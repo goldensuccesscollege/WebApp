@@ -1,0 +1,94 @@
+@page
+@model QuickStockApp.Pages.Account.LoginModel
+
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Login";
+}
+
+<div class="login-wrapper">
+    <div class="login-card glass-card shadow-lg">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="brand-logo mb-3">
+                    <i class="fas fa-boxes fa-3x text-primary d-block mb-2"></i>
+                </div>
+                <h2 class="fw-bold">QuickStock</h2>
+                <p class="text-muted">Welcome back! Please login to your account.</p>
+            </div>
+
+            <form method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Username" class="form-control" id="usernameInput" placeholder="Username" required autocomplete="username">
+                    <label for="usernameInput">Username</label>
+                    <span asp-validation-for="Input.Username" class="text-danger small"></span>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input asp-for="Input.Password" type="password" class="form-control" id="passwordInput" placeholder="Password" required autocomplete="current-password">
+                    <label for="passwordInput">Password</label>
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm py-3 fw-bold">
+                    Login
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <p class="small text-muted mb-0">Don't have an account? <a href="/Account/Register" class="fw-bold text-decoration-none">Register here</a></p>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <a asp-page="/Account/ForgotPassword" class="text-decoration-none small text-muted">Forgot Password?</a>
+                    <span class="text-muted small">|</span>
+                    <a asp-page="/Account/Verify" class="text-decoration-none small text-muted">Verify Account</a>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert mt-4 @(Model.IsSuccess ? "alert-success" : "alert-danger") text-center border-0 rounded-3 shadow-sm py-2">
+                    <i class="fas @(Model.IsSuccess ? "fa-check-circle" : "fa-exclamation-circle") me-2"></i>
+                    @Model.Message
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-wrapper {
+        width: 100%;
+        max-width: 450px;
+        margin: auto;
+        padding: 1rem;
+    }
+
+    .login-card {
+        border: none;
+        border-radius: 24px;
+        overflow: hidden;
+    }
+
+    .form-floating > .form-control:focus, .form-floating > .form-control:not(:placeholder-shown) {
+        padding-top: 1.625rem;
+        padding-bottom: 0.625rem;
+    }
+
+    .btn-lg {
+        padding: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(99, 102, 241, 0.3) !important;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

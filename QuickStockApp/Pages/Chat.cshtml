@@ -1,0 +1,743 @@
+@page
+@model QuickStockApp.Pages.ChatModel
+@{
+    ViewData["Title"] = "Chat";
+}
+<div class="row">
+    <div class="col-12">
+        <div class="chat-wrapper">
+            <!-- Sidebar -->
+            <div class="user-sidebar" id="userSidebar">
+                <div class="sidebar-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-comments"></i> Chats</h5>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal" title="Create Group">
+                        <i class="fas fa-plus"></i> Group
+                    </button>
+                    <button class="btn btn-link d-md-none" onclick="toggleSidebar()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-2 border-bottom">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="userSearch" class="form-control border-start-0 shadow-none" placeholder="Search contacts or groups...">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" onclick="loadUsers()" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="user-list" id="usersContainer">
+                    <div class='p-3 text-center text-muted small'><i class='fas fa-spinner fa-spin'></i> Loading...</div>
+                </div>
+                
+                <div class="border-top p-2 mt-auto">
+                    <div class="user-item" id="global-chat" onclick="selectUser(null, 'Global Chat')">
+                        <div class="user-avatar bg-primary text-white">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="user-name">Global Chat</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chat Area -->
+            <div class="chat-main">
+                <div class="chat-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-link d-md-none me-2" onclick="toggleSidebar()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h5 class="mb-0 text-primary" id="chatTitle">
+                            <i class="fas fa-globe"></i> Global Chat
+                        </h5>
+                    </div>
+                    <div id="connectionStatus" class="badge rounded-pill bg-secondary small me-2">Connecting...</div>
+                </div>
+
+                <div class="chat-messages" id="messagesList">
+                    <!-- Messages will appear here -->
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control border-0 shadow-none" placeholder="Type your message..." disabled>
+                        <button class="btn btn-primary shadow-sm" id="sendButton" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Group Modal -->
+<div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-users"></i> Create New Group</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Group Name</label>
+                    <input type="text" id="groupNameInput" class="form-control" placeholder="Enter group name...">
+                </div>
+                <div class="mb-2 fw-bold small">Select Members</div>
+                <div id="groupMembersList" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                    <!-- User checkboxes will appear here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createNewGroup()">Create Group</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Profile Modal -->
+<div class="modal fade" id="userProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow overflow-hidden">
+            <div class="profile-modal-bg"></div>
+            <div class="modal-body text-center pt-5">
+                <button type="button" class="btn-close position-absolute end-0 top-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="viewProfileImg" src="" class="rounded-circle shadow" style="width: 120px; height: 120px; object-fit: cover; border: 4px solid white;">
+                </div>
+                <h4 id="viewProfileName" class="mb-1"></h4>
+                <p id="viewProfileUsername" class="text-muted small mb-3"></p>
+                
+                <div class="row g-3 text-start px-3 mb-4">
+                    <div class="col-6">
+                        <div class="info-card p-2 rounded bg-light">
+                            <div class="small text-muted">Email</div>
+                            <div id="viewProfileEmail" class="text-truncate"></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-card p-2 rounded bg-light">
+                            <div class="small text-muted">Phone</div>
+                            <div id="viewProfilePhone"></div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="info-card p-2 rounded bg-light">
+                            <div class="small text-muted">Address</div>
+                            <div id="viewProfileAddress"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <a id="viewFullProfileBtn" href="#" class="btn btn-outline-primary rounded-pill px-4 me-2">View Full Profile</a>
+                <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        let selectedUser = null;
+        let selectedGroupId = null;
+        let allUsers = [];
+        let allGroups = [];
+
+        if (!"@Model.JwtToken") {
+            console.error("JWT Token is missing. Chat will not work.");
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("@Model.ApiBaseUrl/chatHub", {
+                accessTokenFactory: () => "@Model.JwtToken"
+            })
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        const connectionStatus = document.getElementById("connectionStatus");
+        const chatTitle = document.getElementById("chatTitle");
+        const messagesList = document.getElementById("messagesList");
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+        const usersContainer = document.getElementById("usersContainer");
+        const userSearch = document.getElementById("userSearch");
+        const groupMembersList = document.getElementById("groupMembersList");
+
+        function toggleSidebar() {
+            document.getElementById("userSidebar").classList.toggle("show");
+        }
+
+        async function showProfile(username) {
+            try {
+                const response = await fetch(`@Model.ApiBaseUrl/api/Profile/user/${username}`, {
+                    headers: { "Authorization": "Bearer @Model.JwtToken" }
+                });
+                if (!response.ok) throw new Error("Failed to load profile");
+                
+                const profile = await response.json();
+                document.getElementById("viewProfileImg").src = profile.imageProfilePath 
+                    ? `@Model.ApiBaseUrl${profile.imageProfilePath}` 
+                    : `https://ui-avatars.com/api/?name=${profile.username}&background=random&color=fff`;
+                document.getElementById("viewProfileName").innerText = `${profile.firstName} ${profile.lastName}` || profile.username;
+                document.getElementById("viewProfileUsername").innerText = "@@" + profile.username;
+                document.getElementById("viewProfileEmail").innerText = profile.email || "N/A";
+                document.getElementById("viewProfilePhone").innerText = profile.phoneNumber || "N/A";
+                document.getElementById("viewProfileAddress").innerText = profile.address || "N/A";
+                document.getElementById("viewFullProfileBtn").href = `/PublicProfile?username=${profile.username}`;
+                
+                new bootstrap.Modal(document.getElementById('userProfileModal')).show();
+            } catch (err) {
+                console.error("Error loading profile:", err);
+            }
+        }
+
+        function appendMessage(user, fullName, message, timestamp, isOwn, isPrivate, imagePath, groupId) {
+            const div = document.createElement("div");
+            div.className = `message ${isOwn ? "own-message" : ""} ${isPrivate ? "private-message" : ""}`;
+            
+            const avatarUrl = imagePath 
+                ? `@Model.ApiBaseUrl${imagePath}` 
+                : `https://ui-avatars.com/api/?name=${fullName || user}&background=random&color=fff`;
+
+            div.innerHTML = `
+                <div class="message-content">
+                    ${!isOwn ? `<img src="${avatarUrl}" class="message-avatar clickable" onclick="showProfile('${user}')" alt="Avatar">` : ""}
+                    <div class="message-details">
+                        <div class="message-info">
+                            <span class="sender clickable" onclick="showProfile('${user}')">${isOwn ? "You" : (fullName || user)}${isPrivate ? " (private)" : ""}</span>
+                            <span class="timestamp">${timestamp}</span>
+                        </div>
+                        <div class="message-bubble">
+                            ${message}
+                        </div>
+                    </div>
+                    ${isOwn ? `<img src="${avatarUrl}" class="message-avatar clickable" onclick="showProfile('${user}')" alt="Avatar">` : ""}
+                </div>
+            `;
+            messagesList.appendChild(div);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        async function loadHistory() {
+            try {
+                let url = `@Model.ApiBaseUrl/api/Chat/history`;
+                if (selectedGroupId) {
+                    url += `?groupId=${selectedGroupId}`;
+                } else if (selectedUser) {
+                    url += `?withUser=${encodeURIComponent(selectedUser)}`;
+                }
+                
+                const response = await fetch(url, {
+                    headers: { "Authorization": "Bearer @Model.JwtToken" }
+                });
+                
+                if (!response.ok) throw new Error("Failed to load history");
+
+                const history = await response.json();
+                messagesList.innerHTML = "";
+                
+                const currentUsername = "@(User.Identity?.Name)".toLowerCase();
+
+                history.forEach(m => {
+                    const senderName = m.fullName || m.username || "Unknown";
+                    const isOwn = (m.username || "").toLowerCase() === currentUsername;
+                    appendMessage(m.username, senderName, m.message, m.timestamp, isOwn, m.isPrivate, m.imageProfilePath, m.groupId);
+                });
+            } catch (err) {
+                console.error("Error loading chat history:", err);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch("@Model.ApiBaseUrl/api/Chat/users", {
+                    headers: { "Authorization": "Bearer @Model.JwtToken" }
+                });
+                if (!response.ok) throw new Error("Failed to load users");
+                
+                allUsers = await response.json();
+                renderUserList();
+                renderGroupMemberSelector();
+            } catch (err) {
+                console.error("Error loading chat users:", err);
+            }
+        }
+
+        async function loadGroups() {
+            try {
+                const response = await fetch("@Model.ApiBaseUrl/api/Chat/groups", {
+                    headers: { "Authorization": "Bearer @Model.JwtToken" }
+                });
+                if (!response.ok) throw new Error("Failed to load groups");
+                
+                allGroups = await response.json();
+                renderUserList();
+            } catch (err) {
+                console.error("Error loading groups:", err);
+            }
+        }
+
+        function renderUserList() {
+            const query = userSearch.value.toLowerCase().trim();
+            usersContainer.innerHTML = "";
+
+            // Render Groups first
+            const filteredGroups = allGroups.filter(g => g.name.toLowerCase().includes(query));
+            if (filteredGroups.length > 0) {
+                const header = document.createElement("div");
+                header.className = "small fw-bold text-muted px-3 py-1 bg-light border-bottom border-top";
+                header.innerText = "GROUPS";
+                usersContainer.appendChild(header);
+
+                filteredGroups.forEach(group => {
+                    const div = document.createElement("div");
+                    div.className = "user-item" + (selectedGroupId === group.id ? " active" : "");
+                    div.onclick = () => selectGroup(group.id, group.name);
+                    div.innerHTML = `
+                        <div class="user-avatar bg-info text-white"><i class="fas fa-users"></i></div>
+                        <div class="user-name">${group.name}</div>
+                    `;
+                    usersContainer.appendChild(div);
+                });
+            }
+
+            // Render Contacts
+            const filteredUsers = allUsers.filter(u => 
+                u.username.toLowerCase().includes(query) || (u.fullName || "").toLowerCase().includes(query)
+            );
+            if (filteredUsers.length > 0) {
+                const header = document.createElement("div");
+                header.className = "small fw-bold text-muted px-3 py-1 bg-light border-bottom border-top";
+                header.innerText = "CONTACTS";
+                usersContainer.appendChild(header);
+
+                filteredUsers.forEach(user => {
+                    const displayName = user.fullName || user.username;
+                    const div = document.createElement("div");
+                    div.className = "user-item" + (selectedUser === user.username && !selectedGroupId ? " active" : "");
+                    div.onclick = () => selectUser(user.username, displayName);
+                    
+                    const avatarUrl = user.imageProfilePath 
+                        ? `@Model.ApiBaseUrl${user.imageProfilePath}` 
+                        : `https://ui-avatars.com/api/?name=${displayName}&background=0D8ABC&color=fff`;
+
+                    div.innerHTML = `
+                        <div class="user-avatar">
+                            <img src="${avatarUrl}" alt="${displayName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        </div>
+                        <div class="user-name">${displayName}</div>
+                    `;
+                    usersContainer.appendChild(div);
+                });
+            }
+        }
+
+        function renderGroupMemberSelector() {
+            groupMembersList.innerHTML = "";
+            allUsers.forEach(user => {
+                const displayName = user.fullName || user.username;
+                const div = document.createElement("div");
+                div.className = "form-check p-2 border-bottom";
+                div.innerHTML = `
+                    <input class="form-check-input" type="checkbox" value="${user.username}" id="chk-${user.username}">
+                    <label class="form-check-label w-100" for="chk-${user.username}">
+                        ${displayName} <span class="text-muted small">@@${user.username}</span>
+                    </label>
+                `;
+                groupMembersList.appendChild(div);
+            });
+        }
+
+        async function createNewGroup() {
+            const name = document.getElementById("groupNameInput").value.trim();
+            if (!name) return alert("Please enter group name");
+
+            const selectedUsernames = [];
+            document.querySelectorAll("#groupMembersList input:checked").forEach(chk => selectedUsernames.push(chk.value));
+            
+            if (selectedUsernames.length === 0) return alert("Please select at least one member");
+
+            try {
+                const response = await fetch("@Model.ApiBaseUrl/api/Chat/groups", {
+                    method: 'POST',
+                    headers: {
+                        "Authorization": "Bearer @Model.JwtToken",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name: name, usernames: selectedUsernames })
+                });
+
+                if (response.ok) {
+                    const group = await response.json();
+                    bootstrap.Modal.getInstance(document.getElementById('createGroupModal')).hide();
+                    document.getElementById("groupNameInput").value = "";
+                    await loadGroups();
+                    selectGroup(group.id, group.name);
+                } else {
+                    alert("Failed to create group");
+                }
+            } catch (err) {
+                console.error("Error creating group:", err);
+            }
+        }
+
+        function selectUser(username, fullName) {
+            selectedUser = username;
+            selectedGroupId = null;
+            renderUserList();
+            if (username) {
+                chatTitle.innerHTML = `<i class="fas fa-user"></i> ${fullName || username}`;
+            } else {
+                document.getElementById("global-chat").classList.add("active");
+                chatTitle.innerHTML = `<i class="fas fa-globe"></i> Global Chat`;
+            }
+            if (window.innerWidth < 768) toggleSidebar();
+            loadHistory();
+        }
+
+        function selectGroup(id, name) {
+            selectedGroupId = id;
+            selectedUser = null;
+            renderUserList();
+            chatTitle.innerHTML = `<i class="fas fa-users text-info"></i> ${name}`;
+            if (window.innerWidth < 768) toggleSidebar();
+            loadHistory();
+        }
+
+        userSearch.addEventListener("input", renderUserList);
+
+        connection.on("ReceiveMessage", (user, fullName, message, timestamp, isPrivate, imagePath, groupId) => {
+            const senderName = fullName || user || "Unknown";
+            const currentUsername = "@(User.Identity?.Name)".toLowerCase();
+            const isOwn = (user || "").toLowerCase() === currentUsername;
+
+            if (groupId) {
+                if (selectedGroupId === groupId) {
+                    appendMessage(user, senderName, message, timestamp, isOwn, false, imagePath, groupId);
+                }
+            } else if (isPrivate) {
+                if (selectedUser === user || (isOwn && selectedUser != null)) {
+                    appendMessage(user, senderName, message, timestamp, isOwn, true, imagePath);
+                }
+            } else {
+                if (selectedUser === null && selectedGroupId === null) {
+                    appendMessage(user, senderName, message, timestamp, isOwn, false, imagePath);
+                }
+            }
+        });
+
+        async function start() {
+            try {
+                await connection.start();
+                connectionStatus.innerText = "Connected";
+                connectionStatus.className = "badge rounded-pill bg-success small me-2";
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                await loadUsers();
+                await loadGroups();
+                await loadHistory();
+            } catch (err) {
+                console.error("SignalR Connection Error:", err);
+                connectionStatus.innerText = "Failed to connect";
+                connectionStatus.className = "badge rounded-pill bg-danger small me-2";
+                setTimeout(start, 5000);
+            }
+        };
+
+        connection.onclose(() => {
+            connectionStatus.innerText = "Disconnected";
+            connectionStatus.className = "badge rounded-pill bg-danger small me-2";
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            setTimeout(start, 5000);
+        });
+
+        connection.onreconnecting(() => {
+            connectionStatus.innerText = "Reconnecting...";
+            connectionStatus.className = "badge rounded-pill bg-warning text-dark small me-2";
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+        });
+
+        connection.onreconnected(() => {
+            connectionStatus.innerText = "Connected";
+            connectionStatus.className = "badge rounded-pill bg-success small me-2";
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+        });
+
+        sendButton.addEventListener("click", async () => {
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                alert("Please wait for the connection to be established.");
+                return;
+            }
+
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            try {
+                await connection.invoke("SendMessage", message, selectedUser, selectedGroupId);
+                messageInput.value = "";
+            } catch (err) {
+                console.error("Failed to send message via SignalR:", err);
+                alert("Failed to send message: " + err.toString());
+            }
+        });
+
+        messageInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendButton.click();
+            }
+        });
+
+        start();
+    </script>
+}
+
+<style>
+    .chat-wrapper {
+        display: flex;
+        height: 75vh;
+        min-height: 500px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        overflow: hidden;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        position: relative;
+    }
+
+    .user-sidebar {
+        width: 280px;
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.5);
+        transition: transform 0.3s ease;
+        z-index: 10;
+    }
+
+    .sidebar-header {
+        padding: 1rem;
+        background: rgba(13, 110, 253, 0.1);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-header h5 {
+        margin: 0;
+        color: #0d6efd;
+    }
+
+    .user-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.5rem;
+    }
+
+    .user-item {
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 0.25rem;
+    }
+
+    .user-item:hover {
+        background: rgba(13, 110, 253, 0.05);
+    }
+
+    .user-item.active {
+        background: #0d6efd;
+        color: #fff;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #dee2e6;
+        color: #495057;
+        font-weight: bold;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .chat-header {
+        padding: 1rem 1.5rem;
+        background: rgba(13, 110, 253, 0.05);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .message {
+        max-width: 80%;
+        align-self: flex-start;
+    }
+
+    .own-message {
+        align-self: flex-end;
+    }
+
+    .message-content {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.75rem;
+    }
+
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .message-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    .own-message .message-info {
+        flex-direction: row-reverse;
+    }
+
+    .sender {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .own-message .sender {
+        color: #0d6efd;
+    }
+
+    .timestamp {
+        color: #adb5bd;
+    }
+
+    .message-bubble {
+        padding: 0.6rem 1rem;
+        border-radius: 1.2rem;
+        border-bottom-left-radius: 0.2rem;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        word-wrap: break-word;
+        font-size: 0.95rem;
+        color: #212529;
+    }
+
+    .own-message .message-bubble {
+        background: #0d6efd;
+        color: #fff !important;
+        border-color: #0d6efd;
+        border-bottom-left-radius: 1.2rem;
+        border-bottom-right-radius: 0.2rem;
+    }
+
+    .private-message .message-bubble {
+        border: 2px solid #ffc107;
+    }
+
+    .chat-input-area {
+        padding: 1.2rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-input-area .form-control {
+        border-radius: 1.5rem;
+        padding-left: 1.2rem;
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-input-area .btn-primary {
+        border-radius: 50%;
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.5rem;
+    }
+
+    .clickable {
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .clickable:hover {
+        opacity: 0.8;
+    }
+
+    .profile-modal-bg {
+        height: 100px;
+        background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+    }
+
+    .info-card {
+        transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .user-avatar.bg-info {
+        background-color: #0dcaf0 !important;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 767.98px) {
+        .user-sidebar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            transform: translateX(-100%);
+            box-shadow: 10px 0 15px rgba(0,0,0,0.1);
+        }
+        .user-sidebar.show {
+            transform: translateX(0);
+        }
+        .chat-wrapper {
+            height: calc(100vh - 120px);
+            border-radius: 0;
+        }
+    }
+</style>

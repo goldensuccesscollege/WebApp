@@ -1,0 +1,604 @@
+@page
+@model QuickStockApp.Pages.Account.ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+    var avatarUrl = string.IsNullOrEmpty(Model.CurrentProfile?.ImageProfilePath) 
+        ? $"https://ui-avatars.com/api/?name={Model.CurrentProfile?.Username}&background=0D8ABC&color=fff&size=200" 
+        : $"{Model.ApiBaseUrl}{Model.CurrentProfile.ImageProfilePath}";
+}
+
+<div class="profile-overhaul">
+    <!-- Premium Header Section -->
+    <div class="profile-cover shadow-sm">
+        <div class="cover-gradient"></div>
+        <div class="container position-relative h-100">
+            <div class="profile-header-content d-flex flex-column flex-md-row align-items-center align-items-md-end pb-4 h-100">
+                <div class="avatar-wrapper position-relative me-md-4">
+                    <img src="@avatarUrl" id="profileImgPreview" class="profile-avatar border border-5 border-white shadow">
+                    <label for="imageUpload" class="avatar-edit-btn btn btn-primary shadow">
+                        <i class="fas fa-camera"></i>
+                        <input type="file" id="imageUpload" name="ImageProfile" form="profileForm" hidden accept="image/*">
+                    </label>
+                </div>
+                <div class="header-info-wrapper text-center text-md-start mb-2">
+                    <h1 class="display-6 fw-bold text-white mb-0">@Model.CurrentProfile?.FirstName @Model.CurrentProfile?.LastName</h1>
+                    <p class="text-white-50 fs-5 mb-0">@@@Model.CurrentProfile?.Username</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <div class="row g-4">
+            <!-- Sidebar Info Card -->
+            <div class="col-lg-4">
+                <div class="glass-card premium-card h-100 p-4 sticky-top" style="top: 20px; z-index: 10;">
+                    <h4 class="fw-bold mb-4 d-flex align-items-center">
+                        <i class="fas fa-info-circle me-3 text-primary"></i> About Me
+                    </h4>
+                    
+                    <div class="info-list">
+                        <div class="info-item mb-3">
+                            <label class="small text-muted d-block fw-bold text-uppercase">Email</label>
+                            <span class="fs-6">@Model.CurrentProfile?.Email</span>
+                        </div>
+                        @if (Model.CurrentProfile?.Birthday.HasValue == true)
+                        {
+                            <div class="info-item mb-3">
+                                <label class="small text-muted d-block fw-bold text-uppercase">Birthday</label>
+                                <span class="fs-6">@Model.CurrentProfile.Birthday.Value.ToString("MMMM dd, yyyy")</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.CurrentProfile?.PhoneNumber))
+                        {
+                            <div class="info-item mb-3">
+                                <label class="small text-muted d-block fw-bold text-uppercase">Phone</label>
+                                <span class="fs-6">@Model.CurrentProfile.PhoneNumber</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.CurrentProfile?.Address))
+                        {
+                            <div class="info-item mb-3">
+                                <label class="small text-muted d-block fw-bold text-uppercase">Location</label>
+                                <span class="fs-6">@Model.CurrentProfile.Address</span>
+                            </div>
+                        }
+                    </div>
+
+                    <button class="btn btn-outline-primary rounded-pill w-100 mt-4 fw-bold" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-user-edit me-2"></i> Edit Profile
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="col-lg-8">
+                <!-- Success Message -->
+                @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4" role="alert">
+                        <i class="fas fa-check-circle me-2"></i> @Model.SuccessMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <!-- Animated Tab Navigation -->
+                <ul class="nav nav-pills premium-tabs shadow-sm rounded-pill p-1 mb-4" id="mainTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#postsTabContent">
+                            <i class="fas fa-feather-alt me-2"></i> Posts
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#photosTabContent">
+                            <i class="fas fa-images me-2"></i> Photos
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Posts Tab -->
+                    <div class="tab-pane fade show active" id="postsTabContent">
+                        <!-- Create Post Quick Box -->
+                        <div class="glass-card shadow-sm p-4 mb-4 post-creator-box">
+                            <div class="d-flex align-items-start gap-3">
+                                <img src="@avatarUrl" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <form asp-page-handler="CreatePost" method="post" enctype="multipart/form-data">
+                                        <textarea asp-for="PostContent" class="form-control mb-3 p-3 ghost-textarea" rows="2" placeholder="Share something new..."></textarea>
+                                        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                                            <div class="d-flex gap-2">
+                                                <label for="postImgFiles" class="btn btn-sm btn-light rounded-pill px-3">
+                                                    <i class="fas fa-image text-success me-1"></i> Photo
+                                                    <input type="file" id="postImgFiles" name="PostImages" multiple accept="image/*" hidden>
+                                                </label>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Post</button>
+                                        </div>
+                                        <div id="postFilesStatus" class="small text-muted mt-2 px-2"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Posts Feed -->
+                        <div class="posts-feed">
+                            @if (Model.Posts != null && Model.Posts.Any())
+                            {
+                                @foreach (var post in Model.Posts)
+                                {
+                                    <div class="glass-card shadow-sm p-4 mb-4 post-card position-relative">
+                                        <form asp-page-handler="DeletePost" method="post" class="position-absolute top-0 end-0 m-3">
+                                            <input type="hidden" name="postId" value="@post.Id" />
+                                            <button type="submit" class="btn btn-link text-muted p-2 hover-danger" title="Delete Post">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        <div class="d-flex align-items-center mb-4">
+                                            <img src="@avatarUrl" class="rounded-circle me-3 shadow-sm" style="width: 48px; height: 48px; object-fit: cover;">
+                                            <div>
+                                                <div class="fw-bold fs-5">@post.AuthorFullName</div>
+                                                <div class="small text-muted d-flex align-items-center">
+                                                    <i class="far fa-clock me-1"></i> @post.CreatedAt.ToString("MMM dd • HH:mm")
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(post.Content))
+                                        {
+                                            <p class="fs-5 mb-4" style="white-space: pre-wrap; line-height: 1.6;">@post.Content</p>
+                                        }
+
+                                        @if (post.Images != null && post.Images.Any())
+                                        {
+                                            <div class="post-media-grid @(post.Images.Count > 1 ? "multi-grid" : "") mb-3">
+                                                @foreach (var img in post.Images)
+                                                {
+                                                    <div class="media-container" onclick="openLightbox('@Model.ApiBaseUrl@img')">
+                                                        <img src="@Model.ApiBaseUrl@img" class="img-fluid rounded-3 shadow-sm">
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+
+                                        <!-- Post Actions -->
+                                        <div class="post-actions d-flex align-items-center gap-4 py-2 border-top border-bottom mb-3">
+                                            <button class="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-2 @(post.IsLikedByCurrentUser ? "text-danger" : "text-muted")" 
+                                                    id="likeBtn-@post.Id" onclick="toggleLike(@post.Id)">
+                                                <i class="@(post.IsLikedByCurrentUser ? "fas" : "far") fa-heart fs-5"></i>
+                                                <span class="fw-bold" id="likeCount-@post.Id">@post.ReactionsCount</span>
+                                            </button>
+                                            <button class="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-2 text-muted" onclick="toggleComments(@post.Id)">
+                                                <i class="far fa-comment fs-5"></i>
+                                                <span class="fw-bold">@post.CommentsCount</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Comments Section -->
+                                        <div class="comments-section d-none" id="comments-@post.Id">
+                                            <div class="comments-list mb-3" id="commentsList-@post.Id">
+                                                @foreach (var comment in post.Comments)
+                                                {
+                                                    <div class="comment-item d-flex gap-2 mb-2">
+                                                        <img src="@(string.IsNullOrEmpty(comment.AuthorProfileImage) ? $"https://ui-avatars.com/api/?name={comment.AuthorUsername}&background=0D8ABC&color=fff" : $"{Model.ApiBaseUrl}{comment.AuthorProfileImage}")" 
+                                                             class="rounded-circle shadow-sm" style="width: 32px; height: 32px; object-fit: cover;">
+                                                        <div class="comment-bubble bg-light rounded-4 px-3 py-2 flex-grow-1">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <span class="fw-bold small">@comment.AuthorFullName</span>
+                                                                <span class="text-muted" style="font-size: 0.7rem;">@comment.CreatedAt.ToString("MMM dd HH:mm")</span>
+                                                            </div>
+                                                            <p class="small mb-0">@comment.Content</p>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="comment-input-wrapper d-flex gap-2 align-items-center">
+                                                <img src="@avatarUrl" class="rounded-circle shadow-sm" style="width: 32px; height: 32px; object-fit: cover;">
+                                                <div class="position-relative flex-grow-1">
+                                                    <input type="text" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-light" 
+                                                           placeholder="Write a comment..." id="commentInput-@post.Id" 
+                                                           onkeypress="if(event.key === 'Enter') addComment(@post.Id)">
+                                                    <button class="btn btn-link text-primary position-absolute end-0 top-50 translate-middle-y me-2 p-0" onclick="addComment(@post.Id)">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="glass-card p-5 text-center text-muted rounded-4">
+                                    <p class="mb-0">You haven't posted anything yet.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Photos Tab -->
+                    <div class="tab-pane fade" id="photosTabContent">
+                        <div class="glass-card shadow-sm p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="fw-bold mb-0">Photo Vault</h4>
+                                <form asp-page-handler="CreatePost" method="post" enctype="multipart/form-data" id="directUploadForm">
+                                    <label for="directPhotos" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                                        <i class="fas fa-plus me-2"></i> Add Photos
+                                        <input type="file" id="directPhotos" name="PostImages" multiple accept="image/*" hidden onchange="this.form.submit()">
+                                    </label>
+                                </form>
+                            </div>
+
+                            @if (Model.Photos != null && Model.Photos.Any())
+                            {
+                                <div class="row g-3 photo-gallery">
+                                    @foreach (var photo in Model.Photos)
+                                    {
+                                        <div class="col-6 col-md-4">
+                                            <div class="gallery-item-wrapper" onclick="openLightbox('@Model.ApiBaseUrl@photo')">
+                                                <img src="@Model.ApiBaseUrl@photo" class="gallery-img rounded-3 shadow-sm h-100 w-100" style="object-fit: cover; aspect-ratio: 1/1;">
+                                                <div class="gallery-overlay">
+                                                    <i class="fas fa-expand-alt fa-2x text-white"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted opacity-50">
+                                    <i class="fas fa-camera fa-4x mb-3"></i>
+                                    <p class="fs-5">Start populating your vault!</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card rounded-4 border-0 p-3 shadow-xl">
+            <div class="modal-header border-0 pb-0">
+                <h4 class="fw-bold modal-title">Edit Personal Info</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="profileForm" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">First Name</label>
+                            <input asp-for="ProfileRequest.FirstName" class="form-control rounded-pill px-4" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Last Name</label>
+                            <input asp-for="ProfileRequest.LastName" class="form-control rounded-pill px-4" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Birthday</label>
+                            <input type="date" asp-for="ProfileRequest.Birthday" class="form-control rounded-pill px-4">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Phone Number</label>
+                            <input asp-for="ProfileRequest.PhoneNumber" class="form-control rounded-pill px-4" placeholder="+123456789">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Address</label>
+                            <textarea asp-for="ProfileRequest.Address" class="form-control rounded-4 px-4 py-3" rows="3" placeholder="Your City, Country"></textarea>
+                        </div>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Discard</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body p-0 text-center position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-4 shadow-lg" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1000; padding: 10px; background-size: 20px;"></button>
+                <img src="" id="lightboxImg" class="img-fluid rounded-4 shadow-2xl pulse-animation" style="max-height: 90vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Global Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card rounded-4 border-0 shadow-xl overflow-hidden">
+            <div class="modal-header bg-danger text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Attention</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="error-icon-wrapper mb-3">
+                    <i class="fas fa-times-circle text-danger fa-4x mb-3 animate__animated animate__shakeX"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Oops! Something went wrong</h4>
+                <p id="errorModalMessage" class="text-muted fs-5 mb-0">@Model.ErrorMessage</p>
+            </div>
+            <div class="modal-footer border-0 p-3 pt-0 justify-content-center">
+                <button type="button" class="btn btn-secondary rounded-pill px-5 fw-bold" data-bs-toggle="modal" data-bs-target="#errorModal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        --glass-bg: rgba(255, 255, 255, 0.75);
+        --premium-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #f8fafc;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 1.5rem;
+    }
+
+    .premium-card {
+        box-shadow: var(--premium-shadow);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .profile-cover {
+        height: 280px;
+        position: relative;
+        overflow: hidden;
+        margin-top: -24px;
+    }
+
+    .cover-gradient {
+        position: absolute;
+        inset: 0;
+        background: var(--primary-gradient);
+        opacity: 0.9;
+    }
+
+    .profile-avatar {
+        width: 168px;
+        height: 168px;
+        object-fit: cover;
+        border-radius: 50%;
+        background-color: white;
+    }
+
+    .avatar-wrapper {
+        margin-top: 40px;
+    }
+
+    .avatar-edit-btn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        padding: 0;
+        border: 4px solid white;
+    }
+
+    .premium-tabs {
+        background: #e2e8f0;
+        padding: 6px;
+    }
+
+    .premium-tabs .nav-link {
+        border-radius: 100px;
+        font-weight: 700;
+        color: #64748b;
+        padding: 10px 30px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .premium-tabs .nav-link.active {
+        background-color: white;
+        color: #6366f1;
+        box-shadow: 0 4px 15px -4px rgba(99, 102, 241, 0.4);
+        transform: scale(1.02);
+    }
+
+    .ghost-textarea {
+        background: transparent;
+        border: none;
+        font-size: 1.25rem;
+        resize: none;
+        padding: 0;
+    }
+    .ghost-textarea:focus {
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .post-card {
+        transition: transform 0.3s ease;
+    }
+    .post-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .hover-danger:hover {
+        color: #ef4444 !important;
+        background: #fee2e2;
+        border-radius: 50%;
+    }
+
+    .post-media-grid {
+        display: grid;
+        gap: 8px;
+        margin-top: 1rem;
+    }
+    .post-media-grid.multi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .media-container {
+        cursor: pointer;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+    .media-container img {
+        transition: transform 0.5s ease;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .media-container:hover img {
+        transform: scale(1.05);
+    }
+
+    .gallery-item-wrapper {
+        position: relative;
+        cursor: pointer;
+        overflow: hidden;
+        border-radius: 1rem;
+        aspect-ratio: 1/1;
+    }
+
+    .gallery-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .gallery-item-wrapper:hover .gallery-overlay {
+        opacity: 1;
+    }
+
+    .pulse-animation {
+        animation: modalPulse 0.4s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    @@keyframes modalPulse {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    @@media (max-width: 768px) {
+        .profile-cover { height: 200px; }
+        .profile-avatar { width: 120px; height: 120px; }
+        .avatar-wrapper { margin-top: 20px; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Profile picture preview
+        document.getElementById('imageUpload').onchange = function () {
+            const [file] = this.files;
+            if (file) {
+                document.getElementById('profileImgPreview').src = URL.createObjectURL(file);
+                // Auto-submit after preview if we wanted, but let's keep it manual
+            }
+        };
+
+        // Post files status
+        // Show error modal if message exists
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <text>
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            errorModal.show();
+            </text>
+        }
+
+        function openLightbox(src) {
+            document.getElementById('lightboxImg').src = src;
+            new bootstrap.Modal(document.getElementById('lightboxModal')).show();
+        }
+
+        async function toggleLike(postId) {
+            const btn = document.getElementById(`likeBtn-${postId}`);
+            const countSpan = document.getElementById(`likeCount-${postId}`);
+            const icon = btn.querySelector('i');
+            
+            try {
+                const response = await fetch(`?handler=ToggleLike&postId=${postId}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    icon.classList.toggle('fas', result.liked);
+                    icon.classList.toggle('far', !result.liked);
+                    btn.classList.toggle('text-danger', result.liked);
+                    btn.classList.toggle('text-muted', !result.liked);
+                    
+                    let count = parseInt(countSpan.innerText);
+                    countSpan.innerText = result.liked ? count + 1 : count - 1;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function toggleComments(postId) {
+            const section = document.getElementById(`comments-${postId}`);
+            section.classList.toggle('d-none');
+        }
+
+        async function addComment(postId) {
+            const input = document.getElementById(`commentInput-${postId}`);
+            const list = document.getElementById(`commentsList-${postId}`);
+            const content = input.value.trim();
+            if (!content) return;
+
+            try {
+                const response = await fetch(`?handler=AddComment&postId=${postId}&content=${encodeURIComponent(content)}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    input.value = '';
+                    const comment = result.comment;
+                    const html = `
+                        <div class="comment-item d-flex gap-2 mb-2 animate__animated animate__fadeIn">
+                            <img src="${comment.authorProfileImage ? '@Model.ApiBaseUrl' + comment.authorProfileImage : 'https://ui-avatars.com/api/?name=' + comment.authorUsername + '&background=0D8ABC&color=fff'}" 
+                                 class="rounded-circle shadow-sm" style="width: 32px; height: 32px; object-fit: cover;">
+                            <div class="comment-bubble bg-light rounded-4 px-3 py-2 flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold small">${comment.authorFullName}</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">Just now</span>
+                                </div>
+                                <p class="small mb-0">${comment.content}</p>
+                            </div>
+                        </div>
+                    `;
+                    list.insertAdjacentHTML('beforeend', html);
+                }
+            } catch (err) { console.error(err); }
+        }
+    </script>
+}

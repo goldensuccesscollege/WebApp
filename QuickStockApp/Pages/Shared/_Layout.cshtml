@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - QuickStockApp</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/QuickStockApp.styles.css" asp-append-version="true" />
+
+    <style>
+        /* Navbar enhancements */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .nav-link.active {
+            font-weight: 600;
+            color: #0d6efd !important;
+        }
+
+        /* Card-like main container */
+        main.pb-3 {
+            padding-top: 2rem;
+        }
+
+        .content-wrapper {
+            background: #f8f9fa;
+            min-height: calc(100vh - 112px); /* navbar + footer height */
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #f1f3f5;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        /* Logout button spacing */
+        .navbar-nav .btn-danger {
+            margin-left: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">QuickStockApp</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                        aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-sm-0">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["Title"]?.ToString() == "Home" ? "active" : "")"
+                               asp-area="" asp-page="/Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["Title"]?.ToString() == "Privacy" ? "active" : "")"
+                               asp-area="" asp-page="/Privacy">Privacy</a>
+                        </li>
+
+                        @* ✅ Register link visible to authenticated users *@
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Register" ? "active" : "")"
+                                   asp-page="/Account/Register">Register</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Chat" ? "active" : "")"
+                                   asp-page="/Chat">Messages</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Login" ? "active" : "")"
+                                   asp-page="/Account/Login">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Register" ? "active" : "")"
+                                   asp-page="/Account/Register">Register</a>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="d-flex align-items-center">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <span class="me-3 text-muted">Hello, <strong>@User.Identity?.Name</strong></span>
+                            <a asp-page="/Account/Profile" class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2">
+                                <i class="fas fa-user-circle me-1"></i> My Profile
+                            </a>
+                            <a asp-page="/Account/Logout" class="btn btn-outline-danger btn-sm rounded-pill px-3">Logout</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid px-md-5">
+        <main role="main" class="pb-3">
+            <div class="content-wrapper">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted d-none">
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

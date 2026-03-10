@@ -1,0 +1,106 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-5 animate-in">
+        <div class="col-12">
+            <h1 class="fw-bold display-5">Dashboard Overview</h1>
+            <p class="text-muted">Welcome back! Here's what's happening with your inventory today.</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4 animate-in" style="animation-delay: 0.1s">
+            <div class="glass-card text-center">
+                <div class="stat-icon mx-auto">📦</div>
+                <h3 class="fw-bold">@Model.TotalProducts</h3>
+                <p class="text-muted mb-0">Total Products</p>
+                <div class="mt-3 small text-success">↑ 12% from last month</div>
+            </div>
+        </div>
+        <div class="col-md-4 animate-in" style="animation-delay: 0.2s">
+            <div class="glass-card text-center">
+                <div class="stat-icon mx-auto" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)">⚠️</div>
+                <h3 class="fw-bold">@Model.LowStockCount</h3>
+                <p class="text-muted mb-0">Low Stock Items</p>
+                <div class="mt-3 small text-danger">Action required</div>
+            </div>
+        </div>
+        <div class="col-md-4 animate-in" style="animation-delay: 0.3s">
+            <div class="glass-card text-center">
+                <div class="stat-icon mx-auto" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%)">💰</div>
+                <h3 class="fw-bold">$@Model.TotalValue.ToString("N0")</h3>
+                <p class="text-muted mb-0">Inventory Value</p>
+                <div class="mt-3 small text-success">Asset total</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row g-4">
+        <!-- Activity Feed -->
+        <div class="col-lg-8 animate-in" style="animation-delay: 0.4s">
+            <div class="glass-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Recent Activity</h5>
+                    <button class="btn btn-sm btn-link text-decoration-none">View All</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-borderless align-middle">
+                        <thead class="text-muted small">
+                            <tr>
+                                <th>ACTION</th>
+                                <th>ITEM</th>
+                                <th>TIME</th>
+                                <th class="text-end">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var activity in Model.Activities)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="badge rounded-pill bg-light text-dark p-2 px-3 border">
+                                            @activity.Action
+                                        </span>
+                                    </td>
+                                    <td class="fw-medium">@activity.Item</td>
+                                    <td class="text-muted small">@activity.Time</td>
+                                    <td class="text-end">
+                                        <div class="spinner-grow spinner-grow-sm text-@activity.Status.ToLower()" role="status"></div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 animate-in" style="animation-delay: 0.5s">
+            <div class="glass-card h-100">
+                <h5 class="fw-bold mb-4">Quick Actions</h5>
+                <div class="d-grid gap-3">
+                    <a href="#" class="btn btn-primary d-flex align-items-center justify-content-between p-3 rounded-4 border-0" style="background: var(--primary-gradient)">
+                        <span>Add New Product</span>
+                        <span class="fs-4">+</span>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark d-flex align-items-center justify-content-between p-3 rounded-4">
+                        <span>Generate Report</span>
+                        <span>📊</span>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark d-flex align-items-center justify-content-between p-3 rounded-4">
+                        <span>Settings</span>
+                        <span>⚙️</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

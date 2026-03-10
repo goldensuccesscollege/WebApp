@@ -1,0 +1,84 @@
+@page
+@model QuickStockApp.Pages.VerifyModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Verify Account";
+}
+
+<div class="login-wrapper">
+    <div class="login-card glass-card shadow-lg">
+        <div class="card-body p-4 p-md-5 text-center">
+            <div class="mb-4">
+                <div class="brand-logo mb-3">
+                    <i class="fas @(Model.IsSuccess ? "fa-check-circle text-success" : "fa-exclamation-circle text-danger") fa-4x d-block mb-2"></i>
+                </div>
+                <h2 class="fw-bold">Verification</h2>
+            </div>
+
+            @if (Model.ShowModal)
+            {
+                <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger") border-0 rounded-3 shadow-sm py-3 mb-4">
+                    <i class="fas @(Model.IsSuccess ? "fa-check" : "fa-times") me-2"></i>
+                    @if(Model.IsSuccess) { <span>Account verified! Now you can login.</span> } else { @Model.ModalMessage }
+                </div>
+
+                @if (Model.IsSuccess)
+                {
+                    <p class="text-muted mb-4">
+                        Redirecting to login page in <span id="countdown" class="fw-bold text-primary">5</span> seconds...
+                    </p>
+                    <a href="/Account/Login" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm fw-bold">
+                        Go to Login Now
+                    </a>
+                }
+                else
+                {
+                    <a href="/Account/Register" class="btn btn-outline-secondary btn-lg w-100 rounded-pill shadow-sm">
+                        Back to Register
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted">Verifying your account, please wait...</p>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-wrapper {
+        width: 100%;
+        max-width: 450px;
+        margin: auto;
+        padding: 1rem;
+    }
+
+    .login-card {
+        border: none;
+        border-radius: 24px;
+        overflow: hidden;
+    }
+</style>
+
+@if (Model.IsSuccess)
+{
+    @section Scripts {
+        <script>
+            let seconds = 5;
+            const countdownEl = document.getElementById('countdown');
+            
+            const timer = setInterval(() => {
+                seconds--;
+                countdownEl.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(timer);
+                    window.location.href = 'http://localhost:5020/Account/Login';
+                }
+            }, 1000);
+        </script>
+    }
+}
