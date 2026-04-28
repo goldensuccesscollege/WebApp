@@ -47,23 +47,19 @@ namespace QuickStockApp.Pages
         {
             if (NewPassword != ConfirmPassword)
             {
-                Message = "Passwords do not match.";
-                IsSuccess = false;
-                return Page();
+                TempData["ErrorMessage"] = "Passwords do not match.";
+                return RedirectToPage(new { email = Email, token = Token });
             }
 
             var success = await _api.ResetPasswordAsync(Email, Token, NewPassword);
-            Message = success ? "Your password has been reset successfully." : "Failed to reset password. Please try again.";
-            IsSuccess = success;
-
-            // ? After successful reset, invalidate token if needed via API
             if (success)
             {
-                Token = ""; // Optional: clear token
-                IsTokenValid = false;
+                TempData["SuccessMessage"] = "Your password has been reset successfully.";
+                return RedirectToPage("Login");
             }
 
-            return Page();
+            TempData["ErrorMessage"] = "Failed to reset password. Please try again.";
+            return RedirectToPage(new { email = Email, token = Token });
         }
     }
 }

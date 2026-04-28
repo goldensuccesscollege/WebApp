@@ -6,7 +6,7 @@ using QuickStockApp.Services;
 
 namespace QuickStockApp.Pages
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     public class RegisterModel : PageModel
     {
         private readonly IApiService _api;
@@ -28,21 +28,22 @@ namespace QuickStockApp.Pages
             // Password match validation
             if (Register.Password != Register.ConfirmPassword)
             {
-                ModalMessage = "Passwords do not match.";
-                ShowModal = true;
-                IsSuccess = false;
-                return Page();
+                TempData["ErrorMessage"] = "Passwords do not match.";
+                return RedirectToPage();
             }
 
             // Call API
             Register.IsFromApi = true;
             var result = await _api.RegisterAsync(Register);
 
-            ModalMessage = result.Success ? "Register successfully" : "Registration failed";
-            ShowModal = true;
-            IsSuccess = result.Success;
-
-            return Page();
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = "Account created successfully!";
+                return RedirectToPage();
+            }
+            
+            TempData["ErrorMessage"] = result.Message ?? "Registration failed. Please try again.";
+            return RedirectToPage();
         }
     }
 }

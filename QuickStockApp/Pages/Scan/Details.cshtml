@@ -1,0 +1,206 @@
+@page
+@model QuickStockApp.Pages.Scan.DetailsModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Asset Details";
+}
+
+<div class="scan-details-container animate-in">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="error-card glass-card text-center">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>Oops!</h2>
+            <p>@Model.ErrorMessage</p>
+            <a href="/" class="btn-home">Return Home</a>
+        </div>
+    }
+    else if (Model.Asset != null)
+    {
+        <div class="asset-details-card glass-card">
+            <div class="asset-header">
+                <div class="asset-icon-large @Model.Asset.Type.ToLower()">
+                    @if(Model.Asset.Type == "Equipment") {
+                        <i class="fas fa-laptop"></i>
+                    } else {
+                        <i class="fas fa-box"></i>
+                    }
+                </div>
+                <div class="header-text">
+                    <span class="type-badge @Model.Asset.Type.ToLower()">@Model.Asset.Type</span>
+                    <h1>@Model.Asset.Name</h1>
+                    <p class="asset-id">ID: @Model.Asset.Qrcode</p>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Brand & Model</label>
+                    <div class="value">@Model.Asset.Brand - @Model.Asset.Model</div>
+                </div>
+                <div class="detail-item">
+                    <label>Serial Number</label>
+                    <div class="value"><code>@Model.Asset.SerialNumber</code></div>
+                </div>
+                <div class="detail-item">
+                    <label>Current Status</label>
+                    <div class="value">
+                        <span class="status-pill @Model.Asset.Status.ToLower().Replace(" ", "-")">@Model.Asset.Status</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <label>Location / Room</label>
+                    <div class="value highlight">
+                        <i class="fas fa-map-marker-alt me-2"></i> @Model.Asset.Location
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-actions">
+                <p class="timestamp">Last scanned: @DateTime.Now.ToString("g")</p>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .scan-details-container {
+        max-width: 600px;
+        margin: 4rem auto;
+        padding: 0 1rem;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 2.5rem;
+    }
+
+    .asset-header {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding-bottom: 2rem;
+    }
+
+    .asset-icon-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+    }
+
+    .asset-icon-large.equipment { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+    .asset-icon-large.materials { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .asset-id {
+        margin: 0;
+        color: #64748b;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+
+    .type-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .type-badge.equipment { background: #e0e7ff; color: #4338ca; }
+    .type-badge.materials { background: #ffedd5; color: #9a3412; }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .detail-item label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-item .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .detail-item .value.highlight {
+        color: #6366f1;
+        font-size: 1.25rem;
+    }
+
+    .status-pill {
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pill.working { background: #dcfce7; color: #166534; }
+    .status-pill.broken { background: #fee2e2; color: #991b1b; }
+    .status-pill.undermaintenance { background: #fef9c3; color: #854d0e; }
+
+    .footer-actions {
+        margin-top: 3rem;
+        text-align: center;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        padding-top: 1.5rem;
+    }
+
+    .timestamp {
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+
+    .error-icon {
+        font-size: 4rem;
+        color: #ef4444;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-home {
+        display: inline-block;
+        margin-top: 2rem;
+        padding: 0.75rem 2rem;
+        background: #6366f1;
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+
+    @@keyframes zoomIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-in { animation: zoomIn 0.5s ease-out; }
+</style>

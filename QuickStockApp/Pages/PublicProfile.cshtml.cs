@@ -42,6 +42,7 @@ namespace QuickStockApp.Pages
             return Page();
         }
 
+
         public async Task<IActionResult> OnPostToggleLikeAsync([FromQuery] int postId)
         {
             var token = User.FindFirst("jwt_token")?.Value;

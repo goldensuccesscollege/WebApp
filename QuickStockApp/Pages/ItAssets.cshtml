@@ -1,0 +1,950 @@
+@page
+@model QuickStockApp.Pages.ItAssetsModel
+@{
+    ViewData["Title"] = "IT Assets";
+}
+
+<div class="assets-container">
+    <div class="header-section">
+        <div class="header-content">
+            <h1 class="premium-title">IT Assets Explorer</h1>
+            <p class="subtitle">Manage and track your organization's technology hardware and materials.</p>
+        </div>
+        
+        <div class="header-actions">
+            <form method="get" class="header-filters" style="display: flex; gap: 1rem; align-items: center;">
+                <div class="search-box glass-panel" style="display: flex; gap: 0.5rem; align-items: center; padding: 0.25rem 1rem; border-radius: 16px; height: 48px;">
+                    <i class="fas fa-search" style="color: var(--text-muted);"></i>
+                    <input type="text" asp-for="SearchTerm" placeholder="Search name, brand, serial..." style="border: none; background: transparent; padding: 0.5rem; outline: none; width: 250px; font-weight: 600; color: var(--text-dark);" />
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <a href="?SelectedRoomId=@Model.SelectedRoomId" style="color: var(--text-muted); text-decoration: none; padding: 0.25rem; display: flex; align-items: center;"><i class="fas fa-times-circle"></i></a>
+                    }
+                </div>
+
+                <select asp-for="SelectedRoomId" class="room-filter" onchange="this.form.submit()" style="height: 48px;">
+                    <option value="">All Rooms</option>
+                    @foreach (var room in Model.Rooms)
+                    {
+                        <option value="@room.RoomId">@room.RoomName</option>
+                    }
+                </select>
+                <button type="submit" style="display: none;"></button>
+            </form>
+            <button class="add-asset-btn animate-in" onclick="openModal('addModal')" style="height: 48px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add New Asset
+            </button>
+            <button class="batch-qr-btn animate-in" onclick="generateBatchQr()" style="background: var(--text-dark); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 16px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.3s; height: 48px;">
+                <i class="fas fa-layer-group me-1"></i> Batch QR PDF
+            </button>
+            <button class="report-btn animate-in" onclick="generateInventoryReport()" style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 16px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.3s; height: 48px;">
+                <i class="fas fa-file-pdf me-1"></i> Generate Report
+            </button>
+        </div>
+    </div>
+
+
+    <div class="table-container glass-panel animate-in">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" /></th>
+                    <th>Asset Name</th>
+                    <th>Type</th>
+                    <th>Brand & Model</th>
+                    <th>Serial Number</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>QR / ID</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var asset in Model.Assets)
+                {
+                    <tr class="asset-row">
+                        <td><input type="checkbox" class="asset-checkbox" data-asset='@Json.Serialize(asset)' /></td>
+                        <td>
+                            <div class="asset-name-cell">
+                                <div class="asset-icon @asset.Type.ToLower()">
+                                    @if(asset.Type == "Equipment") {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                                    } else if(asset.Type == "Component") {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg>
+                                    } else {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                    }
+                                </div>
+                                <span class="asset-name-text">@asset.Name</span>
+                            </div>
+                        </td>
+                        <td><span class="type-badge @asset.Type.ToLower()">@asset.Type</span></td>
+                        <td>
+                            <div class="brand-model">
+                                <span class="brand">@asset.Brand</span>
+                                <span class="model">@asset.Model</span>
+                            </div>
+                        </td>
+                        <td><code class="serial-text">@asset.SerialNumber</code></td>
+                        <td><span class="location-badge">@asset.Location</span></td>
+                        <td><span class="status-pill @asset.Status.ToLower().Replace(" ", "-")">@asset.Status</span></td>
+                        <td>
+                            <button class="icon-btn qr-btn" 
+                                    onclick="showQrModal(this)" 
+                                    data-id="@asset.Qrcode"
+                                    data-name="@asset.Name"
+                                    data-brand="@asset.Brand"
+                                    data-model="@asset.Model"
+                                    data-serial="@asset.SerialNumber"
+                                    data-location="@asset.Location"
+                                    data-status="@asset.Status"
+                                    title="Show QR Code">
+                                <i class="fas fa-qrcode"></i>
+                            </button>
+                        </td>
+                        <td class="text-right">
+                            <div class="action-btns">
+                                <button class="icon-btn edit-btn" 
+                                        data-id="@asset.Id"
+                                        data-name="@asset.Name"
+                                        data-type="@asset.Type"
+                                        data-brand="@asset.Brand"
+                                        data-model="@asset.Model"
+                                        data-serial="@asset.SerialNumber"
+                                        data-location="@asset.Location"
+                                        data-status="@asset.Status"
+                                        data-qrcode="@asset.Qrcode"
+                                        data-campusid="@asset.CampusId"
+                                        data-roomid="@asset.RoomId"
+                                        onclick="editAsset(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
+                                <button class="icon-btn transfer-btn" 
+                                        data-id="@asset.Id"
+                                        data-name="@asset.Name"
+                                        data-roomid="@asset.RoomId"
+                                        title="Transfer Room"
+                                        onclick="openTransferModal(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="10" y1="14" x2="21" y2="3"></line><polyline points="7 21 2 21 2 16"></polyline><line x1="14" y1="10" x2="2" y2="21"></line></svg>
+                                </button>
+                                <form asp-page-handler="Delete" asp-route-id="@asset.Id" method="post" style="display:inline;">
+                                    <button class="icon-btn delete-btn" onclick="return confirm('Are you sure you want to delete this asset?')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Modal Container -->
+<div id="assetModal" class="modal-overlay">
+    <div class="modal-content glass-card animate-in">
+        <div class="modal-header">
+            <h2 id="modalTitle">Manage Asset</h2>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <form method="post" id="assetForm">
+            <input type="hidden" asp-for="Asset.Id" id="assetId" />
+            
+            @{
+                var activeCampusId = User.FindFirst("ActiveCampusId")?.Value;
+                bool hideCampusSelect = !string.IsNullOrEmpty(activeCampusId);
+            }
+
+            @if (Model.AssignedCampuses.Count > 1 && !hideCampusSelect)
+            {
+                <div class="form-group px-3">
+                    <label asp-for="Asset.CampusId">Campus</label>
+                    <select asp-for="Asset.CampusId" id="assetCampusId" required onchange="filterRoomsByCampus(this.value)">
+                        <option value="">Select Campus</option>
+                        @foreach (var campus in Model.AssignedCampuses)
+                        {
+                            <option value="@campus.CampusId">@campus.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+            else
+            {
+                <input type="hidden" asp-for="Asset.CampusId" id="assetCampusId" value="@activeCampusId" />
+            }
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label asp-for="Asset.Name">Asset Name</label>
+                    <input asp-for="Asset.Name" id="name" required />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Asset.Type">Type</label>
+                    <select asp-for="Asset.Type" id="type" required>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Materials">Materials</option>
+                        <option value="Component">Component</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Asset.Brand">Brand</label>
+                    <input asp-for="Asset.Brand" id="brand" required />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Asset.Model">Model</label>
+                    <input asp-for="Asset.Model" id="model" required />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Asset.SerialNumber">Serial Number</label>
+                    <input asp-for="Asset.SerialNumber" id="serial" required />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Asset.RoomId">Location (Room)</label>
+                    <select asp-for="Asset.RoomId" id="roomid" required onchange="updateLocationString(this)">
+                        <option value="">Select Room</option>
+                        @foreach (var room in Model.Rooms)
+                        {
+                            <option value="@room.RoomId" data-name="@room.RoomName" data-campusid="@room.CampusId">@room.RoomName</option>
+                        }
+                    </select>
+                    <input type="hidden" asp-for="Asset.Location" id="location" />
+                    @if (Model.SelectedRoomId.HasValue)
+                    {
+                        <div class="mt-1 small text-info"><i class="fas fa-info-circle me-1"></i> Pre-selected from current view</div>
+                    }
+                </div>
+                <div class="form-group">
+                    <label asp-for="Asset.Status">Status</label>
+                    <select asp-for="Asset.Status" id="status" required>
+                        <option value="Working">Working</option>
+                        <option value="Broken">Broken</option>
+                        <option value="UnderMaintenance">Under Maintenance</option>
+                    </select>
+                </div>
+                <div class="form-group" style="opacity: 0.6; pointer-events: none;">
+                    <label>QR Code / ID</label>
+                    <input asp-for="Asset.Qrcode" id="qrcode" placeholder="Automatically Generated" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="submit-btn" id="submitBtn">Save Asset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="modal-overlay">
+    <div class="modal-content glass-card animate-in text-center" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2 id="qrModalTitle" style="margin:0">QR Identifier</h2>
+            <button class="close-btn" onclick="closeQrModal()">×</button>
+        </div>
+        <div class="py-4 d-flex flex-column align-items-center gap-3">
+            <div id="qrcodeDisplay" style="padding: 1rem; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1)"></div>
+            <code id="qrCodeText" class="fs-5 fw-bold text-muted"></code>
+            <p class="small text-secondary mb-0">Use this code to locate the asset.</p>
+        </div>
+        <div class="modal-footer justify-content-center">
+            <button class="submit-btn w-100" onclick="downloadQrPdf()">
+                <i class="fas fa-file-pdf me-2"></i> Download PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts for QR and PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Transfer Modal -->
+<div id="transferModal" class="modal-overlay">
+    <div class="modal-content glass-card animate-in">
+        <div class="modal-header">
+            <h2 style="margin:0">Transfer Asset Room</h2>
+            <button class="close-btn" onclick="closeTransferModal()">×</button>
+        </div>
+        <form asp-page-handler="Transfer" method="post" id="transferForm">
+            <input type="hidden" name="assetId" id="transferAssetId" />
+            <div class="modal-body p-0 mb-4" style="padding: 1.5rem 0">
+                <p class="mb-3 text-muted">Select the target room for <strong id="transferAssetName"></strong>:</p>
+                <div class="form-group">
+                    <label>Target Room</label>
+                    <select name="targetRoomId" id="transferTargetRoomId" required>
+                        <option value="">Select Target Room</option>
+                        @foreach (var room in Model.Rooms)
+                        {
+                            <option value="@room.RoomId">@room.RoomName (@room.RoomFloor)</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeTransferModal()">Cancel</button>
+                <button type="submit" class="submit-btn" style="background: var(--accent-color)">Confirm Transfer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --accent-color: #6366f1;
+    }
+
+    .assets-container {
+        padding: 2rem;
+        min-height: 80vh;
+        background: radial-gradient(circle at top left, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 20px;
+    }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .room-filter {
+        padding: 0.75rem 1.5rem;
+        border-radius: 16px;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        font-weight: 600;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .room-filter:hover {
+        border-color: var(--accent-color);
+    }
+
+    .premium-title {
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 800;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+
+    .add-asset-btn {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 16px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        transition: all 0.3s;
+    }
+
+    .add-asset-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .premium-table th {
+        text-align: left;
+        padding: 1.5rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .premium-table td {
+        padding: 1.25rem 1.5rem;
+        color: var(--text-dark);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        vertical-align: middle;
+    }
+
+    .asset-row {
+        transition: all 0.2s;
+    }
+
+    .asset-row:hover {
+        background: rgba(99, 102, 241, 0.03);
+    }
+
+    .asset-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .asset-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .asset-icon.equipment { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+    .asset-icon.materials { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .asset-icon.component { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+
+    .asset-name-text {
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+
+    .type-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .type-badge.equipment { background: #e0e7ff; color: #4338ca; }
+    .type-badge.materials { background: #ffedd5; color: #9a3412; }
+    .type-badge.component { background: #dcfce7; color: #166534; }
+
+    .brand-model {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brand { font-weight: 700; font-size: 0.9rem; }
+    .model { color: var(--text-muted); font-size: 0.8rem; }
+
+    .serial-text {
+        background: #f1f5f9;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .location-badge {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .status-pill {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pill.working { background: #dcfce7; color: #166534; }
+    .status-pill.broken { background: #fee2e2; color: #991b1b; }
+    .status-pill.undermaintenance { background: #fef9c3; color: #854d0e; }
+
+    .qr-text {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .action-btns {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--text-muted);
+    }
+
+    .edit-btn:hover { background: #f0f9ff; color: #0284c7; border-color: #0284c7; }
+    .transfer-btn:hover { background: #f5f3ff; color: #7c3aed; border-color: #7c3aed; }
+    .delete-btn:hover { background: #fef2f2; color: #dc2626; border-color: #dc2626; }
+
+    /* Modal Styling */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        max-width: 600px;
+        width: 90%;
+        padding: 2.5rem;
+        position: relative;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .modal-header h2 {
+        font-weight: 800;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .close-btn {
+        background: none; border: none; font-size: 2rem;
+        color: var(--text-muted); cursor: pointer;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-dark); }
+    .form-group input, .form-group select {
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        background: white;
+    }
+
+    .form-group input:focus {
+        outline: none; border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .cancel-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .submit-btn {
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        border: none;
+        background: var(--primary-gradient);
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in { animation: fadeIn 0.4s ease forwards; }
+
+    @@media (max-width: 500px) {
+        .form-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<script>
+    function openTransferModal(btn) {
+        document.getElementById('transferModal').style.display = 'flex';
+        document.getElementById('transferAssetId').value = btn.dataset.id;
+        document.getElementById('transferAssetName').innerText = btn.dataset.name;
+        document.getElementById('transferTargetRoomId').value = btn.dataset.roomid;
+    }
+
+    function closeTransferModal() {
+        document.getElementById('transferModal').style.display = 'none';
+    }
+
+    function openModal(mode) {
+        document.getElementById('assetModal').style.display = 'flex';
+        const form = document.getElementById('assetForm');
+        const activeCampusId = "@(User.FindFirst("ActiveCampusId")?.Value)";
+        const selectedRoomId = "@(Model.SelectedRoomId)";
+
+        if (mode === 'addModal') {
+            document.getElementById('modalTitle').innerText = 'Add New IT Asset';
+            form.action = '?handler=Add';
+            document.getElementById('assetId').value = '0';
+            document.getElementById('serial').readOnly = false;
+            document.getElementById('serial').style.background = 'white';
+            form.reset();
+            document.getElementById('submitBtn').innerText = 'Add Asset';
+
+            // Restore active campus and filter rooms if context is locked
+            if (activeCampusId) {
+                const campusInput = document.getElementById('assetCampusId');
+                if (campusInput) {
+                    campusInput.value = activeCampusId;
+                    filterRoomsByCampus(activeCampusId);
+                }
+            }
+
+            // Auto-select room if we are in a room context
+            if (selectedRoomId && selectedRoomId !== "0" && selectedRoomId !== "") {
+                const roomSelect = document.getElementById('roomid');
+                roomSelect.value = selectedRoomId;
+                updateLocationString(roomSelect);
+            }
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('assetModal').style.display = 'none';
+        document.getElementById('assetForm').reset();
+    }
+
+    function editAsset(btn) {
+        const data = btn.dataset;
+        
+        document.getElementById('assetModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = 'Edit IT Asset';
+        document.getElementById('assetForm').action = '?handler=Update';
+        document.getElementById('submitBtn').innerText = 'Update Asset';
+
+        document.getElementById('assetId').value = data.id || "0";
+        document.getElementById('name').value = data.name || "";
+        document.getElementById('type').value = data.type || "Equipment";
+        document.getElementById('brand').value = data.brand || "";
+        document.getElementById('model').value = data.model || "";
+        document.getElementById('serial').value = data.serial || "";
+        document.getElementById('serial').readOnly = true;
+        document.getElementById('serial').style.background = '#f1f5f9';
+        
+        document.getElementById('status').value = data.status || "Working";
+        document.getElementById('qrcode').value = data.qrcode || "";
+        document.getElementById('location').value = data.location || "";
+        
+        const campusInput = document.getElementById('assetCampusId');
+        if (campusInput) {
+            campusInput.value = data.campusid || "";
+            filterRoomsByCampus(campusInput.value, data.roomid);
+        } else {
+            document.getElementById('roomid').value = data.roomid || "";
+        }
+
+        document.getElementById('submitBtn').innerText = 'Update Asset';
+    }
+
+    function filterRoomsByCampus(campusId, selectedRoomId = null) {
+        const roomSelect = document.getElementById('roomid');
+        const options = roomSelect.options;
+        
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.value === "") continue;
+            
+            const roomCampusId = opt.getAttribute('data-campusid');
+            if (!campusId || roomCampusId === campusId) {
+                opt.style.display = "";
+            } else {
+                opt.style.display = "none";
+            }
+        }
+
+        if (selectedRoomId) {
+            roomSelect.value = selectedRoomId;
+        } else {
+            const currentOpt = roomSelect.options[roomSelect.selectedIndex];
+            if (currentOpt && currentOpt.style.display === "none") {
+                roomSelect.value = "";
+            }
+        }
+    }
+
+    function updateLocationString(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const roomName = selectedOption.getAttribute('data-name') || "";
+        document.getElementById('location').value = roomName;
+    }
+
+    // QR Code Functionality
+    let currentQrCode = "";
+    let currentAssetName = "";
+
+    function showQrModal(btn) {
+        const data = btn.dataset;
+        currentQrCode = data.id;
+        currentAssetName = data.name;
+
+        document.getElementById('qrModal').style.display = 'flex';
+        document.getElementById('qrModalTitle').innerText = data.name;
+        document.getElementById('qrCodeText').innerText = data.id;
+        
+        const display = document.getElementById('qrcodeDisplay');
+        display.innerHTML = "";
+        
+        // Generate QR Code (Offline Format)
+        const qrContent = `--- QUICKSTOCK ASSET ---
+Item: ${data.name}
+Brand/Model: ${data.brand} ${data.model}
+Serial: ${data.serial}
+Location: ${data.location}
+Status: ${data.status}
+Unique ID: ${data.id}
+------------------------`;
+        
+        new QRCode(display, {
+            text: qrContent,
+            width: 120,
+            height: 120,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M // Medium level for better readability of text
+        });
+    }
+
+    function closeQrModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function downloadQrPdf() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const qrSize = 25; // 25mm size
+        const centerX = 105;
+        const startY = 60;
+        
+        doc.setFontSize(22);
+        doc.setTextColor(99, 102, 241);
+        doc.text("QuickStock Asset Tag", centerX, 30, { align: "center" });
+        
+        doc.setFontSize(16);
+        doc.setTextColor(30, 41, 59);
+        doc.text(currentAssetName, centerX, 45, { align: "center" });
+        
+        const qrCanvas = document.querySelector('#qrcodeDisplay canvas');
+        if (qrCanvas) {
+            const qrImage = qrCanvas.toDataURL("image/png");
+            const x = centerX - (qrSize / 2);
+            doc.addImage(qrImage, 'PNG', x, startY, qrSize, qrSize);
+        }
+        
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text(`ID: ${currentQrCode}`, centerX, startY + qrSize + 10, { align: "center" });
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text("Scan this QR code to view asset details and location.", centerX, startY + qrSize + 22, { align: "center" });
+        
+        doc.save(`Asset_QR_${currentQrCode}.pdf`);
+    }
+
+    function toggleSelectAll(master) {
+        const checkboxes = document.querySelectorAll('.asset-checkbox');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+    }
+
+    async function generateBatchQr() {
+        const selected = Array.from(document.querySelectorAll('.asset-checkbox:checked')).map(cb => JSON.parse(cb.dataset.asset));
+        if (selected.length === 0) {
+            alert("Please select at least one asset.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const tempQrDiv = document.createElement('div');
+        tempQrDiv.style.visibility = 'hidden';
+        tempQrDiv.style.position = 'absolute';
+        document.body.appendChild(tempQrDiv);
+
+        const cols = 3;
+        const rows = 6;
+        const itemsPerPage = cols * rows;
+        const qrSize = 25; // 25mm size
+        const marginX = 15;
+        const marginY = 20;
+        const colWidth = 60;
+        const rowHeight = 45;
+
+        for (let i = 0; i < selected.length; i++) {
+            const asset = selected[i];
+            const pageIndex = i % itemsPerPage;
+            
+            if (i > 0 && pageIndex === 0) doc.addPage();
+
+            const col = pageIndex % cols;
+            const row = Math.floor(pageIndex / cols);
+            
+            const x = marginX + (col * colWidth);
+            const y = marginY + (row * rowHeight);
+
+            // Asset Name (Very small)
+            doc.setFontSize(8);
+            doc.setTextColor(30, 41, 59);
+            doc.setFont(undefined, 'bold');
+            doc.text(asset.name.substring(0, 25), x + (qrSize/2), y - 3, { align: "center" });
+
+            // Generate QR content
+            const qrContent = `--- QUICKSTOCK ASSET ---\nItem: ${asset.name}\nBrand/Model: ${asset.brand} ${asset.model}\nSerial: ${asset.serialNumber}\nLocation: ${asset.location}\nStatus: ${asset.status}\nUnique ID: ${asset.qrcode}\n------------------------`;
+            
+            tempQrDiv.innerHTML = "";
+            new QRCode(tempQrDiv, {
+                text: qrContent,
+                width: 128,
+                height: 128
+            });
+
+            await new Promise(r => setTimeout(r, 40));
+            
+            const qrCanvas = tempQrDiv.querySelector('canvas');
+            if (qrCanvas) {
+                const qrImage = qrCanvas.toDataURL("image/png");
+                doc.addImage(qrImage, 'PNG', x, y, qrSize, qrSize);
+            }
+
+            // ID/Serial Text (Tiny)
+            doc.setFontSize(6);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont(undefined, 'normal');
+            doc.text(`ID: ${asset.qrcode} | SN: ${asset.serialNumber.substring(0, 15)}`, x + (qrSize/2), y + qrSize + 4, { align: "center" });
+        }
+
+        document.body.removeChild(tempQrDiv);
+        doc.save(`QuickStock_Batch_QR_${new Date().getTime()}.pdf`);
+    }
+
+    function generateInventoryReport() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+        
+        const assets = @Json.Serialize(Model.Assets);
+        const campusName = "@User.FindFirst("ActiveCampusName")?.Value" || "Campus Inventory";
+        
+        doc.setFontSize(20);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Inventory Report - ${campusName}`, 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
+        
+        // Table Headers
+        let y = 40;
+        doc.setFillColor(241, 245, 249);
+        doc.rect(14, y, 269, 10, 'F');
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text("Asset Name", 16, y + 7);
+        doc.text("Brand/Model", 80, y + 7);
+        doc.text("Serial Number", 140, y + 7);
+        doc.text("Location", 200, y + 7);
+        doc.text("Status", 250, y + 7);
+        
+        y += 15;
+        doc.setFont(undefined, 'normal');
+        
+        assets.forEach((asset, index) => {
+            if (y > 180) {
+                doc.addPage('l', 'mm', 'a4');
+                y = 20;
+            }
+            
+            doc.text(asset.name || "", 16, y);
+            doc.text(`${asset.brand} ${asset.model}` || "", 80, y);
+            doc.text(asset.serialNumber || "N/A", 140, y);
+            doc.text(asset.location || "N/A", 200, y);
+            doc.text(asset.status || "", 250, y);
+            
+            doc.setDrawColor(241, 245, 249);
+            doc.line(14, y + 2, 283, y + 2);
+            y += 10;
+        });
+        
+        doc.save(`Inventory_Report_${new Date().getTime()}.pdf`);
+    }
+
+
+    // Close on click outside
+    window.onclick = function(event) {
+        let assetModal = document.getElementById('assetModal');
+        let qrModal = document.getElementById('qrModal');
+        let transferModal = document.getElementById('transferModal');
+        
+        if (event.target == assetModal) closeModal();
+        if (event.target == qrModal) closeQrModal();
+        if (event.target == transferModal) closeTransferModal();
+    }
+
+    // Auto-trigger report if parameter is present
+    window.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('triggerReport') === 'true') {
+            setTimeout(generateInventoryReport, 500); // Small delay to ensure everything is ready
+            
+            // Clean up URL without refreshing
+            const newUrl = window.location.pathname + window.location.search.replace(/[?&]triggerReport=true/, '').replace(/^&/, '?').replace(/\?$/, '');
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    });
+</script>

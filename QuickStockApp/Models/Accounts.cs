@@ -1,4 +1,4 @@
-﻿namespace QuickStockApp.Models
+namespace QuickStockApp.Models
 {
     public class Accounts
     {
@@ -13,6 +13,9 @@
         public string Token { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+        public System.Collections.Generic.List<int> CampusIds { get; set; } = new();
+        public bool CanAccessITAssets { get; set; }
+        public bool CanAccessApparel { get; set; }
     }
 
     public class RegisterRequest
@@ -24,6 +27,7 @@
         public string Title { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
         public bool IsFromApi { get; set; } = false;
     }
 }

@@ -8,10 +8,12 @@ namespace QuickStockApp.Services
     public class ApiService : IApiService
     {
         private readonly HttpClient _http;
+        private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;
 
-        public ApiService(HttpClient http)
+        public ApiService(HttpClient http, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
         {
             _http = http;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<(LoginResponseDto? Result, string? Message)> LoginAsync(LoginRequestDto login)
@@ -26,9 +28,16 @@ namespace QuickStockApp.Services
                     return (result, null);
                 }
 
-                // Try to parse the error message from the API (matches ExceptionMiddleware)
-                var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
-                return (null, error?.Message ?? "Invalid credentials.");
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    var errorObj = System.Text.Json.JsonSerializer.Deserialize<ApiErrorResponse>(errorMsg, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    return (null, errorObj?.Message ?? "Invalid credentials.");
+                }
+                catch
+                {
+                    return (null, errorMsg.Length > 100 ? errorMsg.Substring(0, 100) : errorMsg);
+                }
             }
             catch (Exception ex)
             {
@@ -275,6 +284,520 @@ namespace QuickStockApp.Services
                 return null;
             }
             catch { return null; }
+        }
+
+        public async Task<List<ItAssetDto>> GetItAssetsAsync(int? roomId = null, int? campusId = null, string? searchTerm = null)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = "api/Itassets?";
+                if (roomId.HasValue && roomId.Value > 0) url += $"roomId={roomId.Value}&";
+                if (campusId.HasValue && campusId.Value > 0) url += $"campusId={campusId.Value}&";
+                if (!string.IsNullOrWhiteSpace(searchTerm)) url += $"searchTerm={Uri.EscapeDataString(searchTerm)}&";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url.TrimEnd('&', '?'));
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<ItAssetDto>>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> AddItAssetAsync(ItAssetDto asset)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/Itassets")
+                {
+                    Content = JsonContent.Create(asset)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Asset added successfully");
+                
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateItAssetAsync(ItAssetDto asset)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Itassets/{asset.Id}")
+                {
+                    Content = JsonContent.Create(asset)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Asset updated successfully");
+
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteItAssetAsync(int id)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Itassets/{id}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Asset deleted successfully");
+
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<List<RoomDto>> GetRoomsAsync(int? campusId = null)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = "api/Rooms";
+                if (campusId.HasValue && campusId.Value > 0) url = $"api/Rooms?campusId={campusId.Value}";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<RoomDto>>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> AddRoomAsync(RoomDto room)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/Rooms")
+                {
+                    Content = JsonContent.Create(room)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Room added successfully.");
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateRoomAsync(RoomDto room)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Rooms/{room.RoomId}")
+                {
+                    Content = JsonContent.Create(room)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Room updated successfully.");
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteRoomAsync(int roomId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Rooms/{roomId}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Room deleted successfully.");
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<List<CampusDto>> GetCampusesAsync(string? token = null)
+        {
+            try
+            {
+                var jwt = token ?? await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/Campuses");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<CampusDto>>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> AddCampusAsync(CampusDto campus)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/Campuses")
+                {
+                    Content = JsonContent.Create(campus)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Campus added successfully.");
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateCampusAsync(CampusDto campus)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Campuses/{campus.CampusId}")
+                {
+                    Content = JsonContent.Create(campus)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Campus updated successfully.");
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteCampusAsync(int id)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Campuses/{id}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Campus deleted successfully.");
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {error}");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> ToggleRoomStatusAsync(int roomId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Rooms/{roomId}/toggle-status");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Status toggled" : "Failed to toggle status");
+            }
+            catch { return (false, "Error toggling status"); }
+        }
+
+        public async Task<List<UserManagementDto>> GetUsersForManagementAsync()
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/Users");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return response.IsSuccessStatusCode ? (await response.Content.ReadFromJsonAsync<List<UserManagementDto>>() ?? new()) : new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> AddUserCampusAccessAsync(int userId, int campusId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, $"api/Users/{userId}/campuses")
+                {
+                    Content = JsonContent.Create(campusId)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Access granted" : "Failed to grant access");
+            }
+            catch { return (false, "Error granting access"); }
+        }
+
+        public async Task<(bool Success, string Message)> RemoveUserCampusAccessAsync(int userId, int campusId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Users/{userId}/campuses/{campusId}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Access removed" : "Failed to remove access");
+            }
+            catch { return (false, "Error removing access"); }
+        }
+
+        public async Task<(bool Success, string Message)> ToggleUserCampusBlockAsync(int userId, int campusId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Users/{userId}/campuses/{campusId}/toggle-block");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Status toggled" : "Failed to toggle status");
+            }
+            catch { return (false, "Error toggling status"); }
+        }
+
+        public async Task<(bool Success, string Message)> CreateUserAsync(CreateUserDto user)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/Users")
+                {
+                    Content = JsonContent.Create(user)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "User created successfully" : await response.Content.ReadAsStringAsync());
+            }
+            catch { return (false, "Error creating user"); }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateUserAsync(int userId, UpdateUserDto user)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Users/{userId}")
+                {
+                    Content = JsonContent.Create(user)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "User updated successfully" : await response.Content.ReadAsStringAsync());
+            }
+            catch { return (false, "Error updating user"); }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteUserAsync(int userId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Users/{userId}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "User deleted successfully" : "Failed to delete user");
+            }
+            catch { return (false, "Error deleting user"); }
+        }
+
+        public async Task<(bool Success, string Message)> ToggleUserStatusAsync(int userId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Users/{userId}/toggle-status");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Status toggled" : "Failed to toggle status");
+            }
+            catch { return (false, "Error toggling status"); }
+        }
+
+        public async Task<(DashboardDto? Stats, string Message)> GetDashboardStatsAsync(int campusId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/Dashboard/{campusId}/stats");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var stats = await response.Content.ReadFromJsonAsync<DashboardDto>();
+                    return (stats, "Success");
+                }
+                return (null, "Failed to fetch stats");
+            }
+            catch { return (null, "Error fetching dashboard stats"); }
+        }
+
+        public async Task<List<AuditLogDto>> GetAuditLogsAsync(int? campusId = null)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = campusId.HasValue ? $"api/AuditLogs?campusId={campusId}" : "api/AuditLogs";
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadFromJsonAsync<PaginatedAuditLogsDto>();
+                    return data?.Logs ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<PaginatedAuditLogsDto> GetAuditLogsPaginatedAsync(int? campusId, int page, int pageSize)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = $"api/AuditLogs?page={page}&pageSize={pageSize}";
+                if (campusId.HasValue && campusId.Value > 0) url += $"&campusId={campusId}";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<PaginatedAuditLogsDto>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> TransferItAssetAsync(int assetId, int targetRoomId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, $"api/itassets/{assetId}/transfer");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                request.Content = JsonContent.Create(targetRoomId);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Transfer successful" : "Failed to transfer asset");
+            }
+            catch { return (false, "Error during asset transfer"); }
+        }
+
+        public async Task<List<ApparelDto>> GetApparelAsync(int? campusId = null, string? searchTerm = null)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = "api/Apparel?";
+                if (campusId.HasValue && campusId.Value > 0) url += $"campusId={campusId.Value}&";
+                if (!string.IsNullOrWhiteSpace(searchTerm)) url += $"searchTerm={Uri.EscapeDataString(searchTerm)}&";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url.TrimEnd('&', '?'));
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<ApparelDto>>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> AddApparelAsync(ApparelDto apparel)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/Apparel")
+                {
+                    Content = JsonContent.Create(apparel)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Apparel added" : await response.Content.ReadAsStringAsync());
+            }
+            catch { return (false, "Error adding apparel"); }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateApparelAsync(ApparelDto apparel)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Apparel/{apparel.Apparel_ID}")
+                {
+                    Content = JsonContent.Create(apparel)
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Apparel updated" : await response.Content.ReadAsStringAsync());
+            }
+            catch { return (false, "Error updating apparel"); }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteApparelAsync(int id)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Apparel/{id}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Apparel deleted" : "Failed to delete apparel");
+            }
+            catch { return (false, "Error deleting apparel"); }
+        }
+
+        public async Task<List<ApparelItemDto>> GetApparelItemsAsync(int apparelId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/Apparel/{apparelId}/items");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<ApparelItemDto>>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        private Task<string?> GetTokenAsync()
+        {
+            return Task.FromResult(_httpContextAccessor.HttpContext?.User?.FindFirst("jwt_token")?.Value);
         }
     }
 }

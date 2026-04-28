@@ -13,6 +13,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/QuickStockApp.styles.css" asp-append-version="true" />
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+                document.addEventListener('DOMContentLoaded', () => document.body.classList.add('dark-mode'));
+            }
+        })();
+    </script>
 
     <style>
         /* Navbar enhancements */
@@ -51,13 +60,151 @@
         .navbar-nav .btn-danger {
             margin-left: 1rem;
         }
+
+        /* Global Notification Modal */
+        .notification-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 24px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .notification-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .notification-icon.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .notification-icon.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .notification-title {
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+        }
+
+        .notification-message {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .notification-close-btn {
+            background: #1e293b;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .notification-close-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(30, 41, 59, 0.2);
+        }
+
+        /* --- Dark Mode Styles --- */
+        body.dark-mode {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .navbar, 
+        body.dark-mode .content-wrapper,
+        body.dark-mode .glass-card,
+        body.dark-mode .glass-panel,
+        body.dark-mode .modal-content {
+            background: rgba(30, 41, 59, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #f1f5f9 !important;
+            backdrop-filter: blur(20px) !important;
+        }
+
+        body.dark-mode .text-muted,
+        body.dark-mode .text-secondary {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .table {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        body.dark-mode .badge.bg-light {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode input, 
+        body.dark-mode select, 
+        body.dark-mode textarea {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .btn-outline-dark {
+            color: #f1f5f9 !important;
+            border-color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .btn-outline-dark:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+        body.dark-mode .navbar-light .navbar-brand,
+        body.dark-mode .navbar-light .nav-link {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .bg-light {
+            background-color: #0f172a !important;
+        }
     </style>
 </head>
 <body class="bg-light">
+    @if (ViewData["HideNav"] == null || !((bool?)ViewData["HideNav"] ?? false))
+    {
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm">
             <div class="container-fluid px-4">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">QuickStockApp</a>
+                <a class="navbar-brand" asp-area="" asp-page="/Dashboard/Index">QuickStockApp</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                         aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -67,20 +214,58 @@
                     <ul class="navbar-nav me-auto mb-2 mb-sm-0">
                         <li class="nav-item">
                             <a class="nav-link @(ViewData["Title"]?.ToString() == "Home" ? "active" : "")"
-                               asp-area="" asp-page="/Index">Home</a>
+                               asp-area="" asp-page="/Dashboard/Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewData["Title"]?.ToString() == "Privacy" ? "active" : "")"
-                               asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
+                        @{
+                            var canAccessIT = User.IsInRole("Admin") || (User.FindFirst("CanAccessITAssets")?.Value == "True");
+                            var canAccessApparel = User.IsInRole("Admin") || (User.FindFirst("CanAccessApparel")?.Value == "True");
+                        }
 
-                        @* ✅ Register link visible to authenticated users *@
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        @if (canAccessIT)
                         {
                             <li class="nav-item">
-                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Register" ? "active" : "")"
-                                   asp-page="/Account/Register">Register</a>
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "IT Assets" ? "active" : "")"
+                                asp-area="" asp-page="/ItAssets">IT Assets</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Room Management" ? "active" : "")"
+                                asp-area="" asp-page="/Rooms">Rooms</a>
+                            </li>
+                        }
+
+                        @if (canAccessApparel)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Apparel List" ? "active" : "")"
+                                asp-area="" asp-page="/ApparelList">Apparel List</a>
+                            </li>
+                        }
+                        @{
+                            var campusIds = User.FindAll("CampusId").ToList();
+                            var showCampuses = User.IsInRole("Admin") || campusIds.Count > 1;
+                        }
+
+                        @if (showCampuses)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Campuses" ? "active" : "")"
+                                asp-area="" asp-page="/Campuses">Campuses</a>
+                            </li>
+                        }
+
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Register" ? "active" : "")"
+                                       asp-page="/Account/Register">Register User</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewData["Title"]?.ToString() == "User Management" ? "active" : "")"
+                                       asp-page="/Admin/UserManagement">Accounts</a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <a class="nav-link @(ViewData["Title"]?.ToString() == "Chat" ? "active" : "")"
                                    asp-page="/Chat">Messages</a>
@@ -92,20 +277,32 @@
                                 <a class="nav-link @(ViewData["Title"]?.ToString() == "Login" ? "active" : "")"
                                    asp-page="/Account/Login">Login</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Register" ? "active" : "")"
-                                   asp-page="/Account/Register">Register</a>
-                            </li>
                         }
                     </ul>
 
                     <div class="d-flex align-items-center">
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
+                            var activeCampus = User.FindFirst("ActiveCampusName")?.Value;
+                            if (!string.IsNullOrEmpty(activeCampus))
+                            {
+                                <div class="badge bg-primary rounded-pill me-3 px-3 py-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i> @activeCampus
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <a asp-page="/Campuses" class="text-white ms-2 text-decoration-none border-start ps-2" title="Switch Campus">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </a>
+                                    }
+                                </div>
+                            }
                             <span class="me-3 text-muted">Hello, <strong>@User.Identity?.Name</strong></span>
                             <a asp-page="/Account/Profile" class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2">
                                 <i class="fas fa-user-circle me-1"></i> My Profile
                             </a>
+                            <button onclick="openSettings()" class="btn btn-outline-secondary btn-sm rounded-pill px-3 me-2" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
                             <a asp-page="/Account/Logout" class="btn btn-outline-danger btn-sm rounded-pill px-3">Logout</a>
                         }
                     </div>
@@ -113,6 +310,7 @@
             </div>
         </nav>
     </header>
+    }
 
     <div class="container-fluid px-md-5">
         <main role="main" class="pb-3">
@@ -127,9 +325,73 @@
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Global Settings Modal -->
+    <div id="settingsModal" class="notification-modal" style="display: none;">
+        <div class="notification-content animate-in" style="max-width: 450px;">
+            <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold mb-0">System Settings</h3>
+                <button class="btn-close" onclick="closeSettings()"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="d-flex align-items-center justify-content-between p-3 border rounded-4 mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrapper d-flex align-items-center justify-content-center rounded-3 bg-light" style="width: 45px; height: 45px;">
+                            <i class="fas fa-moon text-primary fs-5"></i>
+                        </div>
+                        <div class="text-start">
+                            <h6 class="fw-bold mb-0">Night Mode</h6>
+                            <p class="small text-muted mb-0">Switch to dark theme</p>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch fs-4">
+                        <input class="form-check-input" type="checkbox" id="nightModeToggle" onchange="toggleTheme(this.checked)">
+                    </div>
+                </div>
+            </div>
+            <button class="notification-close-btn w-100 mt-3" onclick="closeSettings()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        function openSettings() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                const isDark = document.body.classList.contains('dark-mode');
+                const toggle = document.getElementById('nightModeToggle');
+                if (toggle) toggle.checked = isDark;
+            }
+        }
+
+        function closeSettings() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function toggleTheme(isDark) {
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                document.documentElement.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.documentElement.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Close settings on backdrop click
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('settingsModal');
+            if (event.target === modal) closeSettings();
+        });
+    </script>
+
+    <partial name="_NotificationPartial" />
 </body>
+
 </html>

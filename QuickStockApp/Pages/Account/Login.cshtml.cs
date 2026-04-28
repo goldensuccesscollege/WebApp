@@ -50,9 +50,8 @@ namespace QuickStockApp.Pages.Account
 
             if (result == null || string.IsNullOrEmpty(result.Token))
             {
-                Message = errorMessage ?? "Invalid username or password.";
-                IsSuccess = false;
-                return Page();
+                TempData["ErrorMessage"] = errorMessage ?? "Invalid username or password.";
+                return RedirectToPage();
             }
 
             // ✅ Create cookie authentication
@@ -60,8 +59,39 @@ namespace QuickStockApp.Pages.Account
             {
                 new Claim(ClaimTypes.Name, Input.Username),
                 new Claim(ClaimTypes.Role, result.Role ?? "User"),
-                new Claim("jwt_token", result.Token)
+                new Claim("jwt_token", result.Token),
+                new Claim("CanAccessITAssets", result.CanAccessITAssets.ToString()),
+                new Claim("CanAccessApparel", result.CanAccessApparel.ToString())
             };
+
+            if (result.CampusIds != null && result.CampusIds.Any())
+            {
+                foreach (var cid in result.CampusIds)
+                {
+                    claims.Add(new Claim("CampusId", cid.ToString()));
+                }
+
+                // AI: Auto-assign active campus if only one is assigned
+                if (result.CampusIds.Count == 1)
+                {
+                    var campusId = result.CampusIds[0];
+                    claims.Add(new Claim("ActiveCampusId", campusId.ToString()));
+                    
+                    // Fetch name for the claim
+                    var allCampuses = await _apiService.GetCampusesAsync(result.Token);
+                    var currentCampus = allCampuses.FirstOrDefault(c => c.CampusId == campusId);
+                    if (currentCampus != null)
+                    {
+                        claims.Add(new Claim("ActiveCampusName", currentCampus.Name));
+                    }
+                }
+            }
+            else if (!result.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Access Denied: Your account is not assigned to any campus. Please contact the administrator.";
+                return RedirectToPage();
+            }
+
             var identity = new ClaimsIdentity(claims, "MyCookieAuth");
             var principal = new ClaimsPrincipal(identity);
 
@@ -73,8 +103,28 @@ namespace QuickStockApp.Pages.Account
                 return LocalRedirect(ReturnUrl);
             }
 
-            // Default redirect
-            return RedirectToPage("/Dashboard/Index");
+            if (result.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToPage("/Campuses");
+            }
+
+            if (result.CampusIds != null && result.CampusIds.Count == 1)
+            {
+                return RedirectToPage("/Dashboard/Index");
+            }
+
+            return RedirectToPage("/Campuses");
+        }
+
+        public async Task<IActionResult> OnPostVerifyTokenAsync(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return new JsonResult(new { success = false, message = "Token is required." });
+            }
+
+            var result = await _apiService.VerifyAsync(token);
+            return new JsonResult(new { success = result.Success, message = result.Message });
         }
     }
 }

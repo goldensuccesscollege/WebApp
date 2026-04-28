@@ -1,20 +1,21 @@
 using QuickStockApp.Services;
+using QuickStockApp.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// SSL Bypass for Local Development
-var handler = new HttpClientHandler();
-if (builder.Environment.IsDevelopment())
-{
-    handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-}
+// SSL Bypass logic moved inside ConfigurePrimaryHttpMessageHandler
 
-// Add services
-builder.Services.AddRazorPages();
+// Register services
+builder.Services.AddRazorPages().AddMvcOptions(options =>
+{
+    options.Filters.Add<CampusSelectionFilter>();
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<UnauthorizedHandler>();
 
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
     options.HeaderName = "RequestVerificationToken";
 });
@@ -27,7 +28,17 @@ builder.Services.AddHttpClient<IApiService, ApiService>(client =>
         throw new Exception("ApiSettings:BaseUrl missing in appsettings.json");
 
     client.BaseAddress = new Uri(apiUrl);
-}).ConfigurePrimaryHttpMessageHandler(() => handler);
+})
+.ConfigurePrimaryHttpMessageHandler(() => 
+{
+    var newHandler = new HttpClientHandler();
+    if (builder.Environment.IsDevelopment())
+    {
+        newHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+    }
+    return newHandler;
+})
+.AddHttpMessageHandler<UnauthorizedHandler>();
 
 // ✅ Authentication & Authorization
 builder.Services.AddAuthentication("MyCookieAuth")
@@ -39,7 +50,7 @@ builder.Services.AddAuthentication("MyCookieAuth")
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
 
         // ✅ Ensure cookie is sent only over HTTPS
-        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
         options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
     });
 
@@ -52,9 +63,9 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
-    // ✅ Apply HTTPS redirection only in Production so local HTTP works
-    app.UseHttpsRedirection();
 }
+
+app.UseHttpsRedirection();
 
 // ✅ ORDER MATTERS
 app.UseStaticFiles();
@@ -65,5 +76,7 @@ app.UseAuthentication();   // FIRST
 app.UseAuthorization();    // SECOND
 
 app.MapRazorPages();
+
+app.MapGet("/", () => Results.Redirect("/Account/Login"));
 
 app.Run();

@@ -38,21 +38,46 @@
             </form>
 
             <div class="mt-4 text-center">
-                <p class="small text-muted mb-0">Don't have an account? <a href="/Account/Register" class="fw-bold text-decoration-none">Register here</a></p>
                 <div class="d-flex justify-content-center gap-3 mt-3">
                     <a asp-page="/Account/ForgotPassword" class="text-decoration-none small text-muted">Forgot Password?</a>
                     <span class="text-muted small">|</span>
-                    <a asp-page="/Account/Verify" class="text-decoration-none small text-muted">Verify Account</a>
+                    <a href="javascript:void(0)" onclick="openVerifyModal()" class="text-decoration-none small text-muted">Verify Account</a>
                 </div>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.Message))
-            {
-                <div class="alert mt-4 @(Model.IsSuccess ? "alert-success" : "alert-danger") text-center border-0 rounded-3 shadow-sm py-2">
-                    <i class="fas @(Model.IsSuccess ? "fa-check-circle" : "fa-exclamation-circle") me-2"></i>
-                    @Model.Message
+        </div>
+    </div>
+</div>
+
+<!-- Verify Account Modal -->
+<div id="verifyModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content glass-card animate-in">
+        <div class="modal-header border-0 pb-0">
+            <h3 class="fw-bold mb-0">Verify Account</h3>
+            <button type="button" class="btn-close" onclick="closeVerifyModal()"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+            <div class="mb-4">
+                <div class="stat-icon-wrapper d-flex align-items-center justify-content-center rounded-circle bg-primary-light mx-auto" style="width: 80px; height: 80px;">
+                    <i class="fas fa-shield-alt fa-2x text-primary"></i>
                 </div>
-            }
+            </div>
+            <p class="text-muted mb-4">Please enter the verification token sent to your email to activate your account.</p>
+            
+            <div id="verifyAlert" class="alert d-none mb-3 small" role="alert"></div>
+            
+            <div class="form-floating mb-3">
+                <input type="text" id="verifyTokenInput" class="form-control" placeholder="Verification Token" required>
+                <label for="verifyTokenInput">Paste Verification Token</label>
+            </div>
+            
+            <button type="button" id="verifySubmitBtn" onclick="submitVerification()" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm py-3 fw-bold mt-2">
+                Verify Now
+            </button>
+            
+            <div id="verifySuccessMsg" class="d-none mt-3 text-success fw-bold">
+                <i class="fas fa-check-circle me-1"></i> You can login now! Redirecting...
+            </div>
         </div>
     </div>
 </div>
@@ -69,6 +94,28 @@
         border: none;
         border-radius: 24px;
         overflow: hidden;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(8px);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-primary-light { background-color: rgba(99, 102, 241, 0.1); }
+    
+    .animate-in {
+        animation: slideUp 0.4s ease-out forwards;
+    }
+
+    @@keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .form-floating > .form-control:focus, .form-floating > .form-control:not(:placeholder-shown) {
@@ -91,4 +138,81 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function openVerifyModal() {
+            document.getElementById('verifyModal').style.display = 'flex';
+            document.getElementById('verifyTokenInput').value = '';
+            hideAlert();
+        }
+
+        function closeVerifyModal() {
+            document.getElementById('verifyModal').style.display = 'none';
+        }
+
+        function showAlert(msg, isError) {
+            const alert = document.getElementById('verifyAlert');
+            alert.textContent = msg;
+            alert.className = `alert ${isError ? 'alert-danger' : 'alert-success'} mb-3 small`;
+            alert.classList.remove('d-none');
+        }
+
+        function hideAlert() {
+            document.getElementById('verifyAlert').classList.add('d-none');
+        }
+
+        async function submitVerification() {
+            const tokenInput = document.getElementById('verifyTokenInput');
+            const token = tokenInput.value.trim();
+            const btn = document.getElementById('verifySubmitBtn');
+            const successMsg = document.getElementById('verifySuccessMsg');
+
+            if (!token) {
+                showAlert('Please paste your token first.', true);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+            hideAlert();
+
+            try {
+                const formData = new FormData();
+                formData.append('token', token);
+                
+                const response = await fetch('?handler=VerifyToken', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    successMsg.classList.remove('d-none');
+                    tokenInput.parentElement.style.display = 'none';
+                    btn.style.display = 'none';
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2500);
+                } else {
+                    showAlert(result.message || 'Verification failed.', true);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Verify Now';
+                }
+            } catch (error) {
+                showAlert('An error occurred. Please try again.', true);
+                btn.disabled = false;
+                btn.innerHTML = 'Verify Now';
+            }
+        }
+
+        // Close on backdrop click
+        window.onclick = function(event) {
+            const modal = document.getElementById('verifyModal');
+            if (event.target == modal) closeVerifyModal();
+        }
+    </script>
 }

@@ -1,0 +1,57 @@
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+
+<div id="notificationModal" class="notification-modal">
+    <div class="notification-content animate-in">
+        <div id="notificationIcon" class="notification-icon"></div>
+        <h3 id="notificationTitle" class="notification-title"></h3>
+        <p id="notificationMessage" class="notification-message"></p>
+        <button class="notification-close-btn" onclick="closeNotification()">Got it</button>
+    </div>
+</div>
+
+<script>
+    function showNotification(title, message, type = 'success') {
+        const modal = document.getElementById('notificationModal');
+        const icon = document.getElementById('notificationIcon');
+        const titleEl = document.getElementById('notificationTitle');
+        const messageEl = document.getElementById('notificationMessage');
+
+        if (!modal || !icon || !titleEl || !messageEl) {
+            console.error("Notification modal elements not found");
+            return;
+        }
+
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        
+        icon.className = 'notification-icon ' + type;
+        icon.innerHTML = type === 'success' 
+            ? '<i class="fas fa-check-circle"></i>' 
+            : '<i class="fas fa-exclamation-circle"></i>';
+
+        modal.style.display = 'flex';
+    }
+
+    function closeNotification() {
+        const modal = document.getElementById('notificationModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Auto-trigger from TempData
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <text>
+        document.addEventListener('DOMContentLoaded', function() {
+            showNotification('Success', '@Json.Serialize(TempData["SuccessMessage"])'.replace(/^"|"$/g, ''), 'success');
+        });
+        </text>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <text>
+        document.addEventListener('DOMContentLoaded', function() {
+            showNotification('Error', '@Json.Serialize(TempData["ErrorMessage"])'.replace(/^"|"$/g, ''), 'error');
+        });
+        </text>
+    }
+</script>

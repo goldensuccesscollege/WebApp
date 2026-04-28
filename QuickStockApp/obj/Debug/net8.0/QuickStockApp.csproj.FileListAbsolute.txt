@@ -55,3 +55,4 @@ c:\Projects\QuickStockApp\QuickStockApp\bin\Debug\net8.0\System.Threading.Channe
 c:\Projects\QuickStockApp\QuickStockApp\bin\Debug\net8.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
 c:\Projects\QuickStockApp\QuickStockApp\obj\Debug\net8.0\QuickStockApp.csproj.AssemblyReference.cache
 c:\Projects\QuickStockApp\QuickStockApp\obj\Debug\net8.0\QuickSto.D85E797C.Up2Date
+C:\Projects\QuickStockApp\QuickStockApp\obj\Debug\net8.0\QuickStockApp.sourcelink.json

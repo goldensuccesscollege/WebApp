@@ -35,12 +35,14 @@ namespace QuickStockApp.Pages
 
             var success = await _api.ForgotPasswordAsync(Email);
 
-            Message = success
-                ? "A password reset link has been sent to your email."
-                : "Failed to send reset link. Please check the email address.";
-            ShowModal = true;
-
-            return Page();
+            if (success)
+            {
+                TempData["SuccessMessage"] = "A password reset link has been sent to your email.";
+                return RedirectToPage("Login");
+            }
+            
+            TempData["ErrorMessage"] = "Failed to send reset link. Please check the email address.";
+            return RedirectToPage();
         }
     }
 }

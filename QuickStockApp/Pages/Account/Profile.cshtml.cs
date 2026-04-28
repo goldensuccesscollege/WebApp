@@ -88,10 +88,10 @@ namespace QuickStockApp.Pages.Account
 
             var (success, message) = await _api.UpdateProfileAsync(token, ProfileRequest, imageStream, fileName);
 
-            if (success) SuccessMessage = "Profile updated successfully!";
-            else ErrorMessage = message;
+            if (success) TempData["SuccessMessage"] = "Profile updated successfully!";
+            else TempData["ErrorMessage"] = message;
 
-            return await OnGetAsync();
+            return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostCreatePostAsync(List<IFormFile> PostImages)
@@ -116,10 +116,10 @@ namespace QuickStockApp.Pages.Account
             }
 
             var (success, message) = await _api.CreatePostAsync(token, PostContent ?? "", imageFiles);
-            if (success) SuccessMessage = "Post shared!";
-            else ErrorMessage = message;
+            if (success) TempData["SuccessMessage"] = "Post shared!";
+            else TempData["ErrorMessage"] = message;
 
-            return await OnGetAsync();
+            return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostAddCommentAsync([FromQuery] int postId, [FromQuery] string content)
@@ -140,9 +140,9 @@ namespace QuickStockApp.Pages.Account
             if (string.IsNullOrEmpty(token)) return RedirectToPage("/Account/Login");
 
             var success = await _api.DeletePostAsync(token, postId);
-            if (success) SuccessMessage = "Post deleted.";
+            if (success) TempData["SuccessMessage"] = "Post deleted.";
             
-            return await OnGetAsync();
+            return RedirectToPage();
         }
     }
 }

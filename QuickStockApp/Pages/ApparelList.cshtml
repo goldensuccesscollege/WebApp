@@ -1,0 +1,586 @@
+@page
+@model QuickStockApp.Pages.ApparelListModel
+@{
+    ViewData["Title"] = "Apparel Inventory";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="apparel-dashboard animate-fade-in">
+    <div class="dashboard-header">
+        <div class="title-group">
+            <h1 class="premium-gradient-text">Apparel Inventory</h1>
+            <p class="subtitle">Precision tracking for organizational apparel and uniforms.</p>
+        </div>
+        
+        <div class="header-actions">
+            <form method="get" class="search-form">
+                <div class="premium-search-wrapper glass-panel">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" asp-for="SearchTerm" placeholder="Search by name, category, or supplier..." class="search-input" />
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <a href="/ApparelList" class="clear-search"><i class="fas fa-times-circle"></i></a>
+                    }
+                </div>
+            </form>
+            <button class="btn-premium btn-add animate-pulse" onclick="openAddModal()">
+                <div class="btn-content">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Register Apparel</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="inventory-card glass-panel animate-slide-up">
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Apparel Details</th>
+                        <th>Classification</th>
+                        <th>Gender & Specs</th>
+                        <th>Grade</th>
+                        <th>Inventory</th>
+                        <th>Unit Value</th>
+                        <th class="text-right">Operations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Apparel)
+                    {
+                        <tr class="apparel-row clickable-row" onclick="viewItems(@item.Apparel_ID)">
+                            <td>
+                                <div class="apparel-identity">
+                                    <div class="apparel-avatar">
+                                        <i class="fas fa-tshirt"></i>
+                                    </div>
+                                    <div class="apparel-main-info">
+                                        <span class="apparel-name">@item.Apparel_Name</span>
+                                        <span class="apparel-supplier">@item.Supplier_Name</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge-glass badge-category">@item.Category</span></td>
+                            <td>
+                                <div class="specs-group">
+                                    <span class="spec-label">@item.Gender</span>
+                                    <span class="spec-value">Size @item.Size</span>
+                                </div>
+                            </td>
+                            <td><span class="badge-glass badge-grade">@item.Grade_Level</span></td>
+                            <td>
+                                <div class="stock-meter">
+                                    <div class="stock-values">
+                                        <span class="stock-current @(item.Quality_In_Stock <= item.Reorder_level ? "low-stock" : "")">@item.Quality_In_Stock</span>
+                                        <span class="stock-total">Available</span>
+                                    </div>
+                                    <div class="stock-progress-bg">
+                                        @{
+                                            var percent = Math.Min(100, (item.Quality_In_Stock * 100) / (item.Reorder_level > 0 ? item.Reorder_level * 2 : 100));
+                                            var color = item.Quality_In_Stock <= item.Reorder_level ? "#ef4444" : "#6366f1";
+                                        }
+                                        <div class="stock-progress-bar" style="width: @percent%; background: @color;"></div>
+                                    </div>
+                                    <span class="reorder-tag">Min: @item.Reorder_level</span>
+                                </div>
+                            </td>
+                            <td><span class="price-text">@item.Unit_Price.ToString("C")</span></td>
+                            <td class="text-right" onclick="event.stopPropagation();">
+                                <div class="action-dropdown">
+                                    <button class="btn-icon btn-edit" 
+                                            data-id="@item.Apparel_ID"
+                                            data-name="@item.Apparel_Name"
+                                            data-category="@item.Category"
+                                            data-gender="@item.Gender"
+                                            data-size="@item.Size"
+                                            data-grade="@item.Grade_Level"
+                                            data-stock="@item.Quality_In_Stock"
+                                            data-reorder="@item.Reorder_level"
+                                            data-date="@item.Date_Purchased.ToString("yyyy-MM-dd")"
+                                            data-price="@item.Unit_Price"
+                                            data-supplier="@item.Supplier_Name"
+                                            data-remarks="@item.Remarks"
+                                            data-campusid="@item.CampusId"
+                                            onclick="editApparel(this)">
+                                        <i class="fas fa-pen-nib"></i>
+                                    </button>
+                                    <form asp-page-handler="Delete" asp-route-id="@item.Apparel_ID" method="post" style="display:inline;">
+                                        <button class="btn-icon btn-delete" onclick="return confirm('Are you sure you want to decommission this apparel entry?')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="itemsModal" class="modal-overlay">
+    <div class="modal-container glass-card animate-zoom-in">
+        <div class="modal-header-premium">
+            <div class="header-left">
+                <div class="header-icon-box">
+                    <i class="fas fa-list-ul"></i>
+                </div>
+                <div class="header-text">
+                    <h2 id="itemsModalTitle">Inventory Items</h2>
+                    <p id="itemsModalSubtitle">Individual piece tracking and status management.</p>
+                </div>
+            </div>
+            <button class="modal-close-premium" onclick="closeItemsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body-premium">
+            <div class="modal-toolbar">
+                <div class="mini-search glass-panel">
+                    <i class="fas fa-filter"></i>
+                    <input type="text" id="modalItemSearch" placeholder="Filter by number or status..." onkeyup="filterModalItems()" />
+                </div>
+                <div class="bulk-actions" id="bulkActions" style="display: none;">
+                    <span class="selected-count">0 items selected</span>
+                    <button class="btn-mini"><i class="fas fa-exchange-alt"></i> Change Status</button>
+                    <button class="btn-mini btn-danger"><i class="fas fa-trash-alt"></i> Delete Selected</button>
+                </div>
+            </div>
+
+            <div class="modal-table-wrapper">
+                <table class="modern-table modal-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAll(this)" /></th>
+                            <th>Identity Number</th>
+                            <th>Product Spec</th>
+                            <th>Current Status</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        <!-- Loaded via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="modal-footer-premium">
+            <div class="footer-stats">
+                <span id="modalTotalItems">Total: 0 items</span>
+            </div>
+            <button class="btn-secondary-premium" onclick="closeItemsModal()">Close Dashboard</button>
+        </div>
+    </div>
+</div>
+
+<!-- Entry Modal -->
+<div id="apparelModal" class="modal-overlay">
+    <div class="modal-container glass-card animate-zoom-in entry-modal">
+        <div class="modal-header-premium">
+            <div class="header-left">
+                <div class="header-icon-box entry-icon">
+                    <i class="fas fa-plus-square"></i>
+                </div>
+                <div class="header-text">
+                    <h2 id="modalTitle">Register Apparel</h2>
+                    <p>Enter comprehensive product details for inventory entry.</p>
+                </div>
+            </div>
+            <button class="modal-close-premium" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="post" id="apparelForm" class="premium-form">
+            <input type="hidden" asp-for="ApparelItem.Apparel_ID" id="apparelId" />
+            <input type="hidden" asp-for="ApparelItem.CampusId" id="apparelCampusId" />
+
+            <div class="form-scroll-area">
+                <div class="form-section">
+                    <h3 class="section-title">General Information</h3>
+                    <div class="form-row">
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Apparel_Name">Product Name</label>
+                            <input asp-for="ApparelItem.Apparel_Name" id="apparelName" placeholder="e.g. Executive Polo Shirt" required />
+                        </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Category">Category</label>
+                            <input asp-for="ApparelItem.Category" id="category" placeholder="e.g. Staff Uniform" required />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Gender">Gender Fit</label>
+                            <select asp-for="ApparelItem.Gender" id="gender" required>
+                                <option value="Unisex">Unisex Design</option>
+                                <option value="Male">Male Fit</option>
+                                <option value="Female">Female Fit</option>
+                            </select>
+                        </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Size">Size Reference</label>
+                            <input asp-for="ApparelItem.Size" id="size" placeholder="e.g. Large / 18" required />
+                        </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Grade_Level">Target Level</label>
+                            <input asp-for="ApparelItem.Grade_Level" id="gradeLevel" placeholder="e.g. Grade 10" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-title">Inventory & Financials</h3>
+                    <div class="form-row">
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Quality_In_Stock">Initial Quantity</label>
+                            <input type="number" asp-for="ApparelItem.Quality_In_Stock" id="stock" required />
+                        </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Reorder_level">Safety Stock Level</label>
+                            <input type="number" asp-for="ApparelItem.Reorder_level" id="reorder" required />
+                        </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Unit_Price">Unit Acquisition Cost</label>
+                            <div class="price-input-wrapper">
+                                <span class="currency-symbol">₱</span>
+                                <input type="number" step="0.01" asp-for="ApparelItem.Unit_Price" id="price" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Date_Purchased">Acquisition Date</label>
+                            <input type="date" asp-for="ApparelItem.Date_Purchased" id="date" required />
+                        </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Supplier_Name">Primary Supplier</label>
+                            <input asp-for="ApparelItem.Supplier_Name" id="supplier" placeholder="e.g. Master Tailor Co." />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-title">Additional Context</h3>
+                    <div class="input-group-premium full-width">
+                        <label asp-for="ApparelItem.Remarks">Operational Remarks</label>
+                        <textarea asp-for="ApparelItem.Remarks" id="remarks" rows="3" placeholder="Enter any specific notes regarding this batch..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer-premium">
+                <button type="button" class="btn-flat" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-premium" id="submitBtn">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Confirm Entry</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --secondary: #a855f7;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --font-main: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body { font-family: var(--font-main); background-color: #f8fafc; color: var(--text-main); }
+
+    .apparel-dashboard { padding: 2.5rem; max-width: 1400px; margin: 0 auto; }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem; }
+    
+    .premium-gradient-text { 
+        font-size: 2.75rem; font-weight: 800; letter-spacing: -0.025em; margin: 0;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem; }
+
+    .header-actions { display: flex; gap: 1.5rem; align-items: center; }
+    .premium-search-wrapper { 
+        display: flex; align-items: center; padding: 0 1.25rem; height: 56px; width: 380px;
+        border-radius: 18px; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-search-wrapper:focus-within { transform: translateY(-2px); box-shadow: var(--shadow-premium); border-color: var(--primary); }
+    .search-icon { color: var(--text-muted); font-size: 1.1rem; }
+    .search-input { border: none; background: transparent; padding: 0 1rem; width: 100%; outline: none; font-weight: 600; color: var(--text-main); }
+    .clear-search { color: var(--text-muted); transition: color 0.2s; }
+    .clear-search:hover { color: var(--danger); }
+
+    .btn-premium {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white; border: none; border-radius: 18px; padding: 0.25rem; cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+    }
+    .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4); }
+    .btn-content { 
+        background: rgba(255, 255, 255, 0.1); padding: 0.75rem 1.75rem; border-radius: 16px;
+        display: flex; align-items: center; gap: 0.75rem; font-weight: 700;
+    }
+
+    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .inventory-card { overflow: hidden; }
+
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .modern-table th { padding: 1.5rem 2rem; text-align: left; font-size: 0.85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .modern-table td { padding: 1.5rem 2rem; border-bottom: 1px solid rgba(0,0,0,0.03); vertical-align: middle; }
+
+    .apparel-identity { display: flex; align-items: center; gap: 1.25rem; }
+    .apparel-avatar { width: 48px; height: 48px; border-radius: 16px; background: rgba(99, 102, 241, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+    .apparel-name { display: block; font-weight: 700; color: var(--text-main); font-size: 1.05rem; }
+    .apparel-supplier { display: block; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+    .badge-glass { padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700; font-size: 0.75rem; }
+    .badge-category { background: rgba(99, 102, 241, 0.1); color: var(--primary); }
+    .badge-grade { background: rgba(168, 85, 247, 0.1); color: var(--secondary); }
+
+    .specs-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .spec-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+    .spec-value { font-weight: 700; color: var(--text-main); }
+
+    .stock-meter { min-width: 150px; }
+    .stock-values { display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.5rem; }
+    .stock-current { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
+    .stock-current.low-stock { color: var(--danger); }
+    .stock-total { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .stock-progress-bg { height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 0.4rem; }
+    .stock-progress-bar { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+    .reorder-tag { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); }
+
+    .price-text { font-size: 1.15rem; font-weight: 800; color: var(--text-main); }
+
+    .clickable-row { transition: all 0.2s; }
+    .clickable-row:hover { background: rgba(99, 102, 241, 0.04) !important; transform: scale(1.002); }
+
+    .btn-icon { width: 38px; height: 38px; border-radius: 12px; border: 1px solid transparent; background: white; color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .btn-edit:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+    .btn-delete:hover { background: var(--danger); color: white; transform: translateY(-2px); }
+
+    /* Modals */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 2rem; }
+    .modal-container { background: white; border-radius: 32px; width: 100%; max-width: 1000px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    
+    .modal-header-premium { padding: 2rem 2.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; background: linear-gradient(to right, #ffffff, #fafafa); }
+    .header-left { display: flex; align-items: center; gap: 1.5rem; }
+    .header-icon-box { width: 56px; height: 56px; border-radius: 18px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.3); }
+    .entry-icon { background: linear-gradient(135deg, var(--success) 0%, #059669 100%); box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.3); }
+    .header-text h2 { margin: 0; font-weight: 800; font-size: 1.5rem; color: var(--text-main); }
+    .header-text p { margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    .modal-close-premium { width: 44px; height: 44px; border-radius: 14px; border: none; background: #f1f5f9; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+    .modal-close-premium:hover { background: var(--danger); color: white; transform: rotate(90deg); }
+
+    .modal-body-premium { padding: 2rem 2.5rem; }
+    .modal-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .mini-search { display: flex; align-items: center; padding: 0 1rem; height: 48px; border-radius: 14px; width: 300px; }
+    .mini-search input { border: none; background: transparent; padding: 0 0.75rem; width: 100%; outline: none; font-weight: 600; font-size: 0.9rem; }
+    
+    .modal-table-wrapper { border-radius: 18px; border: 1px solid #f1f5f9; overflow: hidden; }
+    .modal-table th { background: #f8fafc; padding: 1.25rem 1.5rem; font-size: 0.75rem; }
+    .modal-table td { padding: 1rem 1.5rem; font-size: 0.9rem; font-weight: 600; }
+
+    .status-pill { padding: 0.4rem 0.8rem; border-radius: 10px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    .status-pill.in-stock { background: #dcfce7; color: #166534; }
+    .status-pill.in-stock::before { background: #10b981; }
+    .status-pill.issued { background: #e0f2fe; color: #075985; }
+    .status-pill.issued::before { background: #0ea5e9; }
+    .status-pill.damaged { background: #fee2e2; color: #991b1b; }
+    .status-pill.damaged::before { background: #ef4444; }
+
+    .serial-text { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--primary); background: rgba(99,102,241,0.05); padding: 0.25rem 0.6rem; border-radius: 6px; }
+
+    .modal-footer-premium { padding: 1.5rem 2.5rem; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+    .footer-stats { font-weight: 700; color: var(--text-muted); font-size: 0.9rem; }
+    .btn-secondary-premium { padding: 0.75rem 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0; background: white; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary-premium:hover { background: #f1f5f9; }
+
+    /* Form Styles */
+    .entry-modal { max-width: 800px; }
+    .form-scroll-area { max-height: 65vh; overflow-y: auto; padding: 0 2.5rem 2rem; }
+    .form-section { margin-top: 2rem; }
+    .section-title { font-size: 0.85rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 2px solid rgba(99,102,241,0.1); padding-bottom: 0.5rem; margin-bottom: 1.25rem; }
+    .form-row { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .input-group-premium { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+    .input-group-premium.full-width { flex: 0 0 100%; }
+    .input-group-premium label { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); }
+    .input-group-premium input, .input-group-premium select, .input-group-premium textarea { padding: 0.85rem 1.15rem; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-weight: 600; font-family: var(--font-main); transition: all 0.2s; }
+    .input-group-premium input:focus, .input-group-premium select:focus, .input-group-premium textarea:focus { border-color: var(--primary); outline: none; background: white; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+    
+    .price-input-wrapper { position: relative; }
+    .currency-symbol { position: absolute; left: 1.15rem; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--text-muted); }
+    .price-input-wrapper input { padding-left: 2.25rem; }
+
+    .btn-flat { background: transparent; border: none; font-weight: 700; color: var(--text-muted); padding: 0.75rem 1.5rem; cursor: pointer; }
+
+    /* Animations */
+    .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+    .animate-slide-up { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+    .animate-zoom-in { animation: zoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .animate-pulse { animation: pulse 2s infinite; }
+
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @@keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    @@keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); } 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } }
+</style>
+
+<script>
+    let currentModalItems = [];
+
+    function openAddModal() {
+        document.getElementById('apparelModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = 'Register Apparel';
+        document.getElementById('apparelForm').action = '?handler=Add';
+        document.getElementById('apparelId').value = '0';
+        document.getElementById('apparelForm').reset();
+        document.querySelector('#submitBtn span').innerText = 'Confirm Entry';
+        
+        const activeCampusId = "@(User.FindFirst("ActiveCampusId")?.Value)";
+        document.getElementById('apparelCampusId').value = activeCampusId;
+    }
+
+    function closeModal() {
+        document.getElementById('apparelModal').style.display = 'none';
+    }
+
+    function editApparel(btn) {
+        const d = btn.dataset;
+        document.getElementById('apparelModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = 'Update Product';
+        document.getElementById('apparelForm').action = '?handler=Update';
+        document.querySelector('#submitBtn span').innerText = 'Save Changes';
+
+        document.getElementById('apparelId').value = d.id;
+        document.getElementById('apparelName').value = d.name;
+        document.getElementById('category').value = d.category;
+        document.getElementById('gender').value = d.gender;
+        document.getElementById('size').value = d.size;
+        document.getElementById('gradeLevel').value = d.grade;
+        document.getElementById('stock').value = d.stock;
+        document.getElementById('reorder').value = d.reorder;
+        document.getElementById('price').value = d.price;
+        document.getElementById('date').value = d.date;
+        document.getElementById('supplier').value = d.supplier;
+        document.getElementById('remarks').value = d.remarks;
+        document.getElementById('apparelCampusId').value = d.campusid;
+    }
+
+    async function viewItems(id) {
+        // Find the item in the model's list (which is injected into the page via Razor)
+        const apparelList = @Html.Raw(Json.Serialize(Model.Apparel));
+        const item = apparelList.find(i => i.apparel_ID === id);
+        
+        if (!item) return;
+
+        document.getElementById('itemsModal').style.display = 'flex';
+        document.getElementById('itemsModalTitle').innerText = item.apparel_Name;
+        document.getElementById('itemsModalSubtitle').innerText = `${item.category} • ${item.gender} Size ${item.size}`;
+        
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 3rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top: 1rem; font-weight: 700;">Scanning Inventory Records...</p></td></tr>';
+
+        try {
+            const response = await fetch(`?handler=Items&id=${id}`);
+            currentModalItems = await response.json();
+            
+            renderModalItems(currentModalItems, item);
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger" style="padding: 3rem;">Failure to retrieve inventory records.</td></tr>';
+        }
+    }
+
+    function renderModalItems(items, parentItem) {
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '';
+        
+        document.getElementById('modalTotalItems').innerText = `Total: ${items.length} records`;
+
+        if (items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 3rem;">No individual items found for this record.</td></tr>';
+            return;
+        }
+
+        items.forEach(child => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" class="item-checkbox" data-id="${child.id}" onclick="updateBulkActions(event)" /></td>
+                <td><code class="serial-text">${child.apparel_Number}</code></td>
+                <td>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 700;">${parentItem.apparel_Name}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">${parentItem.gender} / Size ${parentItem.size}</span>
+                    </div>
+                </td>
+                <td><span class="status-pill ${child.status.toLowerCase().replace(' ', '-')}">${child.status}</span></td>
+                <td><span style="font-size: 0.8rem; color: var(--text-muted);">${new Date(child.dateCreated).toLocaleDateString()}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function filterModalItems() {
+        const query = document.getElementById('modalItemSearch').value.toLowerCase();
+        const filtered = currentModalItems.filter(i => 
+            i.apparel_Number.toLowerCase().includes(query) || 
+            i.status.toLowerCase().includes(query)
+        );
+        // Note: this simplified render doesn't have parentItem, so we might need to store it globally
+        // For now, I'll just use the already rendered rows and hide them for better performance
+        const rows = document.querySelectorAll('#itemsTableBody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+
+    function toggleSelectAll(master) {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+        updateBulkActions();
+    }
+
+    function updateBulkActions(event) {
+        if(event) event.stopPropagation();
+        const selectedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        const toolbar = document.getElementById('bulkActions');
+        const countSpan = toolbar.querySelector('.selected-count');
+        
+        if (selectedCount > 0) {
+            toolbar.style.display = 'flex';
+            countSpan.innerText = `${selectedCount} item${selectedCount > 1 ? 's' : ''} selected`;
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    function closeItemsModal() {
+        document.getElementById('itemsModal').style.display = 'none';
+        document.getElementById('modalItemSearch').value = '';
+        document.getElementById('selectAllItems').checked = false;
+        document.getElementById('bulkActions').style.display = 'none';
+    }
+
+    // Backdrop click
+    window.onclick = function(e) {
+        if (e.target.className === 'modal-overlay') {
+            closeModal();
+            closeItemsModal();
+        }
+    }
+</script>

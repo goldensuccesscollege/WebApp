@@ -1,7 +1,7 @@
 @page
 @model QuickStockApp.Pages.RegisterModel
 @{
-    Layout = "_Layout";
+    Layout = "_AuthLayout";
     ViewData["Title"] = "Register";
 }
 
@@ -9,8 +9,8 @@
     <div class="glass-card shadow-lg d-flex flex-column p-4" style="width: 100%; max-width: 900px; border-radius: 20px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3);">
         
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="/Index" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                <i class="fas fa-arrow-left me-1"></i> Back
+            <a href="/Dashboard/Index" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="fas fa-arrow-left me-1"></i> Dashboard
             </a>
             <h2 class="fw-bold mb-0 small-title" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 1.5rem;">Register</h2>
         </div>
@@ -67,15 +67,22 @@
                         <input asp-for="Register.ConfirmPassword" type="password" class="form-control form-control-sm rounded-pill px-3" placeholder="••••••••" required />
                     </div>
 
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">User Role</label>
+                        <select asp-for="Register.Role" class="form-select form-select-sm rounded-pill px-3" required>
+                            <option value="User">Standard User</option>
+                            <option value="Admin">Administrator</option>
+                        </select>
+                    </div>
+
                     <div class="alert alert-light border-0 small text-muted p-3 rounded-4 mt-auto">
-                        By clicking Register, you agree to our terms of service and privacy policy. 
+                        New users will need to verify their email before accessing the system.
                     </div>
                 </div>
             </div>
 
             <div class="row align-items-center mt-3">
                 <div class="col-8">
-                    <p class="small text-muted mb-0">Have an account? <a href="/Account/Login" class="fw-bold text-decoration-none">Sign In</a></p>
                 </div>
                 <div class="col-4 text-end">
                     <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill fw-bold py-2 shadow-sm border-0" style="background: var(--primary-gradient);">Register</button>
@@ -84,37 +91,6 @@
         </form>
     </div>
 </div>
-
-<!-- Modal for Success/Error -->
-@if (Model.ShowModal)
-{
-    <div class="modal fade show d-block" style="backdrop-filter: blur(10px); background: rgba(0,0,0,0.3);">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
-                <div class="modal-header @(Model.IsSuccess ? "bg-success" : "bg-danger") text-white border-0 py-4 px-5">
-                    <h3 class="modal-title fw-bold">@(Model.IsSuccess ? "Success" : "Error")</h3>
-                </div>
-                <div class="modal-body p-5 text-center">
-                    <div class="mb-4" style="font-size: 5rem;">@(Model.IsSuccess ? "✨" : "🚫")</div>
-                    <h4 class="fw-bold mb-0">@Model.ModalMessage</h4>
-                </div>
-                <div class="modal-footer border-0 pb-5 justify-content-center">
-                    @if (Model.IsSuccess)
-                    {
-                        <a href="/Account/Login" class="btn btn-success btn-lg px-5 rounded-pill fw-bold shadow-sm">Get Started</a>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-danger btn-lg px-5 rounded-pill fw-bold" onclick="this.closest('.modal').style.display='none'; document.querySelector('.modal-backdrop')?.remove();">
-                            Try Again
-                        </button>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -17,21 +17,20 @@ namespace QuickStockApp.Pages
         public bool ShowModal { get; set; } = false;
         public bool IsSuccess { get; set; } = false;
 
-        public async Task OnGetAsync([FromQuery] string token)
+        public void OnGet()
+        {
+            // Just render the page, JS handles the rest
+        }
+
+        public async Task<IActionResult> OnGetVerifyJsonAsync(string token)
         {
             if (string.IsNullOrEmpty(token))
             {
-                ModalMessage = "Invalid verification link.";
-                ShowModal = true;
-                IsSuccess = false;
-                return;
+                return new JsonResult(new { success = false, message = "Token is required." });
             }
 
             var result = await _api.VerifyAsync(token);
-
-            ModalMessage = result.Message;
-            IsSuccess = result.Success;
-            ShowModal = true;
+            return new JsonResult(new { success = result.Success, message = result.Message });
         }
     }
 }
