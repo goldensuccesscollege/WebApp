@@ -219,8 +219,9 @@
                         @{
                             var canAccessIT = User.IsInRole("Admin") || (User.FindFirst("CanAccessITAssets")?.Value == "True");
                             var canAccessApparel = User.IsInRole("Admin") || (User.FindFirst("CanAccessApparel")?.Value == "True");
+                            var canAccessMessages = User.IsInRole("Admin") || (User.FindFirst("CanAccessMessages")?.Value == "True");
                         }
-
+ 
                         @if (canAccessIT)
                         {
                             <li class="nav-item">
@@ -232,7 +233,7 @@
                                 asp-area="" asp-page="/Rooms">Rooms</a>
                             </li>
                         }
-
+ 
                         @if (canAccessApparel)
                         {
                             <li class="nav-item">
@@ -244,7 +245,7 @@
                             var campusIds = User.FindAll("CampusId").ToList();
                             var showCampuses = User.IsInRole("Admin") || campusIds.Count > 1;
                         }
-
+ 
                         @if (showCampuses)
                         {
                             <li class="nav-item">
@@ -252,7 +253,7 @@
                                 asp-area="" asp-page="/Campuses">Campuses</a>
                             </li>
                         }
-
+ 
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
                             @if (User.IsInRole("Admin"))
@@ -266,10 +267,14 @@
                                        asp-page="/Admin/UserManagement">Accounts</a>
                                 </li>
                             }
-                            <li class="nav-item">
-                                <a class="nav-link @(ViewData["Title"]?.ToString() == "Chat" ? "active" : "")"
-                                   asp-page="/Chat">Messages</a>
-                            </li>
+                            
+                            @if (canAccessMessages)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Chat" ? "active" : "")"
+                                       asp-page="/Chat">Messages</a>
+                                </li>
+                            }
                         }
                         else
                         {

@@ -61,7 +61,8 @@ namespace QuickStockApp.Pages.Account
                 new Claim(ClaimTypes.Role, result.Role ?? "User"),
                 new Claim("jwt_token", result.Token),
                 new Claim("CanAccessITAssets", result.CanAccessITAssets.ToString()),
-                new Claim("CanAccessApparel", result.CanAccessApparel.ToString())
+                new Claim("CanAccessApparel", result.CanAccessApparel.ToString()),
+                new Claim("CanAccessMessages", result.CanAccessMessages.ToString())
             };
 
             if (result.CampusIds != null && result.CampusIds.Any())

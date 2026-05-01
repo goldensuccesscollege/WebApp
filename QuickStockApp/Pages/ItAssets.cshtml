@@ -610,6 +610,11 @@
     }
 </style>
 
+<!-- Scripts for PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script>
     function openTransferModal(btn) {
         document.getElementById('transferModal').style.display = 'flex';
@@ -874,54 +879,63 @@ Unique ID: ${data.id}
         doc.save(`QuickStock_Batch_QR_${new Date().getTime()}.pdf`);
     }
 
-    function generateInventoryReport() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
-        
-        const assets = @Json.Serialize(Model.Assets);
-        const campusName = "@User.FindFirst("ActiveCampusName")?.Value" || "Campus Inventory";
-        
-        doc.setFontSize(20);
-        doc.setTextColor(30, 41, 59);
-        doc.text(`Inventory Report - ${campusName}`, 14, 20);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139);
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
-        
-        // Table Headers
-        let y = 40;
-        doc.setFillColor(241, 245, 249);
-        doc.rect(14, y, 269, 10, 'F');
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(30, 41, 59);
-        doc.text("Asset Name", 16, y + 7);
-        doc.text("Brand/Model", 80, y + 7);
-        doc.text("Serial Number", 140, y + 7);
-        doc.text("Location", 200, y + 7);
-        doc.text("Status", 250, y + 7);
-        
-        y += 15;
-        doc.setFont(undefined, 'normal');
-        
-        assets.forEach((asset, index) => {
-            if (y > 180) {
-                doc.addPage('l', 'mm', 'a4');
-                y = 20;
-            }
+    async function generateInventoryReport() {
+        const btn = document.querySelector('button[onclick="generateInventoryReport()"]');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Generating...</span></div>';
+ 
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
             
-            doc.text(asset.name || "", 16, y);
-            doc.text(`${asset.brand} ${asset.model}` || "", 80, y);
-            doc.text(asset.serialNumber || "N/A", 140, y);
-            doc.text(asset.location || "N/A", 200, y);
-            doc.text(asset.status || "", 250, y);
+            const assets = @Json.Serialize(Model.Assets);
+            const campusName = "@User.FindFirst("ActiveCampusName")?.Value" || "Campus Inventory";
             
-            doc.setDrawColor(241, 245, 249);
-            doc.line(14, y + 2, 283, y + 2);
-            y += 10;
-        });
-        
-        doc.save(`Inventory_Report_${new Date().getTime()}.pdf`);
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(16, 185, 129); // Emerald for IT
+            doc.setFont(undefined, 'bold');
+            doc.text("GOLDEN SUCCESS COLLEGE", 14, 20);
+            
+            doc.setFontSize(14);
+            doc.setTextColor(30, 41, 59);
+            doc.text(`IT Assets Inventory Report - ${campusName}`, 14, 30);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Total Records: ${assets.length}`, 14, 38);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
+ 
+            const tableData = assets.map(a => [
+                a.name || 'N/A',
+                `${a.brand} ${a.model}` || 'N/A',
+                a.serialNumber || 'N/A',
+                a.location || 'N/A',
+                a.status || 'N/A',
+                a.qrcode || 'N/A'
+            ]);
+ 
+            doc.autoTable({
+                startY: 50,
+                head: [['Asset Name', 'Brand/Model', 'Serial Number', 'Location', 'Status', 'QR ID']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { top: 50 },
+                styles: { font: 'helvetica', fontSize: 9 }
+            });
+ 
+            doc.save(`IT_Inventory_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (e) {
+            console.error(e);
+            alert('Failed to generate report.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
     }
 
 

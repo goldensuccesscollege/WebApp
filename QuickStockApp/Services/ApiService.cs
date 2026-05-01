@@ -639,6 +639,45 @@ namespace QuickStockApp.Services
             catch { return (false, "Error toggling status"); }
         }
 
+        public async Task<(bool Success, string Message)> ToggleUserITAccessAsync(int userId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Users/{userId}/toggle-it-access");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "IT access toggled" : "Failed to toggle IT access");
+            }
+            catch { return (false, "Error toggling IT access"); }
+        }
+
+        public async Task<(bool Success, string Message)> ToggleUserAPAccessAsync(int userId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Users/{userId}/toggle-ap-access");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Apparel access toggled" : "Failed to toggle Apparel access");
+            }
+            catch { return (false, "Error toggling Apparel access"); }
+        }
+
+        public async Task<(bool Success, string Message)> ToggleUserMessageAccessAsync(int userId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/Users/{userId}/toggle-message-access");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                return (response.IsSuccessStatusCode, response.IsSuccessStatusCode ? "Message access toggled" : "Failed to toggle message access");
+            }
+            catch { return (false, "Error toggling message access"); }
+        }
+
         public async Task<(DashboardDto? Stats, string Message)> GetDashboardStatsAsync(int campusId)
         {
             try
@@ -657,13 +696,16 @@ namespace QuickStockApp.Services
             catch { return (null, "Error fetching dashboard stats"); }
         }
 
-        public async Task<List<AuditLogDto>> GetAuditLogsAsync(int? campusId = null)
+        public async Task<List<AuditLogDto>> GetAuditLogsAsync(int? campusId = null, string? entityType = null)
         {
             try
             {
                 var jwt = await GetTokenAsync();
-                var url = campusId.HasValue ? $"api/AuditLogs?campusId={campusId}" : "api/AuditLogs";
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                var url = "api/AuditLogs?";
+                if (campusId.HasValue) url += $"campusId={campusId}&";
+                if (!string.IsNullOrEmpty(entityType)) url += $"entityType={entityType}&";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url.TrimEnd('&', '?'));
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
                 var response = await _http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -676,13 +718,14 @@ namespace QuickStockApp.Services
             catch { return new(); }
         }
 
-        public async Task<PaginatedAuditLogsDto> GetAuditLogsPaginatedAsync(int? campusId, int page, int pageSize)
+        public async Task<PaginatedAuditLogsDto> GetAuditLogsPaginatedAsync(int? campusId, int page, int pageSize, string? entityType = null)
         {
             try
             {
                 var jwt = await GetTokenAsync();
                 var url = $"api/AuditLogs?page={page}&pageSize={pageSize}";
                 if (campusId.HasValue && campusId.Value > 0) url += $"&campusId={campusId}";
+                if (!string.IsNullOrEmpty(entityType)) url += $"&entityType={entityType}";
                 
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
@@ -711,12 +754,12 @@ namespace QuickStockApp.Services
             catch { return (false, "Error during asset transfer"); }
         }
 
-        public async Task<List<ApparelDto>> GetApparelAsync(int? campusId = null, string? searchTerm = null)
+        public async Task<PaginatedApparelDto> GetApparelAsync(int? campusId = null, string? searchTerm = null, int page = 1, int pageSize = 5)
         {
             try
             {
                 var jwt = await GetTokenAsync();
-                var url = "api/Apparel?";
+                var url = $"api/Apparel?page={page}&pageSize={pageSize}&";
                 if (campusId.HasValue && campusId.Value > 0) url += $"campusId={campusId.Value}&";
                 if (!string.IsNullOrWhiteSpace(searchTerm)) url += $"searchTerm={Uri.EscapeDataString(searchTerm)}&";
                 
@@ -726,7 +769,28 @@ namespace QuickStockApp.Services
                 var response = await _http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<List<ApparelDto>>() ?? new();
+                    return await response.Content.ReadFromJsonAsync<PaginatedApparelDto>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<PaginatedApparelItemDto> GetSoldItemsAsync(int? campusId = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = $"api/Apparel/sold?page={page}&pageSize={pageSize}&";
+                if (campusId.HasValue && campusId.Value > 0) url += $"campusId={campusId.Value}&";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url.TrimEnd('&', '?'));
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<PaginatedApparelItemDto>() ?? new();
                 }
                 return new();
             }
@@ -783,8 +847,63 @@ namespace QuickStockApp.Services
             try
             {
                 var jwt = await GetTokenAsync();
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/Apparel/{apparelId}/items");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/Apparel/items/{apparelId}");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<ApparelItemDto>>() ?? new();
+                }
+                return new();
+            }
+            catch { return new(); }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateApparelItemStatusAsync(int itemId, string status)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, $"api/Apparel/item/status?itemId={itemId}&status={status}");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Status updated.");
+                return (false, "Failed to update status.");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<(bool Success, string Message)> AddApparelStockAsync(int apparelId, int quantity)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var request = new HttpRequestMessage(HttpMethod.Post, $"api/Apparel/{apparelId}/add-stock");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                request.Content = JsonContent.Create(quantity);
+                
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode) return (true, "Stock added.");
+                return (false, "Failed to add stock.");
+            }
+            catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        public async Task<List<ApparelItemDto>> QueryApparelItemsAsync(string? status, DateTime? startDate, DateTime? endDate, int? campusId)
+        {
+            try
+            {
+                var jwt = await GetTokenAsync();
+                var url = "api/Apparel/items/query?";
+                if (!string.IsNullOrEmpty(status)) url += $"status={status}&";
+                if (startDate.HasValue) url += $"startDate={startDate.Value:yyyy-MM-dd}&";
+                if (endDate.HasValue) url += $"endDate={endDate.Value:yyyy-MM-dd}&";
+                if (campusId.HasValue) url += $"campusId={campusId}&";
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url.TrimEnd('&', '?'));
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+                
                 var response = await _http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {

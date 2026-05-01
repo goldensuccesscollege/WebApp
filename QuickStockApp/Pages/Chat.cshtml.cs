@@ -17,11 +17,19 @@ namespace QuickStockApp.Pages
         public string ApiBaseUrl { get; set; } = string.Empty;
         public string JwtToken { get; set; } = string.Empty;
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            // Permission check
+            var canAccess = User.IsInRole("Admin") || (User.FindFirst("CanAccessMessages")?.Value == "True");
+            if (!canAccess)
+            {
+                return RedirectToPage("/Dashboard/Index");
+            }
+
             var baseUrl = _configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7198";
             ApiBaseUrl = baseUrl.TrimEnd('/');
             JwtToken = User.FindFirst("jwt_token")?.Value ?? string.Empty;
+            return Page();
         }
     }
 }

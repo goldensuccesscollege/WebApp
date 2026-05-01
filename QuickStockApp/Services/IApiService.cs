@@ -52,17 +52,24 @@ namespace QuickStockApp.Services
         Task<(bool Success, string Message)> UpdateUserAsync(int userId, UpdateUserDto user);
         Task<(bool Success, string Message)> DeleteUserAsync(int userId);
         Task<(bool Success, string Message)> ToggleUserStatusAsync(int userId);
+        Task<(bool Success, string Message)> ToggleUserITAccessAsync(int userId);
+        Task<(bool Success, string Message)> ToggleUserAPAccessAsync(int userId);
+        Task<(bool Success, string Message)> ToggleUserMessageAccessAsync(int userId);
         
         Task<(DashboardDto? Stats, string Message)> GetDashboardStatsAsync(int campusId);
-        Task<List<AuditLogDto>> GetAuditLogsAsync(int? campusId = null);
-        Task<PaginatedAuditLogsDto> GetAuditLogsPaginatedAsync(int? campusId, int page, int pageSize);
+        Task<List<AuditLogDto>> GetAuditLogsAsync(int? campusId = null, string? entityType = null);
+        Task<PaginatedAuditLogsDto> GetAuditLogsPaginatedAsync(int? campusId, int page, int pageSize, string? entityType = null);
         Task<(bool Success, string Message)> TransferItAssetAsync(int assetId, int targetRoomId);
 
         // Apparel
-        Task<List<ApparelDto>> GetApparelAsync(int? campusId = null, string? searchTerm = null);
+        Task<PaginatedApparelDto> GetApparelAsync(int? campusId = null, string? searchTerm = null, int page = 1, int pageSize = 5);
+        Task<PaginatedApparelItemDto> GetSoldItemsAsync(int? campusId = null, int page = 1, int pageSize = 10);
         Task<(bool Success, string Message)> AddApparelAsync(ApparelDto apparel);
         Task<(bool Success, string Message)> UpdateApparelAsync(ApparelDto apparel);
         Task<(bool Success, string Message)> DeleteApparelAsync(int id);
         Task<List<ApparelItemDto>> GetApparelItemsAsync(int apparelId);
+        Task<(bool Success, string Message)> UpdateApparelItemStatusAsync(int itemId, string status);
+        Task<(bool Success, string Message)> AddApparelStockAsync(int apparelId, int quantity);
+        Task<List<ApparelItemDto>> QueryApparelItemsAsync(string? status, DateTime? startDate, DateTime? endDate, int? campusId);
     }
 }

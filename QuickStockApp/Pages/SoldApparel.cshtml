@@ -1,0 +1,485 @@
+@page
+@model QuickStockApp.Pages.SoldApparelModel
+@{
+    ViewData["Title"] = "Sold Apparel List";
+}
+
+<div class="apparel-container animate-fade-in">
+    <div class="page-header-premium">
+        <div class="header-content">
+            <div class="header-badge">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Sales Ledger</span>
+            </div>
+            <h1 class="header-title">Sold Apparel List</h1>
+            <p class="header-subtitle">Comprehensive record of all apparel items that have been sold.</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-premium" onclick="openReportModal()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-right: 0.5rem;">
+                <div class="btn-content">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Generate Report</span>
+                </div>
+            </button>
+            <button class="btn-premium" onclick="location.href='/ApparelList'" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);">
+                <div class="btn-content">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Inventory</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="glass-card table-container">
+        <div class="table-toolbar">
+            <div class="toolbar-info">
+                <span class="record-count">Total Sold: <strong>@Model.TotalItems</strong> items</span>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Date Sold</th>
+                        <th>Item Identity</th>
+                        <th>Product Details</th>
+                        <th>Specifications</th>
+                        <th>Unit Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.SoldItems.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="empty-content">
+                                    <i class="fas fa-box-open"></i>
+                                    <h3>No sales recorded yet</h3>
+                                    <p>When you mark items as "Sold" in the inventory list, they will appear here.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.SoldItems)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="date-cell">
+                                        <span class="main-date">@DateTime.Now.ToString("MMM dd, yyyy")</span>
+                                        <span class="sub-time">@DateTime.Now.ToString("hh:mm tt")</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="identity-box">
+                                        <span class="serial-num">@item.Apparel_Number</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="product-info">
+                                        <span class="product-name">@item.ApparelType?.Apparel_Name</span>
+                                        <span class="product-cat">@item.ApparelType?.Category</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="specs-pill-group">
+                                        <span class="spec-pill">@item.ApparelType?.Sex</span>
+                                        <span class="spec-pill">Size @item.ApparelType?.Size</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="price-tag">@item.ApparelType?.Unit_Price.ToString("C")</span>
+                                </td>
+                                <td>
+                                    <span class="status-pill sold">
+                                        <i class="fas fa-check-circle"></i> Sold
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pagination-premium glass-panel">
+                <div class="pagination-info">
+                    Showing page <strong>@Model.CurrentPage</strong> of <strong>@Model.TotalPages</strong>
+                </div>
+                <div class="pagination-buttons">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a asp-page="./SoldApparel" asp-route-CurrentPage="@(Model.CurrentPage - 1)" class="btn-pagination">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    }
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 1 && i <= Model.CurrentPage + 1))
+                        {
+                            <a asp-page="./SoldApparel" asp-route-CurrentPage="@i" class="btn-pagination @(i == Model.CurrentPage ? "active" : "")">@i</a>
+                        }
+                    }
+
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a asp-page="./SoldApparel" asp-route-CurrentPage="@(Model.CurrentPage + 1)" class="btn-pagination">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div id="reportModal" class="modal-overlay">
+    <div class="modal-container glass-card animate-zoom-in" style="max-width: 450px; padding: 2.5rem;">
+        <div class="modal-header-premium" style="margin-bottom: 2rem; border-bottom: none; padding: 0;">
+            <div class="header-left" style="display: flex; align-items: center; gap: 1rem;">
+                <div class="header-icon-box" style="width: 50px; height: 50px; border-radius: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="header-text">
+                    <h2 style="margin:0; font-size: 1.25rem;">Sales Report</h2>
+                    <p style="margin:0; font-size: 0.85rem; color: var(--text-muted);">Select date range for sales data.</p>
+                </div>
+            </div>
+            <button class="modal-close-premium" onclick="closeReportModal()" style="border:none; background:none; cursor:pointer; color:var(--text-muted); font-size:1.25rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body-premium" style="padding: 0;">
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Start Date</label>
+                    <input type="date" id="reportStartDate" value="@DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")" style="padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); font-family: inherit;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">End Date</label>
+                    <input type="date" id="reportEndDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" style="padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); font-family: inherit;" />
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer-premium" style="padding: 2rem 0 0; background: transparent; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn-flat" onclick="closeReportModal()" style="border:none; background:none; cursor:pointer; color:var(--text-muted); font-weight:700;">Cancel</button>
+            <button type="button" class="btn-premium" onclick="generateSalesReport()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <div class="btn-content" style="display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fas fa-download"></i>
+                    <span>Generate PDF</span>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 2rem; }
+    .animate-zoom-in { animation: zoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @@keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .btn-content { font-weight: 700; }
+</style>
+
+<!-- Scripts for PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    function openReportModal() {
+        document.getElementById('reportModal').style.display = 'flex';
+    }
+
+    function closeReportModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    async function generateSalesReport() {
+        const start = document.getElementById('reportStartDate').value;
+        const end = document.getElementById('reportEndDate').value;
+        
+        const btn = document.querySelector('#reportModal .btn-premium');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Generating...</span></div>';
+
+        try {
+            const response = await fetch(`?handler=ReportData&status=Sold&startDate=${start}&endDate=${end}`);
+            const items = await response.json();
+
+            if (items.length === 0) {
+                alert('No sales records found in this date range.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(5, 150, 105); // Green for Sales
+            doc.setFont(undefined, 'bold');
+            doc.text("GOLDEN SUCCESS COLLEGE", 14, 20);
+            
+            doc.setFontSize(14);
+            doc.setTextColor(30, 41, 59);
+            doc.text("Apparel Sales Report (Sold Items)", 14, 30);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Period: ${start} to ${end}`, 14, 38);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
+
+            const tableData = items.map(i => [
+                i.apparel_Number || i.Apparel_Number || 'N/A',
+                i.apparelType?.apparel_Name || i.ApparelType?.Apparel_Name || 'N/A',
+                i.apparelType?.category || i.ApparelType?.Category || 'N/A',
+                i.apparelType?.sex || i.ApparelType?.Sex || 'N/A',
+                i.apparelType?.size || i.ApparelType?.Size || 'N/A',
+                new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(i.apparelType?.unit_Price || i.ApparelType?.Unit_Price || 0),
+                new Date(i.lastModified || i.LastModified || new Date()).toLocaleDateString()
+            ]);
+
+            doc.autoTable({
+                startY: 50,
+                head: [['Serial #', 'Apparel Name', 'Category', 'Sex', 'Size', 'Sale Amount', 'Sale Date']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [240, 253, 244] },
+                margin: { top: 50 },
+                styles: { font: 'helvetica', fontSize: 9 }
+            });
+
+            doc.save(`Apparel_Sales_Report_${start}_to_${end}.pdf`);
+            closeReportModal();
+        } catch (e) {
+            console.error(e);
+            alert('Failed to generate report.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+
+    // Backdrop click
+    window.onclick = function(e) {
+        if (e.target.className === 'modal-overlay') {
+            closeReportModal();
+        }
+    }
+</script>
+
+<style>
+    .page-header-premium {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        background: rgba(5, 150, 105, 0.1);
+        color: #059669;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+    }
+
+    .header-title {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+
+    .header-subtitle {
+        color: var(--text-muted);
+        font-size: 1rem;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 1.5rem;
+        overflow: hidden;
+    }
+
+    .table-toolbar {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .record-count {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .modern-table th {
+        padding: 1.25rem 1.5rem;
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .modern-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        vertical-align: middle;
+    }
+
+    .date-cell .main-date {
+        display: block;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .date-cell .sub-time {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .identity-box .serial-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        color: var(--primary);
+        background: rgba(99, 102, 241, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .product-info .product-name {
+        display: block;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .product-info .product-cat {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .specs-pill-group {
+        display: flex;
+        gap: 0.4rem;
+    }
+
+    .spec-pill {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 0.4rem;
+        color: var(--text-muted);
+    }
+
+    .price-tag {
+        font-weight: 700;
+        color: #10b981;
+    }
+
+    .status-pill.sold {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.8rem;
+        background: rgba(5, 150, 105, 0.1);
+        color: #10b981;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .empty-state {
+        padding: 5rem 2rem;
+        text-align: center;
+    }
+
+    .empty-content i {
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.05);
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-content h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-content p {
+        color: var(--text-muted);
+    }
+
+    .pagination-premium {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-pagination {
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem;
+        color: var(--text-main);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-pagination.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+        font-weight: 700;
+    }
+
+    .btn-pagination:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-premium {
+        border: none;
+        border-radius: 1rem;
+        color: white;
+        padding: 0.8rem 1.5rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.1);
+    }
+</style>
