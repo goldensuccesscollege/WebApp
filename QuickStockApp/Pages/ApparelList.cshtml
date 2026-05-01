@@ -24,6 +24,24 @@
                     }
                 </div>
             </form>
+            <button class="btn-premium" onclick="generateInventoryReport()" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);">
+                <div class="btn-content">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Generate Report</span>
+                </div>
+            </button>
+            <button class="btn-premium btn-logs" onclick="openLogsModal()" style="background: linear-gradient(135deg, #475569 0%, #1e293b 100%); box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3);">
+                <div class="btn-content">
+                    <i class="fas fa-history"></i>
+                    <span>View Activity Logs</span>
+                </div>
+            </button>
+            <button class="btn-premium" onclick="location.href='/SoldApparel'" style="background: linear-gradient(135deg, #059669 0%, #064e3b 100%); box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);">
+                <div class="btn-content">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Sold List</span>
+                </div>
+            </button>
             <button class="btn-premium btn-add animate-pulse" onclick="openAddModal()">
                 <div class="btn-content">
                     <i class="fas fa-plus-circle"></i>
@@ -40,7 +58,7 @@
                     <tr>
                         <th>Apparel Details</th>
                         <th>Classification</th>
-                        <th>Gender & Specs</th>
+                        <th>Sex & Specs</th>
                         <th>Grade</th>
                         <th>Inventory</th>
                         <th>Unit Value</th>
@@ -65,7 +83,7 @@
                             <td><span class="badge-glass badge-category">@item.Category</span></td>
                             <td>
                                 <div class="specs-group">
-                                    <span class="spec-label">@item.Gender</span>
+                                    <span class="spec-label">@item.Sex</span>
                                     <span class="spec-value">Size @item.Size</span>
                                 </div>
                             </td>
@@ -86,14 +104,21 @@
                                     <span class="reorder-tag">Min: @item.Reorder_level</span>
                                 </div>
                             </td>
-                            <td><span class="price-text">@item.Unit_Price.ToString("C")</span></td>
+                            <td>
+                                <div class="price-info">
+                                    <span class="price-text">@item.Unit_Price.ToString("C")</span>
+                                    <span class="purchase-date" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                        <i class="far fa-calendar-alt" style="margin-right: 0.25rem;"></i> @item.Date_Purchased.ToString("MMM dd, yyyy")
+                                    </span>
+                                </div>
+                            </td>
                             <td class="text-right" onclick="event.stopPropagation();">
                                 <div class="action-dropdown">
                                     <button class="btn-icon btn-edit" 
                                             data-id="@item.Apparel_ID"
                                             data-name="@item.Apparel_Name"
                                             data-category="@item.Category"
-                                            data-gender="@item.Gender"
+                                            data-sex="@item.Sex"
                                             data-size="@item.Size"
                                             data-grade="@item.Grade_Level"
                                             data-stock="@item.Quality_In_Stock"
@@ -118,6 +143,45 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Controls -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pagination-premium glass-panel" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="pagination-info" style="font-size: 0.9rem; color: var(--text-muted);">
+                    Showing page <strong style="color: var(--primary);">@Model.CurrentPage</strong> of <strong>@Model.TotalPages</strong> (@Model.TotalItems total records)
+                </div>
+                <div class="pagination-buttons" style="display: flex; gap: 0.5rem; align-items: center;">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a asp-page="./ApparelList" asp-route-CurrentPage="@(Model.CurrentPage - 1)" asp-route-SearchTerm="@Model.SearchTerm" class="btn-pagination" style="padding: 0.5rem 1rem; border-radius: 0.75rem; background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; font-size: 0.85rem; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    }
+
+                    <div style="display: flex; gap: 0.25rem;">
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 1 && i <= Model.CurrentPage + 1))
+                            {
+                                <a asp-page="./ApparelList" asp-route-CurrentPage="@i" asp-route-SearchTerm="@Model.SearchTerm" class="btn-pagination @(i == Model.CurrentPage ? "active" : "")" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; background: @(i == Model.CurrentPage ? "var(--primary)" : "rgba(255,255,255,0.05)"); color: @(i == Model.CurrentPage ? "white" : "var(--text-main)"); text-decoration: none; font-weight: @(i == Model.CurrentPage ? "700" : "400"); border: @(i == Model.CurrentPage ? "none" : "1px solid rgba(255,255,255,0.1)");">@i</a>
+                            }
+                            else if (i == Model.CurrentPage - 2 || i == Model.CurrentPage + 2)
+                            {
+                                <span class="pagination-dots" style="padding: 0 5px; color: var(--text-muted);">...</span>
+                            }
+                        }
+                    </div>
+
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a asp-page="./ApparelList" asp-route-CurrentPage="@(Model.CurrentPage + 1)" asp-route-SearchTerm="@Model.SearchTerm" class="btn-pagination" style="padding: 0.5rem 1rem; border-radius: 0.75rem; background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; font-size: 0.85rem; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
     </div>
 </div>
 
@@ -145,10 +209,12 @@
                     <i class="fas fa-filter"></i>
                     <input type="text" id="modalItemSearch" placeholder="Filter by number or status..." onkeyup="filterModalItems()" />
                 </div>
+                <button class="btn-mini" style="background: var(--primary-gradient); color: white; padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;" onclick="openAddStockModal()">
+                    <i class="fas fa-plus-circle"></i> Add Quantity
+                </button>
                 <div class="bulk-actions" id="bulkActions" style="display: none;">
                     <span class="selected-count">0 items selected</span>
-                    <button class="btn-mini"><i class="fas fa-exchange-alt"></i> Change Status</button>
-                    <button class="btn-mini btn-danger"><i class="fas fa-trash-alt"></i> Delete Selected</button>
+                    <button class="btn-mini" style="background: #10b981; color: white;" onclick="generateSelectedTagPdf()"><i class="fas fa-tags"></i> Batch Tags</button>
                 </div>
             </div>
 
@@ -160,7 +226,7 @@
                             <th>Identity Number</th>
                             <th>Product Spec</th>
                             <th>Current Status</th>
-                            <th>Last Updated</th>
+                            <th class="text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody id="itemsTableBody">
@@ -174,8 +240,78 @@
             <div class="footer-stats">
                 <span id="modalTotalItems">Total: 0 items</span>
             </div>
+            <div id="modalPagination" class="pagination-mini">
+                <!-- Pagination via JS -->
+            </div>
             <button class="btn-secondary-premium" onclick="closeItemsModal()">Close Dashboard</button>
         </div>
+    </div>
+</div>
+
+<!-- Add Stock Modal -->
+<div id="addStockModal" class="modal-overlay">
+    <div class="modal-container glass-card animate-zoom-in" style="max-width: 400px; padding: 2rem;">
+        <div class="modal-header-premium" style="margin-bottom: 1.5rem;">
+            <div class="header-left">
+                <div class="header-icon-box" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="header-text">
+                    <h2 style="font-size: 1.25rem;">Increase Stock</h2>
+                    <p>Enter the number of new items to add.</p>
+                </div>
+            </div>
+            <button class="modal-close-premium" onclick="closeAddStockModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="form-group-premium" style="margin-bottom: 2rem;">
+            <label style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem; display: block;">Quantity to Add</label>
+            <input type="number" id="addStockQuantity" min="1" value="1" style="width: 100%; padding: 0.8rem; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 1.25rem; font-weight: 800; text-align: center;" />
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-secondary-premium" style="flex: 1;" onclick="closeAddStockModal()">Cancel</button>
+            <button class="btn-premium" style="flex: 2; justify-content: center; background: var(--primary-gradient);" onclick="submitAddStock()">
+                <div class="btn-content">
+                    <i class="fas fa-check"></i>
+                    <span>Confirm Add</span>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Product Tag Modal -->
+<div id="tagModal" class="modal-overlay">
+    <div class="modal-container glass-card animate-zoom-in" style="max-width: 450px; padding: 2.5rem;">
+        <div class="modal-header-premium" style="margin-bottom: 2rem;">
+            <div class="header-left">
+                <div class="header-icon-box" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <div class="header-text">
+                    <h2 id="tagModalTitle" style="font-size: 1.25rem;">Product Tag</h2>
+                    <p>Official identification for apparel items.</p>
+                </div>
+            </div>
+            <button class="modal-close-premium" onclick="closeTagModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="tagPreview" class="tag-preview-box" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 2rem; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px dashed #e2e8f0; text-align: center;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #10b981; letter-spacing: 0.1em; margin-bottom: 0.5rem;">GOLDEN SUCCESS COLLEGE</div>
+            <h3 id="tagProductName" style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 0;">-</h3>
+            <div id="tagProductSpec" style="font-size: 0.9rem; color: #64748b; margin-top: 0.25rem;">-</div>
+            <div style="width: 100%; height: 1px; background: #f1f5f9; margin: 1rem 0;"></div>
+            <div id="tagId" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; color: var(--primary);">ID: -</div>
+            <div id="tagStatus" class="status-pill" style="margin-top: 0.5rem;">-</div>
+        </div>
+        <button class="btn-premium w-100" onclick="downloadTagPdf()" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <div class="btn-content">
+                <i class="fas fa-file-pdf"></i>
+                <span>Download Official Tag</span>
+            </div>
+        </button>
     </div>
 </div>
 
@@ -205,7 +341,7 @@
                     <h3 class="section-title">General Information</h3>
                     <div class="form-row">
                         <div class="input-group-premium">
-                            <label asp-for="ApparelItem.Apparel_Name">Product Name</label>
+                            <label asp-for="ApparelItem.Apparel_Name">Apparel Name</label>
                             <input asp-for="ApparelItem.Apparel_Name" id="apparelName" placeholder="e.g. Executive Polo Shirt" required />
                         </div>
                         <div class="input-group-premium">
@@ -215,11 +351,10 @@
                     </div>
                     <div class="form-row">
                         <div class="input-group-premium">
-                            <label asp-for="ApparelItem.Gender">Gender Fit</label>
-                            <select asp-for="ApparelItem.Gender" id="gender" required>
-                                <option value="Unisex">Unisex Design</option>
-                                <option value="Male">Male Fit</option>
-                                <option value="Female">Female Fit</option>
+                            <label asp-for="ApparelItem.Sex">Sex</label>
+                            <select asp-for="ApparelItem.Sex" id="sex" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
                             </select>
                         </div>
                         <div class="input-group-premium">
@@ -282,6 +417,54 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- Logs Modal -->
+<div id="logsModal" class="modal-overlay">
+    <div class="modal-container glass-card animate-zoom-in" style="max-width: 1100px;">
+        <div class="modal-header-premium">
+            <div class="header-left">
+                <div class="header-icon-box" style="background: linear-gradient(135deg, #475569 0%, #1e293b 100%);">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="header-text">
+                    <h2>Apparel Activity Logs</h2>
+                    <p>Comprehensive audit trail of registration, sales, and status updates.</p>
+                </div>
+            </div>
+            <button class="modal-close-premium" onclick="closeLogsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body-premium">
+            <div class="modal-table-wrapper" style="max-height: 60vh; overflow-y: auto;">
+                <table class="modern-table modal-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>Item Reference</th>
+                            <th>Details</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <!-- Loaded via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="modal-footer-premium">
+            <div id="logsPagination" class="pagination-controls">
+                <!-- Pagination buttons -->
+            </div>
+            <button class="btn-secondary-premium" onclick="closeLogsModal()">Close Logs</button>
+        </div>
+    </div>
+</div>
+
 </div>
 
 <style>
@@ -427,6 +610,9 @@
     .price-input-wrapper input { padding-left: 2.25rem; }
 
     .btn-flat { background: transparent; border: none; font-weight: 700; color: var(--text-muted); padding: 0.75rem 1.5rem; cursor: pointer; }
+    .btn-mini { padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin: 0 2px; }
+    .btn-mini:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .pagination-controls { display: flex; align-items: center; gap: 4px; }
 
     /* Animations */
     .animate-fade-in { animation: fadeIn 0.6s ease-out; }
@@ -442,6 +628,10 @@
 
 <script>
     let currentModalItems = [];
+    let currentApparelId = 0;
+    let itemCurrentPage = 1;
+    const itemPageSize = 5;
+    let itemsChanged = false;
 
     function openAddModal() {
         document.getElementById('apparelModal').style.display = 'flex';
@@ -469,7 +659,7 @@
         document.getElementById('apparelId').value = d.id;
         document.getElementById('apparelName').value = d.name;
         document.getElementById('category').value = d.category;
-        document.getElementById('gender').value = d.gender;
+        document.getElementById('sex').value = d.sex;
         document.getElementById('size').value = d.size;
         document.getElementById('gradeLevel').value = d.grade;
         document.getElementById('stock').value = d.stock;
@@ -482,71 +672,156 @@
     }
 
     async function viewItems(id) {
-        // Find the item in the model's list (which is injected into the page via Razor)
         const apparelList = @Html.Raw(Json.Serialize(Model.Apparel));
-        const item = apparelList.find(i => i.apparel_ID === id);
+        console.log("Looking for ID:", id, "in list:", apparelList);
+        const item = apparelList.find(i => (i.apparel_ID || i.Apparel_ID) === id);
         
-        if (!item) return;
-
-        document.getElementById('itemsModal').style.display = 'flex';
-        document.getElementById('itemsModalTitle').innerText = item.apparel_Name;
-        document.getElementById('itemsModalSubtitle').innerText = `${item.category} • ${item.gender} Size ${item.size}`;
-        
-        const tbody = document.getElementById('itemsTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 3rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top: 1rem; font-weight: 700;">Scanning Inventory Records...</p></td></tr>';
-
-        try {
-            const response = await fetch(`?handler=Items&id=${id}`);
-            currentModalItems = await response.json();
-            
-            renderModalItems(currentModalItems, item);
-        } catch (error) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger" style="padding: 3rem;">Failure to retrieve inventory records.</td></tr>';
-        }
-    }
-
-    function renderModalItems(items, parentItem) {
-        const tbody = document.getElementById('itemsTableBody');
-        tbody.innerHTML = '';
-        
-        document.getElementById('modalTotalItems').innerText = `Total: ${items.length} records`;
-
-        if (items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 3rem;">No individual items found for this record.</td></tr>';
+        if (!item) {
+            console.error("Item not found in local list. ID:", id);
             return;
         }
 
-        items.forEach(child => {
+        document.getElementById('itemsModal').style.display = 'flex';
+        document.getElementById('itemsModalTitle').innerText = item.apparel_Name || item.Apparel_Name;
+        document.getElementById('itemsModalSubtitle').innerText = `${item.category || item.Category} • ${item.sex || item.Sex} Size ${item.size || item.Size}`;
+        
+        const tbody = document.getElementById('itemsTableBody');
+        currentApparelId = id;
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 3rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top: 1rem; font-weight: 700;">Scanning Inventory Records...</p></td></tr>';
+        
+        try {
+            const response = await fetch(`?handler=ApparelItems&apparelId=${id}`);
+            if (!response.ok) throw new Error('API error');
+            currentModalItems = await response.json();
+            console.log("Retrieved items:", currentModalItems);
+            itemsChanged = false;
+            renderItems(1);
+        } catch (error) {
+            console.error(error);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle"></i> Failed to retrieve inventory data.</td></tr>';
+        }
+    }
+
+    function renderItems(page = 1) {
+        itemCurrentPage = page;
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '';
+        
+        const searchVal = document.getElementById('modalItemSearch').value.toLowerCase();
+        const filtered = currentModalItems.filter(i => {
+            const num = (i.apparel_Number || i.Apparel_Number || "").toLowerCase();
+            const status = (i.status || i.Status || "").toLowerCase();
+            return status !== 'sold' && (num.includes(searchVal) || status.includes(searchVal));
+        });
+
+        document.getElementById('modalTotalItems').innerText = `Total: ${filtered.length} items`;
+        
+        const startIndex = (page - 1) * itemPageSize;
+        const endIndex = startIndex + itemPageSize;
+        const paginatedItems = filtered.slice(startIndex, endIndex);
+
+        if (paginatedItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 2rem;">No items found.</td></tr>';
+            document.getElementById('modalPagination').innerHTML = '';
+            return;
+        }
+
+        const apparelList = @Html.Raw(Json.Serialize(Model.Apparel));
+        const parentItem = apparelList.find(i => i.apparel_ID === currentApparelId);
+
+        paginatedItems.forEach(child => {
             const row = document.createElement('tr');
+            const num = child.apparel_Number || child.Apparel_Number || "N/A";
+            const stat = child.status || child.Status || "Unknown";
+            const isSold = stat.toLowerCase() === 'sold';
+            const itemId = child.id || child.Id;
+
             row.innerHTML = `
-                <td><input type="checkbox" class="item-checkbox" data-id="${child.id}" onclick="updateBulkActions(event)" /></td>
-                <td><code class="serial-text">${child.apparel_Number}</code></td>
+                <td><input type="checkbox" class="item-checkbox" data-id="${itemId}" onclick="updateBulkActions(event)" ${isSold ? 'disabled' : ''} /></td>
+                <td><span class="serial-text">${num}</span></td>
                 <td>
                     <div style="display: flex; flex-direction: column;">
                         <span style="font-weight: 700;">${parentItem.apparel_Name}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">${parentItem.gender} / Size ${parentItem.size}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">${parentItem.sex} / Size ${parentItem.size}</span>
                     </div>
                 </td>
-                <td><span class="status-pill ${child.status.toLowerCase().replace(' ', '-')}">${child.status}</span></td>
-                <td><span style="font-size: 0.8rem; color: var(--text-muted);">${new Date(child.dateCreated).toLocaleDateString()}</span></td>
+                <td><span class="status-pill ${stat.toLowerCase().replace(' ', '-')}">${stat}</span></td>
+                <td class="text-right">
+                    <button class="btn-mini" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none; padding: 0.4rem 0.8rem; border-radius: 8px; font-weight: 700; cursor: pointer; margin-right: 0.25rem;" 
+                            onclick="showApparelTagModal('${itemId}', '${num}', '${stat}')">
+                        <i class="fas fa-tag"></i>
+                    </button>
+                    <button class="btn-mini" style="background: ${isSold ? '#e2e8f0' : '#10b981'}; color: ${isSold ? '#94a3b8' : 'white'}; border: none; padding: 0.4rem 0.8rem; border-radius: 8px; font-weight: 700; cursor: ${isSold ? 'default' : 'pointer'};" 
+                            onclick="markSingleAsSold(${itemId})" ${isSold ? 'disabled' : ''}>
+                        <i class="fas fa-shopping-cart"></i> Sold
+                    </button>
+                </td>
             `;
             tbody.appendChild(row);
         });
+        
+        renderItemPagination(filtered.length);
+    }
+
+    function renderItemPagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / itemPageSize);
+        const container = document.getElementById('modalPagination');
+        container.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+
+        const btnStyle = "padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin: 0 2px;";
+        const activeStyle = "background: var(--primary); color: white; border-color: var(--primary);";
+
+        const createBtn = (page, text, active = false) => {
+            const btn = document.createElement('button');
+            btn.style.cssText = btnStyle + (active ? activeStyle : "");
+            btn.innerText = text;
+            btn.onclick = () => renderItems(page);
+            return btn;
+        };
+
+        if (itemCurrentPage > 1) container.appendChild(createBtn(itemCurrentPage - 1, 'Prev'));
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= itemCurrentPage - 1 && i <= itemCurrentPage + 1)) {
+                container.appendChild(createBtn(i, i, i === itemCurrentPage));
+            } else if (i === itemCurrentPage - 2 || i === itemCurrentPage + 2) {
+                const dot = document.createElement('span');
+                dot.innerText = '...';
+                container.appendChild(dot);
+            }
+        }
+
+        if (itemCurrentPage < totalPages) container.appendChild(createBtn(itemCurrentPage + 1, 'Next'));
+    }
+
+    async function markSingleAsSold(itemId) {
+        if (!confirm('Are you sure you want to mark this item as sold?')) return;
+        
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const response = await fetch(`?handler=UpdateItemStatus&itemId=${itemId}&status=Sold`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': token }
+            });
+            const result = await response.json();
+            if (result.success) {
+                // Remove item from the current list since it is now sold
+                currentModalItems = currentModalItems.filter(i => i.id !== itemId);
+                itemsChanged = true;
+                alert('Sold Successfully');
+                renderItems(itemCurrentPage);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     function filterModalItems() {
-        const query = document.getElementById('modalItemSearch').value.toLowerCase();
-        const filtered = currentModalItems.filter(i => 
-            i.apparel_Number.toLowerCase().includes(query) || 
-            i.status.toLowerCase().includes(query)
-        );
-        // Note: this simplified render doesn't have parentItem, so we might need to store it globally
-        // For now, I'll just use the already rendered rows and hide them for better performance
-        const rows = document.querySelectorAll('#itemsTableBody tr');
-        rows.forEach(row => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
-        });
+        renderItems(1);
     }
 
     function toggleSelectAll(master) {
@@ -574,13 +849,361 @@
         document.getElementById('modalItemSearch').value = '';
         document.getElementById('selectAllItems').checked = false;
         document.getElementById('bulkActions').style.display = 'none';
+        
+        if (itemsChanged) {
+            window.location.reload();
+        }
     }
 
+    async function openLogsModal() {
+        document.getElementById('logsModal').style.display = 'flex';
+        await fetchLogs(1);
+    }
+
+    function closeLogsModal() {
+        document.getElementById('logsModal').style.display = 'none';
+    }
+
+    async function fetchLogs(page) {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 2rem;"><i class="fas fa-spinner fa-spin"></i> Loading logs...</td></tr>';
+        
+        try {
+            const response = await fetch(`?handler=Logs&page=${page}&pageSize=10`);
+            const data = await response.json();
+            
+            renderLogsTable(data.logs);
+            renderLogsPagination(data.page, data.totalPages);
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load logs.</td></tr>';
+        }
+    }
+
+    function renderLogsTable(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '';
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No activity logs found.</td></tr>';
+            return;
+        }
+
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            const action = log.action.toLowerCase();
+            const badgeStyle = action === 'register' ? 'background: rgba(16, 185, 129, 0.1); color: #10b981;' : 
+                               (action === 'sold' ? 'background: rgba(99, 102, 241, 0.1); color: var(--primary);' : 
+                                'background: rgba(100, 116, 139, 0.1); color: var(--text-muted);');
+            
+            row.innerHTML = `
+                <td><small>${new Date(log.timestamp).toLocaleString()}</small></td>
+                <td><span class="badge-glass" style="${badgeStyle} text-transform: uppercase; font-size: 0.65rem; padding: 0.25rem 0.6rem;">${log.action}</span></td>
+                <td><strong>${log.entityName}</strong></td>
+                <td><div style="max-width: 400px; font-size: 0.8rem; line-height: 1.4; color: var(--text-muted);">${log.details}</div></td>
+                <td><small>${log.username || 'System'}</small></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderLogsPagination(currentPage, totalPages) {
+        const container = document.getElementById('logsPagination');
+        container.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+
+        const createBtn = (page, text, active = false) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-mini';
+            if (active) {
+                btn.style.background = 'var(--primary)';
+                btn.style.color = 'white';
+                btn.style.borderColor = 'var(--primary)';
+            }
+            btn.innerText = text;
+            btn.onclick = () => fetchLogs(page);
+            return btn;
+        };
+
+        if (currentPage > 1) container.appendChild(createBtn(currentPage - 1, 'Previous'));
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                container.appendChild(createBtn(i, i, i === currentPage));
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const dot = document.createElement('span');
+                dot.innerText = '...';
+                dot.style.padding = '0 5px';
+                container.appendChild(dot);
+            }
+        }
+
+        if (currentPage < totalPages) container.appendChild(createBtn(currentPage + 1, 'Next'));
+    }
+
+    async function markSelectedAs(newStatus) {
+        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+        if (checkboxes.length === 0) return;
+        
+        // This function is now only used for batch processing or specific single updates
+        // Most bulk status changes are removed per user request
+    }
+
+    function openAddStockModal() {
+        document.getElementById('addStockModal').style.display = 'flex';
+        document.getElementById('addStockQuantity').value = '1';
+    }
+
+    function closeAddStockModal() {
+        document.getElementById('addStockModal').style.display = 'none';
+    }
+
+    async function submitAddStock() {
+        const qty = parseInt(document.getElementById('addStockQuantity').value);
+        if (isNaN(qty) || qty <= 0) {
+            alert('Please enter a valid quantity.');
+            return;
+        }
+
+        const btn = document.querySelector('#addStockModal .btn-premium');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Adding...</span></div>';
+
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const response = await fetch(`?handler=AddStock&id=${currentApparelId}&quantity=${qty}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert(`Successfully added ${qty} items.`);
+                itemsChanged = true;
+                closeAddStockModal();
+                viewItems(currentApparelId); // Refresh items list
+            } else {
+                alert('Error: ' + (result.message || 'Failed to add stock.'));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('A network error occurred.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+
+    // Product Tag Functionality
+    let currentTagId = "";
+    let currentTagNumber = "";
+    let currentTagStatus = "";
+
+    function showApparelTagModal(id, number, status) {
+        currentTagId = id;
+        currentTagNumber = number;
+        currentTagStatus = status;
+
+        const apparelList = @Html.Raw(Json.Serialize(Model.Apparel));
+        const parent = apparelList.find(i => i.apparel_ID === currentApparelId);
+
+        document.getElementById('tagModal').style.display = 'flex';
+        document.getElementById('tagProductName').innerText = parent.apparel_Name;
+        document.getElementById('tagProductSpec').innerText = `${parent.sex} / Size ${parent.size} / Grade ${parent.grade_Level}`;
+        document.getElementById('tagId').innerText = `ID: ${number}`;
+        
+        const statusEl = document.getElementById('tagStatus');
+        statusEl.innerText = status.toUpperCase();
+        statusEl.className = `status-pill ${status.toLowerCase().replace(' ', '-')}`;
+
+        document.getElementById('tagModalTitle').innerText = `Tag for ${number}`;
+    }
+
+    function closeTagModal() {
+        document.getElementById('tagModal').style.display = 'none';
+    }
+
+    function downloadTagPdf() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const apparelList = @Html.Raw(Json.Serialize(Model.Apparel));
+        const parentItem = apparelList.find(i => i.apparel_ID === currentApparelId);
+        
+        generateOfficialTag(doc, 20, 20, parentItem, currentTagNumber, currentTagStatus);
+        
+        doc.save(`Official_Tag_${currentTagNumber}.pdf`);
+    }
+
+    function generateOfficialTag(doc, x, y, parent, number, status) {
+        const width = 170;
+        const height = 80;
+        const centerX = x + (width / 2);
+
+        // Border & Background
+        doc.setDrawColor(16, 185, 129);
+        doc.setLineWidth(1);
+        doc.roundedRect(x, y, width, height, 8, 8);
+        
+        // Header Background
+        doc.setFillColor(240, 253, 244);
+        doc.roundedRect(x + 1, y + 1, width - 2, 15, 7, 7, 'F');
+
+        // Institution Header
+        doc.setFontSize(12);
+        doc.setTextColor(5, 150, 105);
+        doc.setFont(undefined, 'bold');
+        doc.text("GOLDEN SUCCESS COLLEGE", centerX, y + 11, { align: "center" });
+        
+        // Product Name
+        doc.setFontSize(22);
+        doc.setTextColor(30, 41, 59);
+        doc.text(parent.apparel_Name, centerX, y + 32, { align: "center" });
+        
+        // Specifications
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(`${parent.category} | ${parent.sex} | Size ${parent.size} | Grade ${parent.grade_Level}`, centerX, y + 42, { align: "center" });
+        
+        // Divider
+        doc.setDrawColor(241, 245, 249);
+        doc.line(x + 20, y + 50, x + 150, y + 50);
+
+        // Unique ID
+        doc.setFontSize(16);
+        doc.setTextColor(99, 102, 241);
+        doc.setFont(undefined, 'bold');
+        doc.text(`IDENTITY ID: ${number}`, centerX, y + 62, { align: "center" });
+        
+        // Status Badge
+        const isSold = status.toLowerCase() === 'sold';
+        doc.setFillColor(isSold ? 16 : 99, isSold ? 185 : 102, isSold ? 129 : 241);
+        doc.roundedRect(centerX - 25, y + 68, 50, 7, 2, 2, 'F');
+        doc.setFontSize(9);
+        doc.setTextColor(255, 255, 255);
+        doc.text(status.toUpperCase(), centerX, y + 73, { align: "center" });
+    }
+
+    async function generateSelectedTagPdf() {
+        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+        if (checkboxes.length === 0) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const apparelList = @Html.Raw(Json.Serialize(Model.Apparel));
+        const parentItem = apparelList.find(i => i.apparel_ID === currentApparelId);
+        
+        let yPos = 10;
+        let count = 0;
+
+        for (const cb of checkboxes) {
+            const itemId = cb.dataset.id;
+            const item = currentModalItems.find(i => i.id == itemId);
+            
+            if (!item) continue;
+
+            if (count > 0 && count % 3 === 0) {
+                doc.addPage();
+                yPos = 10;
+            }
+
+            generateOfficialTag(doc, 20, yPos, parentItem, item.apparel_Number, item.status);
+            yPos += 90;
+            count++;
+        }
+        
+        doc.save(`Apparel_Batch_Tags_${parentItem.apparel_Name}.pdf`);
+    }
+
+    async function generateInventoryReport() {
+        const btn = document.querySelector('button[onclick="generateInventoryReport()"]');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Generating...</span></div>';
+ 
+        try {
+            const response = await fetch(`?handler=ReportData&status=In Stock`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Report Error:", errorText);
+                alert('Failed to fetch report data.');
+                return;
+            }
+            const items = await response.json();
+ 
+            if (items.length === 0) {
+                alert('No available items found.');
+                return;
+            }
+ 
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(99, 102, 241);
+            doc.setFont(undefined, 'bold');
+            doc.text("GOLDEN SUCCESS COLLEGE", 14, 20);
+            
+            doc.setFontSize(14);
+            doc.setTextColor(30, 41, 59);
+            doc.text("Available Apparel Inventory Report", 14, 30);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Total Records: ${items.length}`, 14, 38);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
+ 
+            const tableData = items.map(i => [
+                i.apparel_Number || i.Apparel_Number || 'N/A',
+                i.apparelType?.apparel_Name || i.ApparelType?.Apparel_Name || 'N/A',
+                i.apparelType?.category || i.ApparelType?.Category || 'N/A',
+                i.apparelType?.sex || i.ApparelType?.Sex || 'N/A',
+                i.apparelType?.size || i.ApparelType?.Size || 'N/A',
+                i.apparelType?.grade_Level || i.ApparelType?.Grade_Level || 'N/A',
+                new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(i.apparelType?.unit_Price || i.ApparelType?.Unit_Price || 0),
+                new Date(i.lastModified || i.LastModified || new Date()).toLocaleDateString()
+            ]);
+ 
+            doc.autoTable({
+                startY: 50,
+                head: [['Serial #', 'Apparel Name', 'Category', 'Sex', 'Size', 'Grade', 'Unit Price', 'Last Updated']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { top: 50 },
+                styles: { font: 'helvetica', fontSize: 9 }
+            });
+ 
+            doc.save(`Available_Apparel_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (e) {
+            console.error(e);
+            alert('Failed to generate report.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+ 
     // Backdrop click
     window.onclick = function(e) {
         if (e.target.className === 'modal-overlay') {
             closeModal();
             closeItemsModal();
+            closeLogsModal();
+            closeTagModal();
+            closeAddStockModal();
         }
     }
 </script>
+
+<!-- Scripts for PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>

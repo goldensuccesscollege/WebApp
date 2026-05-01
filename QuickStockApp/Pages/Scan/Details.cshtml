@@ -63,6 +63,48 @@
             </div>
         </div>
     }
+    else if (Model.ApparelItem != null)
+    {
+        <div class="asset-details-card glass-card">
+            <div class="asset-header">
+                <div class="asset-icon-large apparel">
+                    <i class="fas fa-tshirt"></i>
+                </div>
+                <div class="header-text">
+                    <span class="type-badge apparel">Apparel Inventory</span>
+                    <h1>@Model.ApparelItem.ApparelType?.Apparel_Name</h1>
+                    <p class="asset-id">ID: @Model.ApparelItem.Apparel_Number</p>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Classification</label>
+                    <div class="value">@Model.ApparelItem.ApparelType?.Category</div>
+                </div>
+                <div class="detail-item">
+                    <label>Specifications</label>
+                    <div class="value">@Model.ApparelItem.ApparelType?.Sex / Size @Model.ApparelItem.ApparelType?.Size / Grade @Model.ApparelItem.ApparelType?.Grade_Level</div>
+                </div>
+                <div class="detail-item">
+                    <label>Item Status</label>
+                    <div class="value">
+                        <span class="status-pill @Model.ApparelItem.Status.ToLower().Replace(" ", "-")">@Model.ApparelItem.Status</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <label>Supplier / Price</label>
+                    <div class="value highlight">
+                        <i class="fas fa-tag me-2"></i> @Model.ApparelItem.ApparelType?.Unit_Price.ToString("C") (@Model.ApparelItem.ApparelType?.Supplier_Name)
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-actions">
+                <p class="timestamp">Last scanned: @DateTime.Now.ToString("g")</p>
+            </div>
+        </div>
+    }
 </div>
 
 <style>
@@ -102,6 +144,7 @@
 
     .asset-icon-large.equipment { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
     .asset-icon-large.materials { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .asset-icon-large.apparel { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 
     .header-text h1 {
         margin: 0.25rem 0;
@@ -128,6 +171,7 @@
 
     .type-badge.equipment { background: #e0e7ff; color: #4338ca; }
     .type-badge.materials { background: #ffedd5; color: #9a3412; }
+    .type-badge.apparel { background: #dcfce7; color: #166534; }
 
     .details-grid {
         display: grid;

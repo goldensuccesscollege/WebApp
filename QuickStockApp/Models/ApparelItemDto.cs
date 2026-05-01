@@ -8,5 +8,7 @@ namespace QuickStockApp.Models
         public string Status { get; set; } = "In Stock";
         public int CampusId { get; set; }
         public DateTime DateCreated { get; set; }
+        public DateTime LastModified { get; set; }
+        public ApparelDto? ApparelType { get; set; }
     }
 }

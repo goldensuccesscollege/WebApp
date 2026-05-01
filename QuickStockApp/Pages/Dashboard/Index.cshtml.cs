@@ -28,12 +28,9 @@ namespace QuickStockApp.Pages.Dashboard
             var activeName = User.FindFirst("ActiveCampusName")?.Value;
             var activeIdString = User.FindFirst("ActiveCampusId")?.Value;
 
-            if (User.IsInRole("Admin"))
+            if (string.IsNullOrEmpty(activeIdString))
             {
-                if (string.IsNullOrEmpty(activeIdString))
-                {
-                    return RedirectToPage("/Campuses");
-                }
+                return RedirectToPage("/Campuses");
             }
 
             if (int.TryParse(activeIdString, out int campusId))

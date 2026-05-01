@@ -80,5 +80,23 @@ namespace QuickStockApp.Pages.Admin
             await _api.ToggleUserCampusBlockAsync(userId, campusId);
             return RedirectToPage();
         }
+
+        public async Task<IActionResult> OnPostToggleITAccessAsync(int id)
+        {
+            await _api.ToggleUserITAccessAsync(id);
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostToggleAPAccessAsync(int id)
+        {
+            await _api.ToggleUserAPAccessAsync(id);
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostToggleMessageAccessAsync(int id)
+        {
+            await _api.ToggleUserMessageAccessAsync(id);
+            return RedirectToPage();
+        }
     }
 }

@@ -22,6 +22,11 @@ namespace QuickStockApp.Pages
         [BindProperty(SupportsGet = true)]
         public string? SearchTerm { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public int CurrentPage { get; set; } = 1;
+        public int TotalPages { get; set; }
+        public int TotalItems { get; set; }
+
         [BindProperty]
         public ApparelDto ApparelItem { get; set; } = new();
 
@@ -37,27 +42,19 @@ namespace QuickStockApp.Pages
             int? filterCampusId = null;
             var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
 
-            if (User.IsInRole("Admin"))
+            if (int.TryParse(activeCampusClaim, out int acid))
             {
-                if (int.TryParse(activeCampusClaim, out int acid))
-                {
-                    filterCampusId = acid;
-                }
-                else
-                {
-                    return RedirectToPage("/Campuses");
-                }
+                filterCampusId = acid;
             }
             else
             {
-                var userCampusIdStr = User.FindFirst("CampusId")?.Value;
-                if (int.TryParse(userCampusIdStr, out int userCid))
-                {
-                    filterCampusId = userCid;
-                }
+                return RedirectToPage("/Campuses");
             }
 
-            Apparel = await _apiService.GetApparelAsync(filterCampusId, SearchTerm);
+            var paginatedResult = await _apiService.GetApparelAsync(filterCampusId, SearchTerm, CurrentPage, 5);
+            Apparel = paginatedResult.Apparel;
+            TotalPages = paginatedResult.TotalPages;
+            TotalItems = paginatedResult.TotalItems;
 
             var allCampuses = await _apiService.GetCampusesAsync();
             if (User.IsInRole("Admin"))
@@ -120,10 +117,44 @@ namespace QuickStockApp.Pages
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnGetItemsAsync(int id)
+        public async Task<IActionResult> OnGetReportDataAsync(string status, DateTime? startDate, DateTime? endDate)
         {
-            var items = await _apiService.GetApparelItemsAsync(id);
+            int? filterCampusId = null;
+            var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
+            if (int.TryParse(activeCampusClaim, out int acid)) filterCampusId = acid;
+
+            var items = await _apiService.QueryApparelItemsAsync(status, startDate, endDate, filterCampusId);
             return new JsonResult(items);
+        }
+
+        public async Task<IActionResult> OnGetApparelItemsAsync(int apparelId)
+        {
+            if (apparelId == 0) return new JsonResult(new List<ApparelItemDto>());
+            
+            var items = await _apiService.GetApparelItemsAsync(apparelId);
+            return new JsonResult(items);
+        }
+
+        public async Task<IActionResult> OnPostUpdateItemStatusAsync(int itemId, string status)
+        {
+            var result = await _apiService.UpdateApparelItemStatusAsync(itemId, status);
+            return new JsonResult(new { success = result.Success, message = result.Message });
+        }
+
+        public async Task<IActionResult> OnPostAddStockAsync(int id, int quantity)
+        {
+            var result = await _apiService.AddApparelStockAsync(id, quantity);
+            return new JsonResult(new { success = result.Success, message = result.Message });
+        }
+
+        public async Task<IActionResult> OnGetLogsAsync(int page = 1, int pageSize = 10)
+        {
+            int? filterCampusId = null;
+            var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
+            if (int.TryParse(activeCampusClaim, out int acid)) filterCampusId = acid;
+
+            var result = await _apiService.GetAuditLogsPaginatedAsync(filterCampusId, page, pageSize, "Apparel");
+            return new JsonResult(result);
         }
     }
 }

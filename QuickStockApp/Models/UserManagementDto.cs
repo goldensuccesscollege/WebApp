@@ -11,6 +11,7 @@ namespace QuickStockApp.Models
         public string LastName { get; set; } = string.Empty;
         public bool CanAccessITAssets { get; set; }
         public bool CanAccessApparel { get; set; }
+        public bool CanAccessMessages { get; set; }
         public List<UserCampusAccessDto> Campuses { get; set; } = new();
     }
 
@@ -31,6 +32,7 @@ namespace QuickStockApp.Models
         public string LastName { get; set; } = string.Empty;
         public bool CanAccessITAssets { get; set; } = true;
         public bool CanAccessApparel { get; set; } = true;
+        public bool CanAccessMessages { get; set; } = true;
     }
 
     public class UpdateUserDto
@@ -42,5 +44,6 @@ namespace QuickStockApp.Models
         public string LastName { get; set; } = string.Empty;
         public bool CanAccessITAssets { get; set; }
         public bool CanAccessApparel { get; set; }
+        public bool CanAccessMessages { get; set; }
     }
 }

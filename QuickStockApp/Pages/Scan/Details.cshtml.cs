@@ -17,6 +17,7 @@ namespace QuickStockApp.Pages.Scan
         }
 
         public ItAssetDto? Asset { get; set; }
+        public ApparelItemDto? ApparelItem { get; set; }
         public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync(string? qr)
@@ -30,16 +31,24 @@ namespace QuickStockApp.Pages.Scan
             try
             {
                 var baseUrl = _config["ApiSettings:BaseUrl"];
-                var response = await _http.GetAsync($"{baseUrl}/api/itassets/qr/{qr}");
+                
+                // Try IT Asset first
+                var assetResponse = await _http.GetAsync($"{baseUrl}/api/itassets/qr/{qr}");
+                if (assetResponse.IsSuccessStatusCode)
+                {
+                    Asset = await assetResponse.Content.ReadFromJsonAsync<ItAssetDto>();
+                    return Page();
+                }
 
-                if (response.IsSuccessStatusCode)
+                // If not found, try Apparel Item
+                var apparelResponse = await _http.GetAsync($"{baseUrl}/api/apparel/item/qr/{qr}");
+                if (apparelResponse.IsSuccessStatusCode)
                 {
-                    Asset = await response.Content.ReadFromJsonAsync<ItAssetDto>();
+                    ApparelItem = await apparelResponse.Content.ReadFromJsonAsync<ApparelItemDto>();
+                    return Page();
                 }
-                else
-                {
-                    ErrorMessage = "Asset not found or QR code expired.";
-                }
+
+                ErrorMessage = "Record not found or QR code expired.";
             }
             catch (Exception ex)
             {

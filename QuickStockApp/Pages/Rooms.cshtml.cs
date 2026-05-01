@@ -5,6 +5,7 @@ using QuickStockApp.Services;
 
 namespace QuickStockApp.Pages
 {
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public class RoomsModel : PageModel
     {
         private readonly IApiService _apiService;
@@ -22,27 +23,22 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnGetAsync(int? campusId = null)
         {
+            var canAccess = User.IsInRole("Admin") || (User.FindFirst("CanAccessITAssets")?.Value == "True");
+            if (!canAccess)
+            {
+                return Forbid();
+            }
+
             int? filterCampusId = null;
             var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
 
-            if (User.IsInRole("Admin"))
+            if (int.TryParse(activeCampusClaim, out int acid))
             {
-                if (int.TryParse(activeCampusClaim, out int acid))
-                {
-                    filterCampusId = acid;
-                }
-                else
-                {
-                    return RedirectToPage("/Campuses");
-                }
+                filterCampusId = acid;
             }
             else
             {
-                var userCampusIdStr = User.FindFirst("CampusId")?.Value;
-                if (int.TryParse(userCampusIdStr, out int userCid))
-                {
-                    filterCampusId = userCid;
-                }
+                return RedirectToPage("/Campuses");
             }
 
             Rooms = await _apiService.GetRoomsAsync(filterCampusId);
