@@ -1,5 +1,5 @@
 @page
-@model QuickStockApp.Pages.CampusesModel
+@model QuickStockApp.Pages.Campus.CampusesModel
 @{
     ViewData["Title"] = "Campuses";
     ViewData["HideNav"] = true;
@@ -48,7 +48,12 @@
                     @if (Model.UserRole == "Admin")
                     {
                         <div class="admin-actions">
-                            <button class="btn-icon" title="Edit" onclick="editCampus(@Json.Serialize(campus))">
+                            <button class="btn-icon" title="Edit" 
+                                    data-campus-id="@campus.CampusId" 
+                                    data-campus-name="@campus.Name" 
+                                    data-campus-address="@campus.Address" 
+                                    data-campus-desc="@campus.Description" 
+                                    onclick="editCampusFromData(this)">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <form asp-page-handler="Delete" method="post" onsubmit="return confirm('Delete this campus? This will affect linked rooms and assets.')">
@@ -89,8 +94,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-primary" id="submitBtn" asp-page-handler="Add">Create Campus</button>
+                <button type="button" class="btn-secondary" onclick="closeModal()" style="cursor:pointer; pointer-events:auto;">Cancel</button>
+                <button type="submit" class="btn-primary" id="addBtn" asp-page-handler="Add" style="cursor:pointer; pointer-events:auto;">Create Campus</button>
+                <button type="submit" class="btn-primary" id="updateBtn" asp-page-handler="Update" style="display:none; cursor:pointer; pointer-events:auto;">Save Changes</button>
             </div>
         </form>
     </div>
@@ -98,12 +104,14 @@
 
 <style>
     :root {
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --glass-bg: rgba(255, 255, 255, 0.7);
-        --glass-border: rgba(255, 255, 255, 0.3);
-        --text-main: #1f2937;
-        --text-muted: #6b7280;
+        --primary: #1F3C88;
+        --primary-hover: #162a60;
+        --accent: #F4C430;
+        --success: #2E7D32;
+        --glass-bg: #FFFFFF;
+        --glass-border: #E5E7EB;
+        --text-main: #333333;
+        --text-muted: #71717A;
     }
 
     .animate-fade-in {
@@ -173,8 +181,8 @@
 
     .campus-card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 12px 48px rgba(79, 70, 229, 0.15);
-        border-color: rgba(79, 70, 229, 0.3);
+        box-shadow: 0 12px 48px rgba(30, 64, 175, 0.15);
+        border-color: rgba(30, 64, 175, 0.3);
     }
 
     .campus-card.assigned {
@@ -188,8 +196,8 @@
     }
 
     .badge-assigned {
-        background: rgba(79, 70, 229, 0.1);
-        color: var(--primary);
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
         padding: 0.4rem 0.8rem;
         border-radius: 50px;
         font-size: 0.75rem;
@@ -202,7 +210,7 @@
     .card-icon {
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, var(--primary), #818cf8);
+        background: linear-gradient(135deg, var(--primary), var(--accent));
         color: white;
         border-radius: 16px;
         display: flex;
@@ -210,7 +218,7 @@
         justify-content: center;
         font-size: 1.5rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);
+        box-shadow: 0 8px 16px rgba(30, 64, 175, 0.2);
     }
 
     .card-body h3 {
@@ -372,14 +380,13 @@
     function openModal(mode) {
         const modal = document.getElementById('campusModal');
         const title = document.getElementById('modalTitle');
-        const submitBtn = document.getElementById('submitBtn');
-        const form = document.getElementById('campusForm');
+        const addBtn = document.getElementById('addBtn');
+        const updateBtn = document.getElementById('updateBtn');
 
         if (mode === 'add') {
             title.innerText = 'Add New Campus';
-            submitBtn.innerText = 'Create Campus';
-            submitBtn.setAttribute('asp-page-handler', 'Add');
-            form.action = '?handler=Add';
+            addBtn.style.display = 'inline-block';
+            updateBtn.style.display = 'none';
             document.getElementById('campusId').value = '0';
             document.getElementById('campusName').value = '';
             document.getElementById('campusAddress').value = '';
@@ -393,19 +400,28 @@
         document.getElementById('campusModal').style.display = 'none';
     }
 
+    function editCampusFromData(btn) {
+        const campus = {
+            campusId: btn.getAttribute('data-campus-id'),
+            name: btn.getAttribute('data-campus-name'),
+            address: btn.getAttribute('data-campus-address'),
+            description: btn.getAttribute('data-campus-desc')
+        };
+        editCampus(campus);
+    }
+
     function editCampus(campus) {
         const modal = document.getElementById('campusModal');
         const title = document.getElementById('modalTitle');
-        const submitBtn = document.getElementById('submitBtn');
-        const form = document.getElementById('campusForm');
+        const addBtn = document.getElementById('addBtn');
+        const updateBtn = document.getElementById('updateBtn');
 
         title.innerText = 'Edit Campus';
-        submitBtn.innerText = 'Save Changes';
-        submitBtn.setAttribute('asp-page-handler', 'Update');
-        form.action = '?handler=Update';
+        addBtn.style.display = 'none';
+        updateBtn.style.display = 'inline-block';
 
-        document.getElementById('campusId').value = campus.campusId;
-        document.getElementById('campusName').value = campus.name;
+        document.getElementById('campusId').value = campus.campusId || '0';
+        document.getElementById('campusName').value = campus.name || '';
         document.getElementById('campusAddress').value = campus.address || '';
         document.getElementById('campusDesc').value = campus.description || '';
 

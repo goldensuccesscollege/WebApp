@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace QuickStockApp.Pages
+namespace QuickStockApp.Pages.Community
 {
     [Authorize]
     public class ChatModel : PageModel

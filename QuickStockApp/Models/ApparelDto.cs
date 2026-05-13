@@ -14,6 +14,7 @@ namespace QuickStockApp.Models
         public decimal Unit_Price { get; set; }
         public string Supplier_Name { get; set; } = string.Empty;
         public string? Remarks { get; set; }
+        public string? Location { get; set; }
         public int CampusId { get; set; }
     }
     public class PaginatedApparelDto

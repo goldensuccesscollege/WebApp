@@ -1,10 +1,203 @@
 @page
-@model QuickStockApp.Pages.ApparelListModel
+@model QuickStockApp.Pages.Inventory.ApparelListModel
 @{
     ViewData["Title"] = "Apparel Inventory";
+    var apCampusId = User.FindFirst("ActiveCampusId")?.Value;
+    var apIsAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+    var isManager = User.IsInRole("Manager");
+    var isUser = User.IsInRole("User");
+    var isViewer = User.IsInRole("Viewer");
+    
+    // Permission helpers
+    var canAdd = apIsAdmin || isManager || isUser;
+    var canUpdate = apIsAdmin || isManager;
+    var canDelete = apIsAdmin;
+    var canSeeLogsReports = apIsAdmin || isManager || isUser;
+
+    bool showListTab = !string.IsNullOrEmpty(Model.SearchTerm) || Model.CurrentPage > 1 || Request.Query.ContainsKey("showList");
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Tab Navigation -->
+<div class="d-flex justify-content-center mb-4 animate-in">
+    <ul class="nav nav-pills bg-white p-1 rounded-pill shadow-sm" id="apAssetsTabs" role="tablist" style="border: 1px solid rgba(16,185,129,0.15);">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(!showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold" id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard-view" type="button" role="tab" aria-controls="dashboard-view" aria-selected="@(!showListTab ? "true" : "false")" style="transition: all 0.3s;">
+                <i class="fas fa-chart-pie me-2"></i> Overview Dashboard
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold text-secondary" id="list-tab" data-bs-toggle="pill" data-bs-target="#list-view" type="button" role="tab" aria-controls="list-view" aria-selected="@(showListTab ? "true" : "false")" style="transition: all 0.3s;">
+                <i class="fas fa-tshirt me-2"></i> Apparel Inventory List
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="tab-content" id="apAssetsTabContent">
+    <!-- DASHBOARD TAB -->
+    <div class="tab-pane fade @(!showListTab ? "show active" : "")" id="dashboard-view" role="tabpanel" aria-labelledby="dashboard-tab">
+        <!-- Apparel Mini Dashboard -->
+        <div id="ap-dashboard-section" class="mb-4">
+            <div class="col-12 d-flex align-items-center gap-2 mb-3">
+        <h5 class="fw-bold mb-0" style="background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            <i class="fas fa-chart-pie me-2" style="-webkit-text-fill-color:var(--primary-color);"></i>Apparel Dashboard
+        </h5>
+        <button class="btn btn-sm btn-link text-muted p-0 ms-auto" onclick="toggleApDashboard()" title="Toggle">
+            <i class="fas fa-chevron-up" id="apDashToggleIcon"></i>
+        </button>
+    </div>
+    <div id="apDashContent">
+        <div class="row g-3 mb-3">
+            <div class="col-md-3 col-6">
+                <div class="it-stat-card" style="--c:var(--primary-color);">
+                    <div class="it-stat-icon" style="background:rgba(31,60,136,0.1);color:var(--primary-color);"><i class="fas fa-tshirt"></i></div>
+                    <div><div class="it-stat-val" id="ap-stat-types">—</div><div class="it-stat-lbl">Apparel Types</div></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="it-stat-card" style="--c:var(--success-color);">
+                    <div class="it-stat-icon" style="background:rgba(46,125,50,0.1);color:var(--success-color);"><i class="fas fa-box-open"></i></div>
+                    <div><div class="it-stat-val" id="ap-stat-instock">—</div><div class="it-stat-lbl">In Stock</div></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="it-stat-card" style="--c:var(--accent-color);">
+                    <div class="it-stat-icon" style="background:rgba(214,40,40,0.1);color:var(--accent-color);"><i class="fas fa-shopping-bag"></i></div>
+                    <div><div class="it-stat-val" id="ap-stat-sold">—</div><div class="it-stat-lbl">Sold</div></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="it-stat-card" style="--c:var(--secondary-color);">
+                    <div class="it-stat-icon" style="background:rgba(244,196,48,0.1);color:var(--secondary-color);"><i class="fas fa-layer-group"></i></div>
+                    <div><div class="it-stat-val" id="ap-stat-cats">—</div><div class="it-stat-lbl">Categories</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-lg-5">
+                <div class="glass-card p-3 h-100">
+                    <h6 class="fw-bold mb-2 small text-muted text-uppercase">By Category</h6>
+                    <div style="position: relative; height: 180px; width: 100%;">
+                        <canvas id="apCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="glass-card p-3 h-100">
+                    <h6 class="fw-bold mb-2 small text-muted text-uppercase">Stock vs Sold</h6>
+                    <div style="position: relative; height: 180px; width: 100%;">
+                        <canvas id="apStockChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (canSeeLogsReports)
+        {
+
+            <div class="glass-card p-3 mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h6 class="fw-bold mb-0 small text-muted text-uppercase"><i class="fas fa-history me-1"></i>Recent Apparel Activity</h6>
+                </div>
+                <div id="apRecentActivity" class="activity-list-sm">
+                    <div class="text-center text-muted small py-2"><div class="spinner-border spinner-border-sm"></div></div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .it-stat-card { display:flex;align-items:center;gap:.9rem;background:rgba(255,255,255,0.85);border:1.5px solid rgba(99,102,241,0.08);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:all 0.22s; }
+    .it-stat-card:hover { transform:translateY(-2px);border-color:var(--c);box-shadow:0 6px 20px rgba(0,0,0,0.09); }
+    .it-stat-icon { width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem; }
+    .it-stat-val { font-size:1.5rem;font-weight:800;line-height:1; }
+    .it-stat-lbl { font-size:.75rem;color:#64748b;font-weight:500;margin-top:2px; }
+    .activity-list-sm { 
+        display:flex;flex-direction:column;gap:.4rem; 
+        max-height: 180px; overflow-y: auto; padding-right: 4px;
+    }
+    .activity-list-sm::-webkit-scrollbar { width: 4px; }
+    .activity-list-sm::-webkit-scrollbar-track { background: transparent; }
+    .activity-list-sm::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+    body.dark-mode .activity-list-sm::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+    .activity-item-sm { display:flex;align-items:center;gap:.6rem;padding:.4rem .6rem;border-radius:8px;background:rgba(16,185,129,0.04);font-size:.82rem; }
+    .ap-badge-sm { font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(16,185,129,0.12);color:#10b981;white-space:nowrap; }
+    body.dark-mode .it-stat-card { background:rgba(30,41,59,0.85)!important;border-color:rgba(255,255,255,0.08)!important; }
+</style>
+
+<script>
+    const _apCampusId = "@apCampusId";
+    const _canSeeLogsReports = @(canSeeLogsReports ? "true" : "false");
+    const AP_PALETTE = ['#6366f1','#10b981','#f59e0b','#ec4899','#3b82f6','#8b5cf6','#ef4444','#14b8a6'];
+    let apCharts = [];
+
+    let apDashVisible = true;
+    function toggleApDashboard() {
+        const content = document.getElementById('apDashContent');
+        const icon = document.getElementById('apDashToggleIcon');
+        apDashVisible = !apDashVisible;
+        content.style.display = apDashVisible ? '' : 'none';
+        icon.className = apDashVisible ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+    }
+
+    async function loadApDashboard() {
+        if (!_apCampusId) return;
+        try {
+            const res = await fetch(`?handler=Stats&campusId=${_apCampusId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Stat cards
+            document.getElementById('ap-stat-types').textContent = data.totalApparelTypes ?? 0;
+            document.getElementById('ap-stat-instock').textContent = data.totalApparelInStock ?? 0;
+            document.getElementById('ap-stat-sold').textContent = data.totalApparelSold ?? 0;
+            document.getElementById('ap-stat-cats').textContent = (data.apparelByCategory || []).length;
+
+            // Category doughnut
+            const cats = data.apparelByCategory || [];
+            if (cats.length) {
+                new Chart(document.getElementById('apCategoryChart'), {
+                    type: 'doughnut',
+                    data: { labels: cats.map(x => x.category), datasets: [{ data: cats.map(x => x.count), backgroundColor: AP_PALETTE, borderWidth: 2, borderColor: '#fff' }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } } }
+                });
+            }
+
+            // Stock vs Sold bar
+            new Chart(document.getElementById('apStockChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['In Stock', 'Sold'],
+                    datasets: [{ data: [data.totalApparelInStock ?? 0, data.totalApparelSold ?? 0], backgroundColor: ['#10b981', '#ec4899'], borderRadius: 10 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
+            });
+
+            // Activity visibility check
+            if (_canSeeLogsReports) {
+
+
+                const acts = data.recentApparelActivities || [];
+                const container = document.getElementById('apRecentActivity');
+                container.innerHTML = acts.length
+                    ? acts.map(a => `<div class="activity-item-sm"><span class="ap-badge-sm">${a.action}</span><span class="fw-medium">${a.entityName}</span><span class="text-muted ms-auto">${a.username || ''} · ${a.timestamp}</span></div>`).join('')
+                    : '<p class="text-muted small text-center py-2">No recent apparel activity.</p>';
+            }
+        } catch (e) { console.warn('Apparel dashboard load failed', e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadApDashboard);
+</script>
+    </div> <!-- END DASHBOARD TAB -->
+
+    <!-- LIST TAB -->
+    <div class="tab-pane fade @(showListTab ? "show active" : "")" id="list-view" role="tabpanel" aria-labelledby="list-tab">
 
 <div class="apparel-dashboard animate-fade-in">
     <div class="dashboard-header">
@@ -20,34 +213,41 @@
                     <input type="text" asp-for="SearchTerm" placeholder="Search by name, category, or supplier..." class="search-input" />
                     @if (!string.IsNullOrEmpty(Model.SearchTerm))
                     {
-                        <a href="/ApparelList" class="clear-search"><i class="fas fa-times-circle"></i></a>
+                        <a href="/Inventory/ApparelList" class="clear-search"><i class="fas fa-times-circle"></i></a>
                     }
                 </div>
             </form>
-            <button class="btn-premium" onclick="generateInventoryReport()" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);">
-                <div class="btn-content">
-                    <i class="fas fa-file-pdf"></i>
-                    <span>Generate Report</span>
-                </div>
-            </button>
-            <button class="btn-premium btn-logs" onclick="openLogsModal()" style="background: linear-gradient(135deg, #475569 0%, #1e293b 100%); box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3);">
-                <div class="btn-content">
-                    <i class="fas fa-history"></i>
-                    <span>View Activity Logs</span>
-                </div>
-            </button>
-            <button class="btn-premium" onclick="location.href='/SoldApparel'" style="background: linear-gradient(135deg, #059669 0%, #064e3b 100%); box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);">
+            @if (canSeeLogsReports)
+            {
+                <button class="btn-premium" onclick="generateInventoryReport()" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);">
+                    <div class="btn-content">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Generate Report</span>
+                    </div>
+                </button>
+                <button class="btn-premium btn-logs" onclick="openLogsModal()" style="background: linear-gradient(135deg, #475569 0%, #1e293b 100%); box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3);">
+                    <div class="btn-content">
+                        <i class="fas fa-history"></i>
+                        <span>View Activity Logs</span>
+                    </div>
+                </button>
+            }
+
+            <button class="btn-premium" onclick="location.href='/Inventory/SoldApparel'" style="background: linear-gradient(135deg, #059669 0%, #064e3b 100%); box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);">
                 <div class="btn-content">
                     <i class="fas fa-shopping-cart"></i>
                     <span>Sold List</span>
                 </div>
             </button>
-            <button class="btn-premium btn-add animate-pulse" onclick="openAddModal()">
-                <div class="btn-content">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Register Apparel</span>
-                </div>
-            </button>
+            @if (canAdd)
+            {
+                <button class="btn-premium btn-add animate-pulse" onclick="openAddModal()">
+                    <div class="btn-content">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Register Apparel</span>
+                    </div>
+                </button>
+            }
         </div>
     </div>
 
@@ -58,6 +258,7 @@
                     <tr>
                         <th>Apparel Details</th>
                         <th>Classification</th>
+                        <th>Location</th>
                         <th>Sex & Specs</th>
                         <th>Grade</th>
                         <th>Inventory</th>
@@ -81,6 +282,12 @@
                                 </div>
                             </td>
                             <td><span class="badge-glass badge-category">@item.Category</span></td>
+                            <td>
+                                <div class="location-badge">
+                                    <i class="fas fa-layer-group text-primary opacity-50 me-1"></i>
+                                    <span class="fw-bold">@(string.IsNullOrEmpty(item.Location) ? "Unassigned" : item.Location)</span>
+                                </div>
+                            </td>
                             <td>
                                 <div class="specs-group">
                                     <span class="spec-label">@item.Sex</span>
@@ -114,28 +321,41 @@
                             </td>
                             <td class="text-right" onclick="event.stopPropagation();">
                                 <div class="action-dropdown">
-                                    <button class="btn-icon btn-edit" 
-                                            data-id="@item.Apparel_ID"
-                                            data-name="@item.Apparel_Name"
-                                            data-category="@item.Category"
-                                            data-sex="@item.Sex"
-                                            data-size="@item.Size"
-                                            data-grade="@item.Grade_Level"
-                                            data-stock="@item.Quality_In_Stock"
-                                            data-reorder="@item.Reorder_level"
-                                            data-date="@item.Date_Purchased.ToString("yyyy-MM-dd")"
-                                            data-price="@item.Unit_Price"
-                                            data-supplier="@item.Supplier_Name"
-                                            data-remarks="@item.Remarks"
-                                            data-campusid="@item.CampusId"
-                                            onclick="editApparel(this)">
-                                        <i class="fas fa-pen-nib"></i>
-                                    </button>
-                                    <form asp-page-handler="Delete" asp-route-id="@item.Apparel_ID" method="post" style="display:inline;">
-                                        <button class="btn-icon btn-delete" onclick="return confirm('Are you sure you want to decommission this apparel entry?')">
-                                            <i class="fas fa-trash-alt"></i>
+                                    @if (canUpdate)
+                                    {
+
+                                        <button class="btn-icon btn-edit" 
+                                                data-id="@item.Apparel_ID"
+                                                data-name="@item.Apparel_Name"
+                                                data-category="@item.Category"
+                                                data-sex="@item.Sex"
+                                                data-size="@item.Size"
+                                                data-grade="@item.Grade_Level"
+                                                data-stock="@item.Quality_In_Stock"
+                                                data-reorder="@item.Reorder_level"
+                                                data-date="@item.Date_Purchased.ToString("yyyy-MM-dd")"
+                                                data-price="@item.Unit_Price"
+                                                data-supplier="@item.Supplier_Name"
+                                                data-remarks="@item.Remarks"
+                                                data-location="@item.Location"
+                                                data-campusid="@item.CampusId"
+                                                onclick="editApparel(this)">
+                                            <i class="fas fa-pen-nib"></i>
                                         </button>
-                                    </form>
+                                        @if (canDelete)
+                                        {
+                                            <form asp-page-handler="Delete" asp-route-id="@item.Apparel_ID" method="post" style="display:inline;">
+                                                <button class="btn-icon btn-delete" onclick="return confirm('Are you sure you want to decommission this apparel entry?')">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    }
+                                    else if (isUser || isViewer)
+                                    {
+                                        <span class="text-muted small">View Only</span>
+                                    }
+
                                 </div>
                             </td>
                         </tr>
@@ -209,9 +429,12 @@
                     <i class="fas fa-filter"></i>
                     <input type="text" id="modalItemSearch" placeholder="Filter by number or status..." onkeyup="filterModalItems()" />
                 </div>
-                <button class="btn-mini" style="background: var(--primary-gradient); color: white; padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;" onclick="openAddStockModal()">
-                    <i class="fas fa-plus-circle"></i> Add Quantity
-                </button>
+                @if (!isViewer)
+                {
+                    <button class="btn-mini" style="background: var(--primary-gradient); color: white; padding: 0.6rem 1.2rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;" onclick="openAddStockModal()">
+                        <i class="fas fa-plus-circle"></i> Add Quantity
+                    </button>
+                }
                 <div class="bulk-actions" id="bulkActions" style="display: none;">
                     <span class="selected-count">0 items selected</span>
                     <button class="btn-mini" style="background: #10b981; color: white;" onclick="generateSelectedTagPdf()"><i class="fas fa-tags"></i> Batch Tags</button>
@@ -222,7 +445,7 @@
                 <table class="modern-table modal-table">
                     <thead>
                         <tr>
-                            <th style="width: 40px;"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAll(this)" /></th>
+                            <th style="width: 40px;">@if(canAdd){<input type="checkbox" id="selectAllItems" onclick="toggleSelectAll(this)" />}</th>
                             <th>Identity Number</th>
                             <th>Product Spec</th>
                             <th>Current Status</th>
@@ -396,6 +619,18 @@
                             <label asp-for="ApparelItem.Supplier_Name">Primary Supplier</label>
                             <input asp-for="ApparelItem.Supplier_Name" id="supplier" placeholder="e.g. Master Tailor Co." />
                         </div>
+                        <div class="input-group-premium">
+                            <label asp-for="ApparelItem.Location">Stock Location</label>
+                            <select asp-for="ApparelItem.Location" id="location">
+                                <option value="">-- Select Location --</option>
+                                <option value="shelf 1">shelf 1</option>
+                                <option value="shelf 2">shelf 2</option>
+                                <option value="shelf 3">shelf 3</option>
+                                <option value="shelf 4">shelf 4</option>
+                                <option value="shelf 5">shelf 5</option>
+                                <option value="shelf 6">shelf 6</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -466,8 +701,21 @@
 </div>
 
 </div>
+    </div> <!-- END LIST TAB -->
+</div> <!-- END TAB CONTENT -->
 
 <style>
+    /* Tab pill active styles */
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #10b981 0%, #6366f1 100%);
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+    .nav-pills .nav-link:not(.active):hover {
+        background: rgba(16, 185, 129, 0.05);
+        color: #10b981 !important;
+    }
+
     :root {
         --primary: #6366f1;
         --primary-dark: #4f46e5;
@@ -525,13 +773,13 @@
     .modern-table td { padding: 1.5rem 2rem; border-bottom: 1px solid rgba(0,0,0,0.03); vertical-align: middle; }
 
     .apparel-identity { display: flex; align-items: center; gap: 1.25rem; }
-    .apparel-avatar { width: 48px; height: 48px; border-radius: 16px; background: rgba(99, 102, 241, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
-    .apparel-name { display: block; font-weight: 700; color: var(--text-main); font-size: 1.05rem; }
+    .apparel-avatar { width: 48px; height: 48px; border-radius: 16px; background: rgba(31, 60, 136, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+    .apparel-name { display: block; font-weight: 700; color: var(--text-dark); font-size: 1.05rem; }
     .apparel-supplier { display: block; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
     .badge-glass { padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700; font-size: 0.75rem; }
-    .badge-category { background: rgba(99, 102, 241, 0.1); color: var(--primary); }
-    .badge-grade { background: rgba(168, 85, 247, 0.1); color: var(--secondary); }
+    .badge-category { background: rgba(31, 60, 136, 0.1); color: var(--primary-color); }
+    .badge-grade { background: rgba(244, 196, 48, 0.1); color: var(--secondary-color); }
 
     .specs-group { display: flex; flex-direction: column; gap: 0.25rem; }
     .spec-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
@@ -552,8 +800,8 @@
     .clickable-row:hover { background: rgba(99, 102, 241, 0.04) !important; transform: scale(1.002); }
 
     .btn-icon { width: 38px; height: 38px; border-radius: 12px; border: 1px solid transparent; background: white; color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .btn-edit:hover { background: var(--primary); color: white; transform: translateY(-2px); }
-    .btn-delete:hover { background: var(--danger); color: white; transform: translateY(-2px); }
+    .btn-edit:hover { background: var(--primary-color); color: white; transform: translateY(-2px); }
+    .btn-delete:hover { background: var(--accent-color); color: white; transform: translateY(-2px); }
 
     /* Modals */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 2rem; }
@@ -579,12 +827,12 @@
 
     .status-pill { padding: 0.4rem 0.8rem; border-radius: 10px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.4rem; }
     .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
-    .status-pill.in-stock { background: #dcfce7; color: #166534; }
-    .status-pill.in-stock::before { background: #10b981; }
-    .status-pill.issued { background: #e0f2fe; color: #075985; }
-    .status-pill.issued::before { background: #0ea5e9; }
-    .status-pill.damaged { background: #fee2e2; color: #991b1b; }
-    .status-pill.damaged::before { background: #ef4444; }
+    .status-pill.in-stock { background: #E8F5E9; color: #2E7D32; }
+    .status-pill.in-stock::before { background: #2E7D32; }
+    .status-pill.issued { background: #E3F2FD; color: #1F3C88; }
+    .status-pill.issued::before { background: #1F3C88; }
+    .status-pill.damaged { background: #FFEBEE; color: #D62828; }
+    .status-pill.damaged::before { background: #D62828; }
 
     .serial-text { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--primary); background: rgba(99,102,241,0.05); padding: 0.25rem 0.6rem; border-radius: 6px; }
 
@@ -668,6 +916,7 @@
         document.getElementById('date').value = d.date;
         document.getElementById('supplier').value = d.supplier;
         document.getElementById('remarks').value = d.remarks;
+        document.getElementById('location').value = d.location || "";
         document.getElementById('apparelCampusId').value = d.campusid;
     }
 
@@ -851,7 +1100,9 @@
         document.getElementById('bulkActions').style.display = 'none';
         
         if (itemsChanged) {
-            window.location.reload();
+            const url = new URL(window.location.href);
+            url.searchParams.set('showList', 'true');
+            window.location.href = url.toString();
         }
     }
 

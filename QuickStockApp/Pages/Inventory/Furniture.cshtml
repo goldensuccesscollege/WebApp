@@ -1,0 +1,784 @@
+@page
+@using System.Text.Json
+@model QuickStockApp.Pages.Inventory.FurnitureModel
+@{
+    ViewData["Title"] = "Furniture Inventory";
+    var isViewer = User.IsInRole("Viewer");
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+    var isManager = User.IsInRole("Manager");
+    var isUser = User.IsInRole("User");
+    var campusId = User.FindFirst("ActiveCampusId")?.Value;
+    
+    // Permission helpers
+    var canAdd = isAdmin || isManager || isUser;
+    var canUpdate = isAdmin || isManager;
+    var canDelete = isAdmin;
+    var canTransfer = isAdmin || isManager || isUser;
+    var canSeeLogs = isAdmin || isManager || isUser;
+
+    bool showListTab = !string.IsNullOrEmpty(Request.Query["searchTerm"]) || Request.Query.ContainsKey("showList");
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<div class="content-container animate-in">
+    <div class="header-section mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="display-5 fw-800 text-slate-900 mb-1">Furniture Inventory</h1>
+                <p class="text-slate-500 fw-500"><i class="fas fa-couch me-2 text-primary"></i>Furniture & Equipment Inventory for @Model.SelectedCampusName</p>
+            </div>
+            <div class="action-group d-flex gap-2">
+                <button class="btn btn-dark rounded-pill px-4 shadow-sm py-2 fw-bold" onclick="generateBatchQr()">
+                    <i class="fas fa-qrcode me-2"></i> Batch QR
+                </button>
+                @if (canAdd)
+                {
+                    <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2 fw-bold" onclick="openFurnitureModal()">
+                        <i class="fas fa-plus me-2"></i> Add Furniture
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 animate-in">
+            <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 animate-in">
+            <i class="fas fa-exclamation-circle me-2"></i> @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Tab Navigation -->
+    <div class="d-flex justify-content-center mb-4">
+        <ul class="nav nav-pills bg-white p-1 rounded-pill shadow-sm border" id="furnitureTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(!showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold" id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard-view" type="button" role="tab">
+                    <i class="fas fa-chart-pie me-2"></i> Overview Dashboard
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold text-secondary" id="list-tab" data-bs-toggle="pill" data-bs-target="#list-view" type="button" role="tab">
+                    <i class="fas fa-list me-2"></i> Furniture List
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="tab-content" id="furnitureTabContent">
+        <!-- DASHBOARD TAB -->
+        <div class="tab-pane fade @(!showListTab ? "show active" : "")" id="dashboard-view" role="tabpanel">
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="it-stat-card" style="--c:var(--primary-color);">
+                        <div class="it-stat-icon" style="background:rgba(31,60,136,0.1);color:var(--primary-color);"><i class="fas fa-couch"></i></div>
+                        <div><div class="it-stat-val" id="stat-total-furniture">@Model.Furnitures.Count</div><div class="it-stat-lbl">Total Units</div></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="it-stat-card" style="--c:var(--success-color);">
+                        <div class="it-stat-icon" style="background:rgba(46,125,50,0.1);color:var(--success-color);"><i class="fas fa-check-circle"></i></div>
+                        <div><div class="it-stat-val" id="stat-good-furniture">—</div><div class="it-stat-lbl">Good Condition</div></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="it-stat-card" style="--c:var(--accent-color);">
+                        <div class="it-stat-icon" style="background:rgba(214,40,40,0.1);color:var(--accent-color);"><i class="fas fa-tools"></i></div>
+                        <div><div class="it-stat-val" id="stat-repair-furniture">—</div><div class="it-stat-lbl">Needs Repair</div></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="it-stat-card" style="--c:var(--secondary-color);">
+                        <div class="it-stat-icon" style="background:rgba(244,196,48,0.1);color:var(--secondary-color);"><i class="fas fa-door-open"></i></div>
+                        <div><div class="it-stat-val">@Model.Furnitures.Select(f => f.RoomId).Distinct().Count()</div><div class="it-stat-lbl">Locations</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-lg-5">
+                    <div class="glass-panel p-4 h-100 rounded-4 shadow-sm">
+                        <h6 class="fw-bold mb-3 small text-muted text-uppercase">Condition Breakdown</h6>
+                        <div style="height: 180px; position: relative;">
+                            <canvas id="conditionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="glass-panel p-4 h-100 rounded-4 shadow-sm">
+                        <h6 class="fw-bold mb-3 small text-muted text-uppercase">Furniture by Location</h6>
+                        <div style="height: 180px; position: relative;">
+                            <canvas id="locationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            @if (canSeeLogs)
+            {
+
+                <div class="glass-panel p-4 rounded-4 shadow-sm mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold mb-0 small text-muted text-uppercase"><i class="fas fa-history me-1"></i>Recent Furniture Activity</h6>
+                    </div>
+                    <div id="furnitureRecentActivity" class="activity-list-sm">
+                        <div class="text-center text-muted small py-4"><div class="spinner-border spinner-border-sm me-2"></div>Loading activity...</div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- LIST TAB -->
+        <div class="tab-pane fade @(showListTab ? "show active" : "")" id="list-view" role="tabpanel">
+            <!-- Live Search Section -->
+            <div class="glass-panel p-3 mb-4 rounded-4 shadow-sm border-0">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="input-group search-input-group border-0 bg-light rounded-pill px-3">
+                            <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="furnitureSearchInput" class="form-control border-0 shadow-none bg-transparent" placeholder="Search by name, brand, item #, or location..." autocomplete="off">
+                            <button type="button" id="furnitureSearchClear" class="btn btn-link text-muted border-0 bg-transparent pe-2" style="display:none;" onclick="clearFurnitureSearch()" title="Clear">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span id="furnitureResultCount" class="badge rounded-pill px-3 py-2 fw-bold" style="background:rgba(31,60,136,0.1);color:var(--primary-color);font-size:0.8rem;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Furniture Table -->
+            <div class="glass-panel rounded-4 shadow-sm border-0 overflow-hidden mb-5">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-3" style="width: 50px;">
+                                    <input type="checkbox" id="selectAll" class="form-check-input" onclick="toggleSelectAll(this)" />
+                                </th>
+                                <th class="py-3" style="width: 80px;">ID</th>
+                                <th class="py-3">Furniture Details</th>
+                                <th class="py-3 text-center">Item #</th>
+                                <th class="py-3">Location</th>
+                                <th class="py-3 text-center">Qty</th>
+                                <th class="py-3">Condition/Remarks</th>
+                                <th class="py-3 pe-4 text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="furnitureTableBody">
+                            @if (Model.Furnitures == null || !Model.Furnitures.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        <div class="py-4">
+                                            <i class="fas fa-couch fa-3x mb-3 opacity-20"></i>
+                                            <p class="fw-600">No records found matching your criteria.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.Furnitures)
+                                {
+                                    <tr data-search="@($"{item.Item_Name} {item.Brand} {item.Item_number} {item.Location} {item.Condition}".ToLower())">
+                                        <td class="ps-4">
+                                            <input type="checkbox" class="form-check-input asset-checkbox" data-asset="@JsonSerializer.Serialize(item)" />
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-primary">#@item.Item_ID</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-800 text-slate-900 fs-6">@item.Item_Name</span>
+                                                <span class="text-muted small fw-500">@item.Brand</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <code class="px-2 py-1 bg-light rounded border-0 small">@item.Item_number</code>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="location-dot bg-success me-2"></div>
+                                                <span class="fw-600">@item.Location</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="qty-badge">@item.Item_count</span>
+                                        </td>
+                                        <td>
+                                            @if (string.IsNullOrEmpty(item.Condition))
+                                            {
+                                                <span class="text-muted italic small">No remarks</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@item.Condition">
+                                                    @item.Condition
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="pe-4 text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                @if (canUpdate)
+                                                {
+                                                    <button class="btn btn-action-edit" onclick='openEditModal(@Html.Raw(JsonSerializer.Serialize(item)))' title="Edit Details">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                }
+                                                @if (canTransfer)
+                                                {
+                                                    <button class="btn btn-action-transfer" onclick="openTransferModal(@item.Item_ID, '@item.Item_Name', '@item.Location')" title="Transfer Furniture">
+                                                        <i class="fas fa-exchange-alt"></i>
+                                                    </button>
+                                                }
+
+                                                <button class="btn btn-action-qr" onclick="showQr('@item.Qrcode', '@item.Item_Name', '#@item.Item_ID')" title="View QR Code">
+                                                    <i class="fas fa-qrcode"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals & Scripts remain similar, but added dashboard loading -->
+
+<!-- Add/Edit Furniture Modal -->
+<div id="furnitureModal" class="modal-overlay">
+    <div class="modal-panel glass-panel animate-in">
+        <div class="modal-header-custom border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
+            <h3 class="fw-800 mb-0"><i class="fas fa-couch text-primary me-2"></i><span id="modalTitle">Add New Furniture</span></h3>
+            <button class="btn-close-custom" onclick="closeFurnitureModal()">&times;</button>
+        </div>
+        <form asp-page-handler="AddFurniture" method="post" id="furnitureForm">
+            <input type="hidden" asp-for="Furniture.Item_ID" id="editItemId" />
+            <input type="hidden" asp-for="Furniture.CampusId" value="@campusId" />
+
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <label asp-for="Furniture.Item_Name" class="form-label fw-bold small">Furniture Name</label>
+                    <input asp-for="Furniture.Item_Name" id="editItemName" class="form-control rounded-3" required placeholder="e.g. Executive Desk" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Furniture.Item_number" class="form-label fw-bold small">Item Number</label>
+                    <input asp-for="Furniture.Item_number" id="editItemNumber" class="form-control rounded-3" placeholder="e.g. FURN-2024-001" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Furniture.Brand" class="form-label fw-bold small">Brand</label>
+                    <input asp-for="Furniture.Brand" id="editBrand" class="form-control rounded-3" placeholder="e.g. Mandaue Foam" />
+                </div>
+                <div class="col-md-12" id="locationGroup">
+                    <label class="form-label fw-bold small">Room / Location</label>
+                    <select class="form-select rounded-3" id="roomSelect" onchange="updateLocation(this)">
+                        <option value="">Select Room...</option>
+                        @foreach (var room in Model.Rooms)
+                        {
+                            <option value="@room.RoomId" data-name="@room.RoomName">@room.RoomName (@room.RoomFloor)</option>
+                        }
+                    </select>
+                    <input type="hidden" asp-for="Furniture.RoomId" id="furnitureRoomId" />
+                    <input type="hidden" asp-for="Furniture.Location" id="furnitureLocation" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Furniture.DateAdded" class="form-label fw-bold small">Date Added</label>
+                    <input type="date" asp-for="Furniture.DateAdded" id="editDateAdded" class="form-control rounded-3" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Furniture.Item_count" class="form-label fw-bold small">Item Count</label>
+                    <input type="number" asp-for="Furniture.Item_count" id="editItemCount" class="form-control rounded-3" value="1" min="1" required />
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Furniture.Condition" class="form-label fw-bold small">Condition / Remarks</label>
+                    <textarea asp-for="Furniture.Condition" id="editCondition" class="form-control rounded-3" rows="3" placeholder="Describe the current condition..."></textarea>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm flex-grow-1" id="saveBtn">Save Furniture</button>
+                <button type="button" class="btn btn-light rounded-pill px-4 py-2 border shadow-sm" onclick="closeFurnitureModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transfer Modal -->
+<div id="transferModal" class="modal-overlay">
+    <div class="modal-panel glass-panel animate-in" style="max-width: 500px;">
+        <div class="modal-header-custom border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
+            <h3 class="fw-800 mb-0"><i class="fas fa-exchange-alt text-success me-2"></i>Transfer Furniture</h3>
+            <button class="btn-close-custom" onclick="closeTransferModal()">&times;</button>
+        </div>
+        <form asp-page-handler="TransferFurniture" method="post">
+            <input type="hidden" name="furnitureId" id="transferFurnitureId" />
+            
+            <div class="mb-4">
+                <div class="p-3 bg-light rounded-4 mb-3 border">
+                    <div class="small text-muted fw-bold text-uppercase mb-1">Furniture to Transfer</div>
+                    <div class="fw-800 fs-5" id="transferFurnitureName">Item Name</div>
+                    <div class="small fw-600 text-slate-500 mt-1"><i class="fas fa-map-marker-alt me-1"></i> Current: <span id="transferCurrentLocation">Location</span></div>
+                </div>
+                
+                <label class="form-label fw-bold small">Select Destination Room</label>
+                <select name="targetRoomId" class="form-select rounded-pill p-3 border-2" required>
+                    <option value="">Choose a room...</option>
+                    @foreach (var room in Model.Rooms)
+                    {
+                        <option value="@room.RoomId">@room.RoomName (@room.RoomFloor)</option>
+                    }
+                </select>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-success btn-lg rounded-pill fw-800 shadow-sm">Confirm Transfer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- QR Viewer Modal -->
+<div id="qrModal" class="modal-overlay">
+    <div class="modal-panel glass-panel text-center animate-in" style="max-width: 400px;">
+        <h4 id="qrTitle" class="fw-800 mb-3">QR Code</h4>
+        <div id="qrCodeContainer" class="bg-white p-4 rounded-4 shadow-sm d-inline-block mb-3">
+            <img id="qrImage" src="" alt="QR Code" style="width: 200px; height: 200px;" />
+        </div>
+        <p id="qrText" class="text-slate-600 mb-4"></p>
+        <button class="btn btn-dark rounded-pill px-5 fw-bold" onclick="closeQrModal()">Close</button>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-color: #3b82f6;
+        --success-color: #10b981;
+        --accent-color: #ef4444;
+        --secondary-color: #f59e0b;
+    }
+
+    .header-section { padding: 1rem 0; }
+    .display-5 { letter-spacing: -1.5px; }
+    .glass-panel { background: white; border: 1px solid rgba(0,0,0,0.05); }
+    .text-slate-900 { color: #0f172a; }
+    .text-slate-500 { color: #64748b; }
+    
+    .nav-pills .nav-link { color: #64748b; transition: all 0.3s; }
+    .nav-pills .nav-link.active { background: #0f172a; color: white !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    
+    .it-stat-card { display:flex;align-items:center;gap:.9rem;background:white;border:1px solid rgba(0,0,0,0.05);border-radius:16px;padding:1.2rem;box-shadow:0 2px 12px rgba(0,0,0,0.03);transition:all 0.22s; }
+    .it-stat-card:hover { transform:translateY(-2px);border-color:var(--c);box-shadow:0 6px 20px rgba(0,0,0,0.06); }
+    .it-stat-icon { width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.25rem; }
+    .it-stat-val { font-size:1.5rem;font-weight:800;line-height:1; color: #0f172a; }
+    .it-stat-lbl { font-size:.75rem;color:#64748b;font-weight:600;margin-top:4px; text-transform: uppercase; letter-spacing: 0.025em; }
+
+    .activity-list-sm { 
+        display:flex;flex-direction:column;gap:.6rem; 
+        max-height: 180px; overflow-y: auto; padding-right: 4px;
+    }
+    .activity-list-sm::-webkit-scrollbar { width: 4px; }
+    .activity-list-sm::-webkit-scrollbar-track { background: transparent; }
+    .activity-list-sm::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+    body.dark-mode .activity-list-sm::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+    .activity-item-sm { display:flex;align-items:center;gap:.8rem;padding:.75rem 1rem;border-radius:12px;background:rgba(0,0,0,0.02);font-size:.85rem; border: 1px solid rgba(0,0,0,0.03); }
+    .badge-action { font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:20px;background:rgba(59,130,246,0.1);color:#3b82f6;text-transform: uppercase; }
+
+    .search-input-group { background: #f8fafc; border-radius: 50px; padding: 0.25rem 1rem; border: 1px solid #e2e8f0 !important; }
+    .table thead th { font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #64748b; border-bottom: 2px solid #f1f5f9; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-panel { max-width: 600px; width: 90%; padding: 2.5rem; border-radius: 24px; position: relative; }
+    .btn-close-custom { background: none; border: none; font-size: 2rem; line-height: 1; color: #94a3b8; cursor: pointer; transition: color 0.2s; }
+    .btn-close-custom:hover { color: #0f172a; }
+
+    @@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: slideUp 0.4s ease-out forwards; }
+
+    .location-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .qty-badge { background: #f1f5f9; color: #475569; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 8px; font-size: 0.85rem; }
+    
+    .btn-action-qr, .btn-action-edit, .btn-action-transfer { 
+        background: white; border: 1px solid #e2e8f0; color: #64748b; width: 36px; height: 36px; 
+        border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-action-qr:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; transform: translateY(-2px); }
+    .btn-action-edit:hover { background: #fefce8; color: #ca8a04; border-color: #fef08a; transform: translateY(-2px); }
+    .btn-action-transfer:hover { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; transform: translateY(-2px); }
+    
+    .italic { font-style: italic; }
+    .fw-800 { font-weight: 800; }
+    .fw-600 { font-weight: 600; }
+    .fw-500 { font-weight: 500; }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    const _campusId = "@campusId";
+    const _canSeeLogs = @(canSeeLogs ? "true" : "false");
+    const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+    async function loadDashboard() {
+        if (!_campusId) return;
+        try {
+            const res = await fetch(`?handler=Stats&campusId=${_campusId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Stats
+            const goodCount = (data.furnitureByCondition || []).filter(c => c.condition.toLowerCase().includes('good') || c.condition === '').reduce((a, b) => a + b.count, 0);
+            const repairCount = (data.furnitureByCondition || []).filter(c => c.condition.toLowerCase().includes('repair') || c.condition.toLowerCase().includes('broken')).reduce((a, b) => a + b.count, 0);
+            
+            document.getElementById('stat-good-furniture').textContent = goodCount;
+            document.getElementById('stat-repair-furniture').textContent = repairCount;
+
+            // Condition Chart
+            const condData = data.furnitureByCondition || [];
+            new Chart(document.getElementById('conditionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: condData.map(c => c.condition || 'Good'),
+                    datasets: [{
+                        data: condData.map(c => c.count),
+                        backgroundColor: CHART_COLORS,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Location Chart
+            const locData = data.furnitureByLocation || [];
+            new Chart(document.getElementById('locationChart'), {
+                type: 'bar',
+                data: {
+                    labels: locData.map(l => l.location),
+                    datasets: [{
+                        label: 'Furniture Count',
+                        data: locData.map(l => l.count),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { precision: 0, stepSize: 1 },
+                            grid: { display: false } 
+                        }, 
+                        x: { grid: { display: false } } 
+                    }
+
+                }
+            });
+
+            // Activity
+            if (_canSeeLogs) {
+
+                const activities = data.recentFurnitureActivities || [];
+                const container = document.getElementById('furnitureRecentActivity');
+                if (activities.length > 0) {
+                    container.innerHTML = activities.map(a => `
+                        <div class="activity-item-sm">
+                            <span class="badge-action">${a.action}</span>
+                            <span class="fw-bold text-slate-800">${a.entityName}</span>
+                            <span class="text-slate-500 ms-auto small">${a.username} · ${a.timestamp}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="text-center text-muted small py-4">No recent activity recorded.</div>';
+                }
+            }
+        } catch (e) { console.error('Dashboard load failed', e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+
+    function openFurnitureModal() {
+        document.getElementById('modalTitle').innerText = "Add New Furniture";
+        document.getElementById('furnitureForm').setAttribute('asp-page-handler', 'AddFurniture');
+        document.getElementById('furnitureForm').action = "?handler=AddFurniture";
+        document.getElementById('editItemId').value = 0;
+        document.getElementById('editItemName').value = "";
+        document.getElementById('editItemNumber').value = "";
+        document.getElementById('editBrand').value = "";
+        document.getElementById('editCondition').value = "";
+        document.getElementById('editItemCount').value = 1;
+        document.getElementById('locationGroup').style.display = 'block';
+        document.getElementById('furnitureModal').style.display = 'flex';
+    }
+
+    function openEditModal(item) {
+        document.getElementById('modalTitle').innerText = "Edit Furniture Details";
+        document.getElementById('furnitureForm').setAttribute('asp-page-handler', 'UpdateFurniture');
+        document.getElementById('furnitureForm').action = "?handler=UpdateFurniture";
+        
+        document.getElementById('editItemId').value = item.Item_ID;
+        document.getElementById('editItemName').value = item.Item_Name;
+        document.getElementById('editItemNumber').value = item.Item_number || "";
+        document.getElementById('editBrand').value = item.Brand || "";
+        document.getElementById('editCondition').value = item.Condition || "";
+        document.getElementById('editItemCount').value = item.Item_count;
+        
+        document.getElementById('locationGroup').style.display = 'none';
+        document.getElementById('furnitureModal').style.display = 'flex';
+    }
+
+    function closeFurnitureModal() {
+        document.getElementById('furnitureModal').style.display = 'none';
+    }
+
+    function openTransferModal(id, name, location) {
+        document.getElementById('transferFurnitureId').value = id;
+        document.getElementById('transferFurnitureName').innerText = name;
+        document.getElementById('transferCurrentLocation').innerText = location || "Unassigned";
+        document.getElementById('transferModal').style.display = 'flex';
+    }
+
+    function closeTransferModal() {
+        document.getElementById('transferModal').style.display = 'none';
+    }
+
+    function updateLocation(select) {
+        const option = select.options[select.selectedIndex];
+        document.getElementById('furnitureRoomId').value = select.value;
+        document.getElementById('furnitureLocation').value = option.getAttribute('data-name') || '';
+    }
+
+    function showQr(code, name, id) {
+        if (!code || code === 'null' || code === 'undefined') {
+            code = "FURN-" + id.replace('#', '');
+        }
+
+        const numericId = parseInt(id.replace('#', ''));
+        let details = "ID: " + code;
+        
+        // Find the item data from the checkboxes (most reliable way)
+        const checkboxes = document.querySelectorAll('.asset-checkbox');
+        for (let cb of checkboxes) {
+            try {
+                const item = JSON.parse(cb.dataset.asset);
+                if (item.Item_ID === numericId) {
+                    details = `--- QUICKSTOCK ASSET ---\nFurniture: ${item.Item_Name || 'N/A'}\nItem #: ${item.Item_number || 'N/A'}\nLocation: ${item.Location || 'N/A'}\nCondition: ${item.Condition || 'N/A'}\nUnique ID: ${item.Item_ID}\n------------------------`;
+                    break;
+                }
+            } catch (e) { console.error("Error parsing asset data", e); }
+        }
+
+        document.getElementById('qrTitle').innerText = name;
+        document.getElementById('qrText').innerText = code;
+        
+        const display = document.getElementById('qrImage').parentElement;
+        // Replace img with div for qrcode.js
+        display.innerHTML = '<div id="qrInternalContainer" class="d-inline-block p-3 bg-white rounded-4 shadow-sm"></div>';
+        
+        new QRCode(document.getElementById('qrInternalContainer'), {
+            text: details,
+            width: 250,
+            height: 250,
+            colorDark : "#0F172A",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M
+        });
+        
+        document.getElementById('qrModal').style.display = 'flex';
+    }
+
+    function closeQrModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal-overlay')) {
+            event.target.style.display = 'none';
+        }
+    }
+
+    // ===== LIVE SEARCH =====
+    (function () {
+        const input   = document.getElementById('furnitureSearchInput');
+        const clearBtn = document.getElementById('furnitureSearchClear');
+        const countBadge = document.getElementById('furnitureResultCount');
+        const tbody   = document.getElementById('furnitureTableBody');
+
+        if (!input || !tbody) return;
+
+        function updateCount(visible, total) {
+            if (input.value.trim() === '') {
+                countBadge.textContent = '';
+            } else {
+                countBadge.textContent = `${visible} of ${total} result${visible !== 1 ? 's' : ''}`;
+            }
+        }
+
+        function filterTable() {
+            const q = input.value.trim().toLowerCase();
+            clearBtn.style.display = q ? 'inline-block' : 'none';
+
+            const allRows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+            let visibleCount = 0;
+
+            allRows.forEach(row => {
+                const haystack = row.getAttribute('data-search') || '';
+                const match = haystack.includes(q);
+                row.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+
+            // Show/hide empty state
+            let emptyRow = tbody.querySelector('tr.no-results-row');
+            if (visibleCount === 0 && q) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.className = 'no-results-row';
+                    emptyRow.innerHTML = `<td colspan="8" class="text-center py-5 text-muted">
+                        <div class="py-3">
+                            <i class="fas fa-search fa-2x mb-3 opacity-25"></i>
+                            <p class="fw-600 mb-0">No furniture matched "<strong>${input.value}</strong>"</p>
+                            <small class="text-muted">Try a different name, brand, item #, or location</small>
+                        </div>
+                    </td>`;
+                    tbody.appendChild(emptyRow);
+                }
+                emptyRow.style.display = '';
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+
+            updateCount(visibleCount, allRows.length);
+        }
+
+        input.addEventListener('input', filterTable);
+
+        // If user typed something before JS loaded (e.g. browser autofill), run immediately
+        if (input.value) filterTable();
+
+        // Auto-focus when switching to the List tab
+        document.getElementById('list-tab')?.addEventListener('click', () => {
+            setTimeout(() => input.focus(), 200);
+        });
+    })();
+
+    function clearFurnitureSearch() {
+        const input = document.getElementById('furnitureSearchInput');
+        if (input) { input.value = ''; input.dispatchEvent(new Event('input')); input.focus(); }
+    }
+
+    function toggleSelectAll(master) {
+        const checkboxes = document.querySelectorAll('.asset-checkbox');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+    }
+
+    async function generateBatchQr() {
+        const selected = Array.from(document.querySelectorAll('.asset-checkbox:checked')).map(cb => JSON.parse(cb.dataset.asset));
+        if (selected.length === 0) {
+            alert("Please select at least one item.");
+            return;
+        }
+
+        const btn = document.querySelector('button[onclick="generateBatchQr()"]');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating PDF...';
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const tempQrDiv = document.createElement('div');
+            tempQrDiv.style.visibility = 'hidden';
+            tempQrDiv.style.position = 'absolute';
+            document.body.appendChild(tempQrDiv);
+
+            const cols = 5;
+            const rows = 8;
+            const itemsPerPage = cols * rows;
+            const qrSize = 25; 
+            const marginX = 10;
+            const marginY = 15;
+            const colWidth = 38;
+            const rowHeight = 35;
+
+            for (let i = 0; i < selected.length; i++) {
+            const item = selected[i];
+            const pageIndex = i % itemsPerPage;
+            
+            if (i > 0 && pageIndex === 0) doc.addPage();
+
+            const col = pageIndex % cols;
+            const row = Math.floor(pageIndex / cols);
+            
+            const x = marginX + (col * colWidth);
+            const y = marginY + (row * rowHeight);
+
+            // Item Name
+            doc.setFontSize(7);
+            doc.setTextColor(30, 41, 59);
+            doc.setFont(undefined, 'bold');
+            doc.text((item.Item_Name || "Unnamed").substring(0, 22), x + (qrSize/2), y - 3, { align: "center" });
+
+            // Direct Text QR Content (Exactly like IT Assets)
+            const qrContent = `--- QUICKSTOCK ASSET ---\nFurniture: ${item.Item_Name || 'N/A'}\nItem #: ${item.Item_number || 'N/A'}\nLocation: ${item.Location || 'N/A'}\nCondition: ${item.Condition || 'N/A'}\nUnique ID: ${item.Item_ID}\n------------------------`;
+            
+            const codeValue = item.Qrcode || ("FURN-" + item.Item_ID);
+            
+            tempQrDiv.innerHTML = "";
+            new QRCode(tempQrDiv, {
+                text: qrContent,
+                width: 128,
+                height: 128
+            });
+
+            await new Promise(r => setTimeout(r, 50));
+            
+            const qrCanvas = tempQrDiv.querySelector('canvas');
+            if (qrCanvas) {
+                const qrImage = qrCanvas.toDataURL("image/png");
+                doc.addImage(qrImage, 'PNG', x, y, qrSize, qrSize);
+            }
+
+            // Footer Text
+            doc.setFontSize(5);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont(undefined, 'normal');
+            doc.text(`ID: ${codeValue} | ${item.Brand || ""}`, x + (qrSize/2), y + qrSize + 4, { align: "center" });
+        }
+
+        document.body.removeChild(tempQrDiv);
+
+            doc.save(`Furniture_Batch_QR_${new Date().getTime()}.pdf`);
+        } catch (err) {
+            console.error(err);
+            alert("Error generating PDF: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+</script>

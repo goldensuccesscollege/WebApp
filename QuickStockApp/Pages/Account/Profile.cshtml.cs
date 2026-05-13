@@ -71,7 +71,7 @@ namespace QuickStockApp.Pages.Account
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync(IFormFile? ImageProfile)
+        public async Task<IActionResult> OnPostUpdateProfileAsync(IFormFile? ImageProfile)
         {
             var token = User.FindFirst("jwt_token")?.Value;
             if (string.IsNullOrEmpty(token))

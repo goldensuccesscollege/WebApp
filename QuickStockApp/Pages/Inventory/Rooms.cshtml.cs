@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuickStockApp.Models;
 using QuickStockApp.Services;
 
-namespace QuickStockApp.Pages
+namespace QuickStockApp.Pages.Inventory
 {
     [Microsoft.AspNetCore.Authorization.Authorize]
     public class RoomsModel : PageModel
@@ -23,7 +23,8 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnGetAsync(int? campusId = null)
         {
-            var canAccess = User.IsInRole("Admin") || (User.FindFirst("CanAccessITAssets")?.Value == "True");
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            var canAccess = isAnyAdmin || (User.FindFirst("CanAccessITAssets")?.Value == "True");
             if (!canAccess)
             {
                 return Forbid();
@@ -38,7 +39,7 @@ namespace QuickStockApp.Pages
             }
             else
             {
-                return RedirectToPage("/Campuses");
+                return RedirectToPage("/Campus/Campuses");
             }
 
             Rooms = await _apiService.GetRoomsAsync(filterCampusId);
@@ -59,6 +60,9 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostAddAsync()
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("User")) return Forbid();
+
             if (Room.CampusId <= 0)
             {
                 var activeCampus = User.FindFirst("ActiveCampusId")?.Value;
@@ -95,6 +99,9 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostUpdateAsync()
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager")) return Forbid();
+
             if (!ModelState.IsValid || Room.RoomId <= 0)
             {
                 Rooms = await _apiService.GetRoomsAsync();
@@ -114,6 +121,9 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin) return Forbid();
+
             var (success, message) = await _apiService.DeleteRoomAsync(id);
             if (!success)
             {
@@ -127,6 +137,9 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostToggleStatusAsync(int roomId)
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin) return Forbid();
+
             var (success, message) = await _apiService.ToggleRoomStatusAsync(roomId);
             if (!success)
             {

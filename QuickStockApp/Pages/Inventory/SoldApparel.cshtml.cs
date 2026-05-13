@@ -4,7 +4,7 @@ using QuickStockApp.Services;
 using QuickStockApp.Models;
 using Microsoft.AspNetCore.Authorization;
 
-namespace QuickStockApp.Pages
+namespace QuickStockApp.Pages.Inventory
 {
     [Authorize]
     public class SoldApparelModel : PageModel

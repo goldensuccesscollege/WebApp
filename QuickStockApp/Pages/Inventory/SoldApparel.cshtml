@@ -1,5 +1,5 @@
 @page
-@model QuickStockApp.Pages.SoldApparelModel
+@model QuickStockApp.Pages.Inventory.SoldApparelModel
 @{
     ViewData["Title"] = "Sold Apparel List";
 }
@@ -15,13 +15,13 @@
             <p class="header-subtitle">Comprehensive record of all apparel items that have been sold.</p>
         </div>
         <div class="header-actions">
-            <button class="btn-premium" onclick="openReportModal()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-right: 0.5rem;">
+            <button class="btn-premium" onclick="openReportModal()" style="background: var(--success-gradient); margin-right: 0.5rem;">
                 <div class="btn-content">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Generate Report</span>
                 </div>
             </button>
-            <button class="btn-premium" onclick="location.href='/ApparelList'" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);">
+            <button class="btn-premium" onclick="location.href='/Inventory/ApparelList'" style="background: var(--primary-gradient);">
                 <div class="btn-content">
                     <i class="fas fa-arrow-left"></i>
                     <span>Back to Inventory</span>
@@ -172,7 +172,7 @@
         
         <div class="modal-footer-premium" style="padding: 2rem 0 0; background: transparent; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
             <button type="button" class="btn-flat" onclick="closeReportModal()" style="border:none; background:none; cursor:pointer; color:var(--text-muted); font-weight:700;">Cancel</button>
-            <button type="button" class="btn-premium" onclick="generateSalesReport()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <button type="button" class="btn-premium" onclick="generateSalesReport()" style="background: var(--success-gradient);">
                 <div class="btn-content" style="display:flex; align-items:center; gap:0.5rem;">
                     <i class="fas fa-download"></i>
                     <span>Generate PDF</span>
@@ -254,8 +254,8 @@
                 head: [['Serial #', 'Apparel Name', 'Category', 'Sex', 'Size', 'Sale Amount', 'Sale Date']],
                 body: tableData,
                 theme: 'striped',
-                headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
-                alternateRowStyles: { fillColor: [240, 253, 244] },
+                headStyles: { fillColor: [31, 60, 136], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [245, 245, 245] },
                 margin: { top: 50 },
                 styles: { font: 'helvetica', fontSize: 9 }
             });
@@ -292,8 +292,8 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.4rem 0.8rem;
-        background: rgba(5, 150, 105, 0.1);
-        color: #059669;
+        background: rgba(46, 125, 50, 0.1);
+        color: var(--success-color);
         border-radius: 2rem;
         font-size: 0.75rem;
         font-weight: 700;
@@ -402,7 +402,7 @@
 
     .price-tag {
         font-weight: 700;
-        color: #10b981;
+        color: var(--success-color);
     }
 
     .status-pill.sold {
@@ -410,8 +410,8 @@
         align-items: center;
         gap: 0.4rem;
         padding: 0.4rem 0.8rem;
-        background: rgba(5, 150, 105, 0.1);
-        color: #10b981;
+        background: rgba(46, 125, 50, 0.1);
+        color: var(--success-color);
         border-radius: 2rem;
         font-size: 0.75rem;
         font-weight: 700;

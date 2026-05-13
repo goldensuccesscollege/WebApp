@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuickStockApp.Models;
 using QuickStockApp.Services;
 
-namespace QuickStockApp.Pages
+namespace QuickStockApp.Pages.Community
 {
     public class PublicProfileModel : PageModel
     {

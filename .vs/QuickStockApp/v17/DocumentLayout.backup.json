@@ -3,12 +3,40 @@
   "WorkspaceRootPath": "C:\\Projects\\QuickStockApp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Rooms.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:QuickStockApp\\Pages\\Rooms.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\campuses.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\campuses.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\register.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\register.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\forgotpassword.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\forgotpassword.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\services\\iapiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -31,10 +59,6 @@
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\admin\\usermanagement.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\admin\\usermanagement.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -51,24 +75,8 @@
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\models\\accounts.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -91,20 +99,12 @@
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\register.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\register.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\register.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\shared\\_layout.cshtml.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\shared\\_layout.cshtml.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\logout.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\logout.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\account\\forgotpassword.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\pages\\account\\forgotpassword.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\pages\\shared\\_authlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -125,6 +125,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|c:\\projects\\quickstockapp\\quickstockapp\\quickstockapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{F1C1377F-2F7D-4F82-908E-13CF9DC2BC12}|QuickStockApp\\QuickStockApp.csproj|solutionrelative:quickstockapp\\quickstockapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Campuses.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:QuickStockApp\\Pages\\Campuses.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -134,108 +138,26 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 1,
           "Children": [
             {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Campuses.cshtml.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Campuses.cshtml.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Campuses.cshtml.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Campuses.cshtml.cs",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Campuses.cshtml.cs",
-              "ViewState": "AgIAACkAAAAAAAAAAAAswBkAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-09T13:24:43.806Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "UserManagement.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
-              "ViewState": "AgIAADYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-04-09T13:23:35.208Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "DisabledRooms.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-04-09T13:23:32.042Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "ForgotPassword.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAbAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-05T12:39:32.105Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "Login.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Login.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Login.cshtml",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAYwDYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-05T08:23:28.737Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ApiService.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Services\\ApiService.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Services\\ApiService.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Services\\ApiService.cs",
-              "RelativeToolTip": "QuickStockApp\\Services\\ApiService.cs",
-              "ViewState": "AgIAAD0AAAAAAAAAAAAswBsAAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T08:12:34.834Z"
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "_Layout.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
-              "ViewState": "AgIAAJ4AAAAAAAAAAAAAwKYAAAAAAAAAAAAAAA==",
+              "Title": "Rooms.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Rooms.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Rooms.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Rooms.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Rooms.cshtml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-05T12:59:48.67Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-05T14:52:06.584Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Profile.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Profile.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Profile.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Profile.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Profile.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-04-09T13:23:52.322Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 9,
               "Title": "IApiService.cs",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Services\\IApiService.cs",
               "RelativeDocumentMoniker": "QuickStockApp\\Services\\IApiService.cs",
@@ -247,55 +169,67 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 1,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\appsettings.json",
               "RelativeDocumentMoniker": "QuickStockApp\\appsettings.json",
               "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\appsettings.json",
               "RelativeToolTip": "QuickStockApp\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-02-05T08:09:44.596Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "QuickStockApp\\Properties\\launchSettings.json",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Properties\\launchSettings.json",
-              "RelativeToolTip": "QuickStockApp\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABsAAAAfAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-05T13:55:07.52Z"
+              "DocumentIndex": 6,
+              "Title": "ForgotPassword.cshtml.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAYwC4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-05T12:39:40.591Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "Logout.cshtml",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Logout.cshtml",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Logout.cshtml",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Logout.cshtml",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Logout.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-02-07T08:53:16.999Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "Accounts.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Models\\Accounts.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Models\\Accounts.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Models\\Accounts.cs",
-              "RelativeToolTip": "QuickStockApp\\Models\\Accounts.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Title": "Login.cshtml.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAAAAD0AAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T08:13:41.554Z"
+              "WhenOpened": "2026-02-05T08:24:00.75Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 4,
+              "Title": "Register.cshtml.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
+              "ViewState": "AgIAABUAAAAAAAAAAAAYwAgAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-05T11:11:54.471Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Program.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Program.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Program.cs",
+              "RelativeToolTip": "QuickStockApp\\Program.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAABkAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-05T08:01:36.354Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "appsettings.Development.json",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\appsettings.Development.json",
               "RelativeDocumentMoniker": "QuickStockApp\\appsettings.Development.json",
@@ -307,19 +241,139 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Program.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Program.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Program.cs",
-              "RelativeToolTip": "QuickStockApp\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T08:01:36.354Z"
+              "DocumentIndex": 11,
+              "Title": "Profile.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Profile.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Profile.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Profile.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Profile.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-09T13:23:52.322Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 8,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAJUAAAAAAAAAAAAAwKAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-05T12:59:48.67Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ApiService.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Services\\ApiService.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Services\\ApiService.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Services\\ApiService.cs",
+              "RelativeToolTip": "QuickStockApp\\Services\\ApiService.cs",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAswBsAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-05T08:12:34.834Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ForgotPassword.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAMAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-05T12:39:32.105Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Login.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Login.cshtml",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAYwDYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-05T08:23:28.737Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "DisabledRooms.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Admin\\DisabledRooms.cshtml",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-09T13:23:32.042Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "UserManagement.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Admin\\UserManagement.cshtml",
+              "ViewState": "AgIAADYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-09T13:23:35.208Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "Campuses.cshtml.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Campuses.cshtml.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Campuses.cshtml.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Campuses.cshtml.cs",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Campuses.cshtml.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAAAswBkAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-09T13:24:43.806Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "QuickStockApp\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Properties\\launchSettings.json",
+              "RelativeToolTip": "QuickStockApp\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABsAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-02-05T13:55:07.52Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Logout.cshtml",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Logout.cshtml",
+              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Logout.cshtml",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Logout.cshtml",
+              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Logout.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-02-07T08:53:16.999Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "Accounts.cs",
+              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Models\\Accounts.cs",
+              "RelativeDocumentMoniker": "QuickStockApp\\Models\\Accounts.cs",
+              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Models\\Accounts.cs",
+              "RelativeToolTip": "QuickStockApp\\Models\\Accounts.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-05T08:13:41.554Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
               "Title": "Index.cshtml",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Dashboard\\Index.cshtml",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Dashboard\\Index.cshtml",
@@ -331,7 +385,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 16,
               "Title": "Index.cshtml.cs",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Dashboard\\Index.cshtml.cs",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Dashboard\\Index.cshtml.cs",
@@ -343,31 +397,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
-              "Title": "ForgotPassword.cshtml.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\ForgotPassword.cshtml.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAA1wC4AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T12:39:40.591Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "Login.cshtml.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Login.cshtml.cs",
-              "ViewState": "AgIAAD4AAAAAAAAAAAAAwD0AAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T08:24:00.75Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 21,
               "Title": "ResetPassword.cshtml.cs",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ResetPassword.cshtml.cs",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\ResetPassword.cshtml.cs",
@@ -379,7 +409,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 22,
               "Title": "ResetPassword.cshtml",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\ResetPassword.cshtml",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\ResetPassword.cshtml",
@@ -391,7 +421,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 23,
               "Title": "Register.cshtml",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Register.cshtml",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Register.cshtml",
@@ -403,7 +433,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 20,
               "Title": "site.js",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\wwwroot\\js\\site.js",
               "RelativeDocumentMoniker": "QuickStockApp\\wwwroot\\js\\site.js",
@@ -415,19 +445,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
-              "Title": "Register.cshtml.cs",
-              "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
-              "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
-              "ToolTip": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
-              "RelativeToolTip": "QuickStockApp\\Pages\\Account\\Register.cshtml.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAAwAgAAAAPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T11:11:54.471Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 24,
               "Title": "_Layout.cshtml.css",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Shared\\_Layout.cshtml.css",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Shared\\_Layout.cshtml.css",
@@ -439,7 +457,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 25,
               "Title": "Logout.cshtml.cs",
               "DocumentMoniker": "C:\\Projects\\QuickStockApp\\QuickStockApp\\Pages\\Account\\Logout.cshtml.cs",
               "RelativeDocumentMoniker": "QuickStockApp\\Pages\\Account\\Logout.cshtml.cs",

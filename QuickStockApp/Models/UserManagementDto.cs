@@ -12,6 +12,9 @@ namespace QuickStockApp.Models
         public bool CanAccessITAssets { get; set; }
         public bool CanAccessApparel { get; set; }
         public bool CanAccessMessages { get; set; }
+        public bool CanAccessLibrary { get; set; }
+        public bool CanAccessHomeEconomics { get; set; }
+        public bool CanAccessConsumables { get; set; }
         public List<UserCampusAccessDto> Campuses { get; set; } = new();
     }
 
@@ -33,6 +36,9 @@ namespace QuickStockApp.Models
         public bool CanAccessITAssets { get; set; } = true;
         public bool CanAccessApparel { get; set; } = true;
         public bool CanAccessMessages { get; set; } = true;
+        public bool CanAccessLibrary { get; set; } = true;
+        public bool CanAccessHomeEconomics { get; set; } = true;
+        public bool CanAccessConsumables { get; set; } = true;
     }
 
     public class UpdateUserDto
@@ -45,5 +51,8 @@ namespace QuickStockApp.Models
         public bool CanAccessITAssets { get; set; }
         public bool CanAccessApparel { get; set; }
         public bool CanAccessMessages { get; set; }
+        public bool CanAccessLibrary { get; set; }
+        public bool CanAccessHomeEconomics { get; set; }
+        public bool CanAccessConsumables { get; set; }
     }
 }
