@@ -4,7 +4,7 @@ using QuickStockApp.Services;
 using QuickStockApp.Models;
 using Microsoft.AspNetCore.Authorization;
 
-namespace QuickStockApp.Pages
+namespace QuickStockApp.Pages.Inventory
 {
     [Authorize]
     public class ApparelListModel : PageModel
@@ -33,7 +33,8 @@ namespace QuickStockApp.Pages
         public async Task<IActionResult> OnGetAsync()
         {
             // Permission check
-            var canAccess = User.IsInRole("Admin") || (User.FindFirst("CanAccessApparel")?.Value == "True");
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            var canAccess = isAnyAdmin || (User.FindFirst("CanAccessApparel")?.Value == "True");
             if (!canAccess)
             {
                 return Forbid();
@@ -48,7 +49,7 @@ namespace QuickStockApp.Pages
             }
             else
             {
-                return RedirectToPage("/Campuses");
+                return RedirectToPage("/Campus/Campuses");
             }
 
             var paginatedResult = await _apiService.GetApparelAsync(filterCampusId, SearchTerm, CurrentPage, 5);
@@ -72,6 +73,9 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostAddAsync()
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("User")) return Forbid();
+
             if (ApparelItem.CampusId <= 0)
             {
                 var activeCampus = User.FindFirst("ActiveCampusId")?.Value;
@@ -85,7 +89,7 @@ namespace QuickStockApp.Pages
             if (result.Success)
             {
                 TempData["SuccessMessage"] = "Apparel added successfully!";
-                return RedirectToPage();
+                return RedirectToPage(new { showList = true });
             }
             
             TempData["ErrorMessage"] = result.Message;
@@ -94,11 +98,14 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostUpdateAsync()
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager")) return Forbid();
+
             var result = await _apiService.UpdateApparelAsync(ApparelItem);
             if (result.Success)
             {
                 TempData["SuccessMessage"] = "Apparel updated successfully!";
-                return RedirectToPage();
+                return RedirectToPage(new { showList = true });
             }
             TempData["ErrorMessage"] = result.Message;
             return RedirectToPage();
@@ -106,11 +113,14 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin) return Forbid();
+
             var result = await _apiService.DeleteApparelAsync(id);
             if (result.Success)
             {
                 TempData["SuccessMessage"] = "Apparel deleted successfully!";
-                return RedirectToPage();
+                return RedirectToPage(new { showList = true });
             }
 
             TempData["ErrorMessage"] = result.Message;
@@ -137,12 +147,18 @@ namespace QuickStockApp.Pages
 
         public async Task<IActionResult> OnPostUpdateItemStatusAsync(int itemId, string status)
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager")) return new JsonResult(new { success = false, message = "Insufficient permissions." });
+
             var result = await _apiService.UpdateApparelItemStatusAsync(itemId, status);
             return new JsonResult(new { success = result.Success, message = result.Message });
         }
 
         public async Task<IActionResult> OnPostAddStockAsync(int id, int quantity)
         {
+            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("User")) return new JsonResult(new { success = false, message = "Insufficient permissions." });
+
             var result = await _apiService.AddApparelStockAsync(id, quantity);
             return new JsonResult(new { success = result.Success, message = result.Message });
         }
@@ -155,6 +171,12 @@ namespace QuickStockApp.Pages
 
             var result = await _apiService.GetAuditLogsPaginatedAsync(filterCampusId, page, pageSize, "Apparel");
             return new JsonResult(result);
+        }
+
+        public async Task<JsonResult> OnGetStatsAsync(int campusId)
+        {
+            var response = await _apiService.GetDashboardStatsAsync(campusId);
+            return new JsonResult(response.Stats);
         }
     }
 }

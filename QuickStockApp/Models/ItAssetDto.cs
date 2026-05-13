@@ -13,6 +13,8 @@ namespace QuickStockApp.Models
         public string? Qrcode { get; set; }
         public string Type { get; set; } = string.Empty;
         public int? RoomId { get; set; }
+        public RoomDto? Room { get; set; }
         public int CampusId { get; set; }
+        public int TotalItemsInRoom { get; set; }
     }
 }

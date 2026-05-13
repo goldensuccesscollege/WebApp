@@ -1,7 +1,8 @@
 @page
-@model QuickStockApp.Pages.ChatModel
+@model QuickStockApp.Pages.Community.ChatModel
 @{
     ViewData["Title"] = "Chat";
+    var isViewer = User.IsInRole("Viewer");
 }
 <div class="row">
     <div class="col-12">
@@ -10,9 +11,12 @@
             <div class="user-sidebar" id="userSidebar">
                 <div class="sidebar-header d-flex justify-content-between align-items-center">
                     <h5><i class="fas fa-comments"></i> Chats</h5>
-                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal" title="Create Group">
-                        <i class="fas fa-plus"></i> Group
-                    </button>
+                    @if (!isViewer)
+                    {
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal" title="Create Group">
+                            <i class="fas fa-plus"></i> Group
+                        </button>
+                    }
                     <button class="btn btn-link d-md-none" onclick="toggleSidebar()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -32,14 +36,17 @@
                     <div class='p-3 text-center text-muted small'><i class='fas fa-spinner fa-spin'></i> Loading...</div>
                 </div>
                 
-                <div class="border-top p-2 mt-auto">
-                    <div class="user-item" id="global-chat" onclick="selectUser(null, 'Global Chat')">
-                        <div class="user-avatar bg-primary text-white">
-                            <i class="fas fa-globe"></i>
+                @if (!isViewer)
+                {
+                    <div class="border-top p-2 mt-auto">
+                        <div class="user-item" id="global-chat" onclick="selectUser(null, 'Global Chat')">
+                            <div class="user-avatar bg-primary text-white">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div class="user-name">Global Chat</div>
                         </div>
-                        <div class="user-name">Global Chat</div>
                     </div>
-                </div>
+                }
             </div>
 
             <!-- Main Chat Area -->
@@ -148,6 +155,7 @@
         let selectedGroupId = null;
         let allUsers = [];
         let allGroups = [];
+        const isViewer = @(isViewer ? "true" : "false");
 
         if (!"@Model.JwtToken") {
             console.error("JWT Token is missing. Chat will not work.");
@@ -190,7 +198,7 @@
                 document.getElementById("viewProfileEmail").innerText = profile.email || "N/A";
                 document.getElementById("viewProfilePhone").innerText = profile.phoneNumber || "N/A";
                 document.getElementById("viewProfileAddress").innerText = profile.address || "N/A";
-                document.getElementById("viewFullProfileBtn").href = `/PublicProfile?username=${profile.username}`;
+                document.getElementById("viewFullProfileBtn").href = `/Community/PublicProfile?username=${profile.username}`;
                 
                 new bootstrap.Modal(document.getElementById('userProfileModal')).show();
             } catch (err) {
@@ -395,8 +403,12 @@
             if (username) {
                 chatTitle.innerHTML = `<i class="fas fa-user"></i> ${fullName || username}`;
             } else {
-                document.getElementById("global-chat").classList.add("active");
-                chatTitle.innerHTML = `<i class="fas fa-globe"></i> Global Chat`;
+                if (isViewer) {
+                    chatTitle.innerHTML = `<i class="fas fa-comments"></i> Select a Conversation`;
+                } else {
+                    document.getElementById("global-chat").classList.add("active");
+                    chatTitle.innerHTML = `<i class="fas fa-globe"></i> Global Chat`;
+                }
             }
             if (window.innerWidth < 768) toggleSidebar();
             loadHistory();
@@ -442,7 +454,16 @@
                 sendButton.disabled = false;
                 await loadUsers();
                 await loadGroups();
-                await loadHistory();
+                
+                if (isViewer) {
+                    if (allUsers.length > 0) {
+                        selectUser(allUsers[0].username, allUsers[0].fullName || allUsers[0].username);
+                    } else {
+                        await loadHistory();
+                    }
+                } else {
+                    await loadHistory();
+                }
             } catch (err) {
                 console.error("SignalR Connection Error:", err);
                 connectionStatus.innerText = "Failed to connect";

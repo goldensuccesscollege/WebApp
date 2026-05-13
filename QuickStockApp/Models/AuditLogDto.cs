@@ -12,5 +12,6 @@ namespace QuickStockApp.Models
         public string? UserId { get; set; }
         public string? Username { get; set; }
         public int CampusId { get; set; }
+        public string? Status { get; set; }
     }
 }

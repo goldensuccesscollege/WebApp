@@ -1,5 +1,5 @@
 @page
-@model QuickStockApp.Pages.PublicProfileModel
+@model QuickStockApp.Pages.Community.PublicProfileModel
 @{
     ViewData["Title"] = $"{Model.PublicProfile?.Username}'s Profile";
     var avatarUrl = string.IsNullOrEmpty(Model.PublicProfile?.ImageProfilePath) 
@@ -21,7 +21,7 @@
                     <p class="text-white-50 fs-5 mb-0">@@@Model.PublicProfile?.Username</p>
                 </div>
                 <div class="ms-md-auto mb-3 mb-md-3">
-                    <a href="/Chat" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">
+                    <a href="/Community/Chat" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">
                         <i class="fas fa-comment shadow-none me-2"></i> Message
                     </a>
                 </div>

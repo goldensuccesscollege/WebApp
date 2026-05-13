@@ -1,0 +1,546 @@
+@page
+@model QuickStockApp.Pages.Inventory.ConsumablesModel
+@{
+    ViewData["Title"] = "Consumables Inventory";
+    var activeCampusId = User.FindFirst("ActiveCampusId")?.Value;
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+    var isManager = User.IsInRole("Manager");
+    var isUser = User.IsInRole("User");
+    var isViewer = User.IsInRole("Viewer");
+    
+    var canAdd = isAdmin || isManager || isUser;
+    var canUpdate = isAdmin || isManager;
+    var canDelete = isAdmin;
+
+    bool showListTab = !string.IsNullOrEmpty(Model.SearchTerm) || Model.CurrentPage > 1 || Request.Query.ContainsKey("showList");
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<div class="consumables-container animate-fade-in">
+    <!-- Header -->
+    <div class="dashboard-header mb-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="title-section">
+                    <div class="badge-v3 mb-2">
+                        <i class="fas fa-box-open me-2"></i> Stock Management
+                    </div>
+                    <h1 class="premium-display-text mb-2">Consumables Inventory</h1>
+                    <p class="text-muted fs-5 mb-0">Monitor and manage school supplies with precision and ease.</p>
+                </div>
+            </div>
+            <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
+                <div class="header-actions-v2">
+                    <form method="get" class="search-form-v2 d-inline-block me-2">
+                        <div class="premium-search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" asp-for="SearchTerm" placeholder="Search products..." class="search-field" />
+                            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                            {
+                                <a href="/Inventory/Consumables" class="search-clear"><i class="fas fa-times-circle"></i></a>
+                            }
+                        </div>
+                    </form>
+                    @if (canAdd)
+                    {
+                        <button class="btn-premium-v2 animate-bounce-in" onclick="openAddModal()">
+                            <span class="btn-icon"><i class="fas fa-plus"></i></span>
+                            <span class="btn-text">Register Stock</span>
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats & Chart Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-8">
+            <div class="glass-card p-4 h-100 position-relative overflow-hidden">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Inventory Performance</h5>
+                        <p class="small text-muted mb-0">Overview of stock flow across the campus</p>
+                    </div>
+                    <div class="chart-legend-v2 d-flex gap-3">
+                        <div class="legend-item"><span class="dot bg-success"></span> <small class="fw-bold">In</small></div>
+                        <div class="legend-item"><span class="dot bg-danger"></span> <small class="fw-bold">Out</small></div>
+                        <div class="legend-item"><span class="dot bg-primary"></span> <small class="fw-bold">Balance</small></div>
+                    </div>
+                </div>
+                <div style="height: 300px;">
+                    <canvas id="inventoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="row g-4 h-100">
+                <div class="col-12">
+                    <div class="stat-card-v2 bg-primary-gradient text-white">
+                        <div class="stat-icon-bg"><i class="fas fa-boxes"></i></div>
+                        <div class="stat-body">
+                            <h6 class="text-uppercase small fw-bold opacity-80 mb-1">Total Products</h6>
+                            <h2 class="display-6 fw-extrabold mb-0">@Model.Consumables.Count</h2>
+                            <div class="mt-2 small opacity-70">Diverse categories registered</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="stat-card-v2 bg-white border">
+                        <div class="stat-icon-bg text-light"><i class="fas fa-balance-scale"></i></div>
+                        <div class="stat-body">
+                            <h6 class="text-uppercase small fw-bold text-muted mb-1">Total Current Balance</h6>
+                            <h2 class="display-6 fw-extrabold text-primary mb-0">@Model.Consumables.Sum(c => c.Balance)</h2>
+                            <div class="mt-2 small text-success fw-bold"><i class="fas fa-arrow-up"></i> High Availability</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="inventory-section glass-card border-0 shadow-sm">
+        <div class="card-header-v2 p-4 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Product Directory</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table-premium">
+                <thead>
+                    <tr>
+                        <th style="width: 40%">Product Information</th>
+                        <th>Arrival Date</th>
+                        <th class="text-center">Stock In</th>
+                        <th class="text-center">Stock Out</th>
+                        <th class="text-center">Balance</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Consumables.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="fas fa-search fa-3x text-muted opacity-20 mb-3"></i>
+                                    <h5 class="fw-bold text-muted">No products found</h5>
+                                    <p class="small text-muted">Try adjusting your search filters or add a new consumable.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.Consumables)
+                    {
+                        <tr class="product-row animate-in">
+                            <td>
+                                <div class="product-identity">
+                                    <div class="product-avatar-v2" style="background: rgba(31,60,136,0.05); color: var(--primary-color);">
+                                        <i class="fas fa-box"></i>
+                                    </div>
+                                    <div class="product-text">
+                                        <span class="product-name fw-bold text-dark">@item.Product</span>
+                                        <span class="product-desc text-muted small">@item.Description</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-light text-dark fw-bold border">
+                                    @item.DateArrived.ToString("MMM dd, yyyy")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="stock-badge in">@item.In</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="stock-badge out">@item.Out</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="balance-indicator @(item.Balance < 10 ? "low" : "")">
+                                    <span class="balance-val">@item.Balance</span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="action-group-v2">
+                                    <button class="btn-action view" onclick="viewItems(@item.Id, '@item.Product')" title="View Items">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    @if (canUpdate)
+                                    {
+                                        <button class="btn-action edit" title="Edit Product">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination Placeholder -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="p-4 border-top d-flex justify-content-between align-items-center">
+                <span class="small text-muted fw-bold">Page @Model.CurrentPage of @Model.TotalPages</span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link rounded-circle mx-1" href="?CurrentPage=@i&SearchTerm=@Model.SearchTerm">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Structure remains but improved visually -->
+<div id="addModal" class="modal-overlay-v2">
+    <div class="modal-card-v2 animate-scale-in">
+        <div class="modal-card-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modal-header-icon bg-primary-gradient"><i class="fas fa-plus"></i></div>
+                <div>
+                    <h5 class="fw-800 mb-0">Register New Consumable</h5>
+                    <p class="small text-muted mb-0">Initialize stock for a new product category.</p>
+                </div>
+            </div>
+            <button class="modal-close-v2" onclick="closeAddModal()">&times;</button>
+        </div>
+        <form method="post" asp-page-handler="Create" class="modal-card-body p-4">
+            <input type="hidden" asp-for="NewConsumable.CampusId" value="@activeCampusId" />
+            <div class="form-floating mb-3">
+                <input asp-for="NewConsumable.Product" class="form-control" id="productInput" placeholder="Product Name" required>
+                <label for="productInput">Product Name</label>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <div class="form-floating">
+                        <input type="number" asp-for="NewConsumable.In" class="form-control" id="qtyInput" placeholder="Quantity" min="1" value="1" required>
+                        <label for="qtyInput">Quantity (In)</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-floating">
+                        <input type="date" asp-for="NewConsumable.DateArrived" class="form-control" id="dateInput" value="@DateTime.Now.ToString("yyyy-MM-dd")" required>
+                        <label for="dateInput">Date Arrived</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-floating mb-4">
+                <textarea asp-for="NewConsumable.Description" class="form-control" id="descInput" placeholder="Description" style="height: 100px"></textarea>
+                <label for="descInput">Description (Optional)</label>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border" onclick="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill flex-grow-1 py-3 fw-bold bg-primary-gradient border-0">Complete Registration</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="itemsModal" class="modal-overlay-v2">
+    <div class="modal-card-v2 wide animate-scale-in">
+        <div class="modal-card-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modal-header-icon bg-info"><i class="fas fa-list-ul"></i></div>
+                <div>
+                    <h5 class="fw-800 mb-0" id="modalItemTitle">Consumable Units</h5>
+                    <p class="small text-muted mb-0" id="modalItemSubtitle">Track individual unit status and usage logs.</p>
+                </div>
+            </div>
+            <button class="modal-close-v2" onclick="closeItemsModal()">&times;</button>
+        </div>
+        <div class="modal-card-body p-0">
+            <div class="table-responsive" style="max-height: 60vh;">
+                <table class="table-premium">
+                    <thead class="sticky-top bg-white">
+                        <tr>
+                            <th>Unit Code</th>
+                            <th>Status</th>
+                            <th>Date Out</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<style>
+    :root {
+        --primary-color: #1F3C88;
+        --primary-gradient: linear-gradient(135deg, #1F3C88 0%, #3b82f6 100%);
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.4);
+    }
+
+    body {
+        background-color: #f8fafc;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .consumables-container { padding: 2rem 3rem; }
+
+    /* Header Styling */
+    .badge-v3 {
+        display: inline-flex; align-items: center;
+        background: rgba(31, 60, 136, 0.1); color: var(--primary-color);
+        padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 0.75rem;
+        text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .premium-display-text { font-size: 3rem; font-weight: 900; color: #0f172a; letter-spacing: -0.02em; }
+    
+    .premium-search-box {
+        position: relative; background: white; border: 1.5px solid #e2e8f0; border-radius: 50px;
+        padding: 10px 20px; display: flex; align-items: center; gap: 10px; width: 300px;
+        transition: all 0.3s;
+    }
+    .premium-search-box:focus-within { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(31, 60, 136, 0.1); width: 350px; }
+    .search-field { border: none; outline: none; font-weight: 600; width: 100%; color: #334155; }
+    .search-icon { color: #94a3b8; }
+
+    .btn-premium-v2 {
+        background: var(--primary-gradient); color: white; border: none;
+        padding: 12px 28px; border-radius: 50px; font-weight: 800;
+        display: inline-flex; align-items: center; gap: 12px;
+        box-shadow: 0 10px 25px rgba(31, 60, 136, 0.3); transition: all 0.3s;
+    }
+    .btn-premium-v2:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(31, 60, 136, 0.4); }
+
+    /* Glass Cards */
+    .glass-card {
+        background: var(--glass-bg); backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border); border-radius: 28px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    }
+
+    /* Stats Styling */
+    .stat-card-v2 {
+        padding: 2.5rem; border-radius: 28px; position: relative; overflow: hidden;
+        height: 100%; display: flex; align-items: center;
+    }
+    .bg-primary-gradient { background: var(--primary-gradient); }
+    .stat-icon-bg {
+        position: absolute; right: -20px; bottom: -20px; font-size: 8rem;
+        opacity: 0.15; transform: rotate(-15deg);
+    }
+    .fw-extrabold { font-weight: 800; }
+
+    /* Table Styling */
+    .table-premium { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-premium th {
+        padding: 1.5rem; font-size: 0.75rem; text-transform: uppercase;
+        color: #94a3b8; font-weight: 800; letter-spacing: 0.08em;
+        background: #fcfcfd; border-bottom: 2px solid #f1f5f9;
+    }
+    .table-premium td { padding: 1.5rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .product-row { transition: all 0.2s; }
+    .product-row:hover { background: rgba(31, 60, 136, 0.02); }
+
+    .product-identity { display: flex; align-items: center; gap: 1.25rem; }
+    .product-avatar-v2 {
+        width: 52px; height: 52px; border-radius: 16px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+    }
+    .product-text { display: flex; flex-direction: column; }
+    .product-name { font-size: 1.1rem; }
+
+    .stock-badge {
+        padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 0.85rem;
+    }
+    .stock-badge.in { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stock-badge.out { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .balance-indicator {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 45px; height: 45px; border-radius: 12px;
+        background: rgba(31, 60, 136, 0.08); color: var(--primary-color);
+        font-weight: 800; font-size: 1.1rem;
+    }
+    .balance-indicator.low { background: #fee2e2; color: #ef4444; animation: pulse-red 2s infinite; }
+
+    .btn-action {
+        width: 38px; height: 38px; border-radius: 12px; border: none;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: all 0.2s; margin-left: 5px;
+    }
+    .btn-action.view { background: rgba(31, 60, 136, 0.1); color: var(--primary-color); }
+    .btn-action.view:hover { background: var(--primary-color); color: white; }
+    .btn-action.edit { background: #f1f5f9; color: #64748b; }
+    .btn-action.edit:hover { background: #334155; color: white; }
+
+    /* Modals V2 */
+    .modal-overlay-v2 {
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 3000;
+    }
+    .modal-card-v2 {
+        background: white; border-radius: 32px; width: 100%; max-width: 550px;
+        box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25); overflow: hidden;
+    }
+    .modal-card-v2.wide { max-width: 900px; }
+    .modal-card-header {
+        padding: 2rem; border-bottom: 1px solid #f1f5f9; display: flex;
+        justify-content: space-between; align-items: center;
+    }
+    .modal-header-icon {
+        width: 50px; height: 50px; border-radius: 15px; display: flex;
+        align-items: center; justify-content: center; color: white; font-size: 1.25rem;
+    }
+    .modal-close-v2 { background: none; border: none; font-size: 2rem; color: #cbd5e1; }
+    .form-floating > .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(31, 60, 136, 0.08); }
+
+    /* Animations */
+    .animate-scale-in { animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @@keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    
+    .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    .animate-bounce-in { animation: bounceIn 0.5s ease-out; }
+    @@keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+<script>
+    // --- Charting ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('inventoryChart').getContext('2d');
+        const data = {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.Product))),
+            datasets: [
+                {
+                    label: 'Inbound',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.In))),
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                },
+                {
+                    label: 'Outbound',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.Out))),
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                },
+                {
+                    label: 'Balance',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.Balance))),
+                    type: 'line',
+                    borderColor: '#1F3C88',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#1F3C88',
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        };
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { borderDash: [5, 5], color: '#e2e8f0' }, ticks: { font: { weight: 'bold' } } },
+                    x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+                }
+            }
+        });
+    });
+
+    // --- Modal Logic ---
+    function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+    function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+    function closeItemsModal() { document.getElementById('itemsModal').style.display = 'none'; }
+
+    async function viewItems(id, name) {
+        document.getElementById('modalItemTitle').innerText = name;
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 fw-bold text-primary">Fetching units...</p></td></tr>';
+        document.getElementById('itemsModal').style.display = 'flex';
+
+        try {
+            const res = await fetch(`?handler=Items&consumableId=${id}`);
+            const items = await res.json();
+            
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted"><i class="fas fa-folder-open fa-2x mb-2 d-block opacity-20"></i>No units found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => `
+                <tr class="${item.status === 'Out' ? 'opacity-50' : ''}">
+                    <td class="ps-4"><code class="fw-bold px-2 py-1 rounded bg-light text-dark">${item.itemCode}</code></td>
+                    <td>
+                        <span class="badge rounded-pill ${item.status === 'In Stock' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'}" style="font-size: 0.75rem; padding: 5px 12px;">
+                            ${item.status}
+                        </span>
+                    </td>
+                    <td class="text-muted small">${item.dateOut ? new Date(item.dateOut).toLocaleDateString() : '—'}</td>
+                    <td class="text-end pe-4">
+                        ${item.status === 'In Stock' ? `
+                            <button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="updateStatus(${item.id}, 'Out')">
+                                <i class="fas fa-sign-out-alt me-1"></i> Use Unit
+                            </button>
+                        ` : `
+                            <span class="text-muted small fw-bold"><i class="fas fa-check-circle me-1"></i> Used</span>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-5">Failed to load unit data.</td></tr>';
+        }
+    }
+
+    async function updateStatus(itemId, status) {
+        if (!confirm(`Mark this unit as ${status}? This action is permanent.`)) return;
+
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const res = await fetch(`?handler=UpdateStatus&itemId=${itemId}&status=${status}`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': token }
+            });
+            if (res.ok) {
+                location.reload();
+            } else {
+                alert("Operation failed. Please try again.");
+            }
+        } catch (e) { alert("An error occurred during the update."); }
+    }
+
+    window.onclick = (e) => {
+        if (e.target.classList.contains('modal-overlay-v2')) {
+            e.target.style.display = 'none';
+        }
+    }
+</script>

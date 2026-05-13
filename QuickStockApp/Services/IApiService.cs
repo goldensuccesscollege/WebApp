@@ -55,6 +55,9 @@ namespace QuickStockApp.Services
         Task<(bool Success, string Message)> ToggleUserITAccessAsync(int userId);
         Task<(bool Success, string Message)> ToggleUserAPAccessAsync(int userId);
         Task<(bool Success, string Message)> ToggleUserMessageAccessAsync(int userId);
+        Task<(bool Success, string Message)> ToggleUserLibraryAccessAsync(int userId);
+        Task<(bool Success, string Message)> ToggleUserHomeEconomicsAccessAsync(int userId);
+        Task<(bool Success, string Message)> ToggleUserConsumablesAccessAsync(int userId);
         
         Task<(DashboardDto? Stats, string Message)> GetDashboardStatsAsync(int campusId);
         Task<List<AuditLogDto>> GetAuditLogsAsync(int? campusId = null, string? entityType = null);
@@ -71,5 +74,29 @@ namespace QuickStockApp.Services
         Task<(bool Success, string Message)> UpdateApparelItemStatusAsync(int itemId, string status);
         Task<(bool Success, string Message)> AddApparelStockAsync(int apparelId, int quantity);
         Task<List<ApparelItemDto>> QueryApparelItemsAsync(string? status, DateTime? startDate, DateTime? endDate, int? campusId);
+
+        // Library
+        Task<List<LibraryBookDto>> GetLibraryBooksAsync(int? campusId = null);
+        Task<(bool Success, string Message)> AddLibraryBookAsync(LibraryBookDto book);
+        Task<(bool Success, string Message)> UpdateLibraryBookAsync(LibraryBookDto book);
+
+        // Library Items
+        Task<(bool Success, string Message)> AddLibraryBookItemAsync(int bookId, LibraryBookItemDto item);
+        Task<(bool Success, string Message)> UpdateLibraryBookItemAsync(int itemId, LibraryBookItemDto item);
+        Task<(bool Success, string Message)> DeleteLibraryBookItemAsync(int itemId);
+
+        // Furniture
+        Task<List<FurnitureDto>> GetFurnituresAsync(int? roomId = null, int? campusId = null, string? searchTerm = null);
+        Task<(bool Success, string Message)> AddFurnitureAsync(FurnitureDto furniture);
+        Task<(bool Success, string Message)> UpdateFurnitureAsync(FurnitureDto furniture);
+        Task<(bool Success, string Message)> TransferFurnitureAsync(int id, int targetRoomId);
+
+        // Consumables
+        Task<ConsumableListResponse> GetConsumablesAsync(int? campusId = null, string? searchTerm = null, int page = 1, int pageSize = 10);
+        Task<List<ConsumableItemDto>> GetConsumableItemsAsync(int consumableId);
+        Task<(bool Success, string Message)> CreateConsumableAsync(ConsumableDto consumable);
+        Task<bool> UpdateConsumableItemStatusAsync(int itemId, string status);
     }
 }
+
+

@@ -5,246 +5,604 @@
     ViewData["Title"] = "Asset Details";
 }
 
-<div class="scan-details-container animate-in">
-    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-    {
-        <div class="error-card glass-card text-center">
-            <div class="error-icon">
-                <i class="fas fa-exclamation-triangle"></i>
+<div class="scan-page-wrapper">
+    <div class="scan-container animate-in">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="error-state card shadow-lg border-0 rounded-4 p-5 text-center">
+                <div class="error-visual mb-4">
+                    <div class="error-blob"></div>
+                    <i class="fas fa-search-minus error-icon-main"></i>
+                </div>
+                <h2 class="fw-800 text-dark mb-3">Record Not Found</h2>
+                <p class="text-secondary mb-4">@Model.ErrorMessage</p>
+                <a href="/" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow">
+                    <i class="fas fa-home me-2"></i> Return to Home
+                </a>
             </div>
-            <h2>Oops!</h2>
-            <p>@Model.ErrorMessage</p>
-            <a href="/" class="btn-home">Return Home</a>
-        </div>
-    }
-    else if (Model.Asset != null)
-    {
-        <div class="asset-details-card glass-card">
-            <div class="asset-header">
-                <div class="asset-icon-large @Model.Asset.Type.ToLower()">
-                    @if(Model.Asset.Type == "Equipment") {
-                        <i class="fas fa-laptop"></i>
-                    } else {
-                        <i class="fas fa-box"></i>
-                    }
-                </div>
-                <div class="header-text">
-                    <span class="type-badge @Model.Asset.Type.ToLower()">@Model.Asset.Type</span>
-                    <h1>@Model.Asset.Name</h1>
-                    <p class="asset-id">ID: @Model.Asset.Qrcode</p>
-                </div>
-            </div>
-
-            <div class="details-grid">
-                <div class="detail-item">
-                    <label>Brand & Model</label>
-                    <div class="value">@Model.Asset.Brand - @Model.Asset.Model</div>
-                </div>
-                <div class="detail-item">
-                    <label>Serial Number</label>
-                    <div class="value"><code>@Model.Asset.SerialNumber</code></div>
-                </div>
-                <div class="detail-item">
-                    <label>Current Status</label>
-                    <div class="value">
-                        <span class="status-pill @Model.Asset.Status.ToLower().Replace(" ", "-")">@Model.Asset.Status</span>
+        }
+        else if (Model.Asset != null)
+        {
+            <div class="asset-card card shadow-2xl border-0 rounded-5 overflow-hidden">
+                <div class="hero-section @Model.Asset.Type.ToLower()">
+                    <div class="hero-overlay"></div>
+                    <div class="hero-content p-4 p-md-5">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <span class="badge rounded-pill px-3 py-2 glass-badge">@Model.Asset.Type</span>
+                            <div class="status-indicator @Model.Asset.Status.ToLower().Replace(" ", "-")">
+                                <span class="pulse"></span>
+                                @Model.Asset.Status
+                            </div>
+                        </div>
+                        <h1 class="asset-title text-white mb-1">@Model.Asset.Name</h1>
+                        <p class="asset-subtitle text-white-50 mb-0">@Model.Asset.Brand • @Model.Asset.Model</p>
+                    </div>
+                    <div class="hero-icon">
+                        @if(Model.Asset.Type == "Equipment") { <i class="fas fa-laptop"></i> }
+                        else if(Model.Asset.Type == "Component") { <i class="fas fa-microchip"></i> }
+                        else { <i class="fas fa-box"></i> }
                     </div>
                 </div>
-                <div class="detail-item">
-                    <label>Location / Room</label>
-                    <div class="value highlight">
-                        <i class="fas fa-map-marker-alt me-2"></i> @Model.Asset.Location
+
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <div class="qr-label mb-4">
+                        <span class="label-text">IDENTIFIER</span>
+                        <code class="qr-code-val">@Model.Asset.Qrcode</code>
+                    </div>
+
+                    <div class="info-sections mt-5">
+                        <div class="info-row mb-4">
+                            <div class="info-col">
+                                <div class="info-box">
+                                    <i class="fas fa-barcode"></i>
+                                    <div>
+                                        <label>Serial Number</label>
+                                        <span>@Model.Asset.SerialNumber</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-row mb-4">
+                            <div class="info-col">
+                                <div class="info-box highlight">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <div>
+                                        <label>Assigned Location</label>
+                                        <span class="text-primary fw-bold">@Model.Asset.Location</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid mt-4">
+                            <div class="info-mini">
+                                <label>Ownership</label>
+                                <span>Golden Success College</span>
+                            </div>
+                            <div class="info-mini">
+                                <label>Total in Room</label>
+                                <span class="fw-bold text-success">@Model.Asset.TotalItemsInRoom assets</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="scan-footer mt-5 pt-4 border-top text-center">
+                        <p class="text-muted small mb-3">
+                            <i class="fas fa-history me-1"></i> System verification at @DateTime.Now.ToString("HH:mm:ss")
+                        </p>
+                        <a href="/Dashboard" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                            <i class="fas fa-th-large me-2"></i> Dashboard
+                        </a>
                     </div>
                 </div>
             </div>
+        }
+        else if (Model.ApparelItem != null)
+        {
+            <div class="asset-card card shadow-2xl border-0 rounded-5 overflow-hidden">
+                <div class="hero-section apparel">
+                    <div class="hero-overlay"></div>
+                    <div class="hero-content p-4 p-md-5">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <span class="badge rounded-pill px-3 py-2 glass-badge">Apparel Item</span>
+                            <div class="status-indicator @Model.ApparelItem.Status.ToLower().Replace(" ", "-")">
+                                <span class="pulse"></span>
+                                @Model.ApparelItem.Status
+                            </div>
+                        </div>
+                        <h1 class="asset-title text-white mb-1">@Model.ApparelItem.ApparelType?.Apparel_Name</h1>
+                        <p class="asset-subtitle text-white-50 mb-0">@Model.ApparelItem.ApparelType?.Category</p>
+                    </div>
+                    <div class="hero-icon"><i class="fas fa-tshirt"></i></div>
+                </div>
 
-            <div class="footer-actions">
-                <p class="timestamp">Last scanned: @DateTime.Now.ToString("g")</p>
-            </div>
-        </div>
-    }
-    else if (Model.ApparelItem != null)
-    {
-        <div class="asset-details-card glass-card">
-            <div class="asset-header">
-                <div class="asset-icon-large apparel">
-                    <i class="fas fa-tshirt"></i>
-                </div>
-                <div class="header-text">
-                    <span class="type-badge apparel">Apparel Inventory</span>
-                    <h1>@Model.ApparelItem.ApparelType?.Apparel_Name</h1>
-                    <p class="asset-id">ID: @Model.ApparelItem.Apparel_Number</p>
-                </div>
-            </div>
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <div class="qr-label mb-4">
+                        <span class="label-text">INVENTORY NO.</span>
+                        <code class="qr-code-val">@Model.ApparelItem.Apparel_Number</code>
+                    </div>
 
-            <div class="details-grid">
-                <div class="detail-item">
-                    <label>Classification</label>
-                    <div class="value">@Model.ApparelItem.ApparelType?.Category</div>
-                </div>
-                <div class="detail-item">
-                    <label>Specifications</label>
-                    <div class="value">@Model.ApparelItem.ApparelType?.Sex / Size @Model.ApparelItem.ApparelType?.Size / Grade @Model.ApparelItem.ApparelType?.Grade_Level</div>
-                </div>
-                <div class="detail-item">
-                    <label>Item Status</label>
-                    <div class="value">
-                        <span class="status-pill @Model.ApparelItem.Status.ToLower().Replace(" ", "-")">@Model.ApparelItem.Status</span>
+                    <div class="info-sections mt-5">
+                        <div class="info-row mb-4">
+                            <div class="info-box">
+                                <i class="fas fa-ruler-combined"></i>
+                                <div>
+                                    <label>Specifications</label>
+                                    <span>Size @Model.ApparelItem.ApparelType?.Size • @Model.ApparelItem.ApparelType?.Sex</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid mb-4">
+                            <div class="info-box highlight">
+                                <i class="fas fa-graduation-cap"></i>
+                                <div>
+                                    <label>Level/Grade</label>
+                                    <span class="text-success fw-bold">Grade @Model.ApparelItem.ApparelType?.Grade_Level</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-row mb-4">
+                            <div class="info-box">
+                                <i class="fas fa-truck"></i>
+                                <div>
+                                    <label>Supplier Source</label>
+                                    <span>@Model.ApparelItem.ApparelType?.Supplier_Name</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="scan-footer mt-5 pt-4 border-top text-center">
+                        <p class="text-muted small mb-3">Scan Verified: @DateTime.Now.ToString("g")</p>
+                        <a href="/Dashboard" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                            <i class="fas fa-th-large me-2"></i> Dashboard
+                        </a>
                     </div>
                 </div>
-                <div class="detail-item">
-                    <label>Supplier / Price</label>
-                    <div class="value highlight">
-                        <i class="fas fa-tag me-2"></i> @Model.ApparelItem.ApparelType?.Unit_Price.ToString("C") (@Model.ApparelItem.ApparelType?.Supplier_Name)
+            </div>
+        }
+        else if (Model.Furniture != null)
+        {
+            <div class="asset-card card shadow-2xl border-0 rounded-5 overflow-hidden">
+                <div class="hero-section furniture">
+                    <div class="hero-overlay"></div>
+                    <div class="hero-content p-4 p-md-5">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge rounded-pill px-3 py-2 glass-badge">Furniture</span>
+                            @if (!string.IsNullOrEmpty(Model.Furniture.CampusName))
+                            {
+                                <span class="badge rounded-pill px-3 py-2 glass-badge">@Model.Furniture.CampusName</span>
+                            }
+                        </div>
+                        <h1 class="asset-title text-white mb-1">@(string.IsNullOrEmpty(Model.Furniture.Item_Name) ? "Unknown Furniture" : Model.Furniture.Item_Name)</h1>
+                        <p class="asset-subtitle text-white-50 mb-0">
+                            @(string.IsNullOrEmpty(Model.Furniture.Brand) ? "No brand" : Model.Furniture.Brand) • ID: #@Model.Furniture.Item_ID
+                        </p>
+                    </div>
+                    <div class="hero-icon"><i class="fas fa-couch"></i></div>
+                </div>
+
+                <div class="card-body p-0 bg-white">
+                    <!-- ID & Details -->
+                    <div class="furn-row">
+                        <div class="furn-icon"><i class="fas fa-hashtag"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">System ID</span>
+                            <span class="furn-val mono-val">#@Model.Furniture.Item_ID</span>
+                        </div>
+                    </div>
+
+                    <!-- Item Name -->
+                    <div class="furn-row">
+                        <div class="furn-icon"><i class="fas fa-tag"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Item Name</span>
+                            <span class="furn-val">@(string.IsNullOrEmpty(Model.Furniture.Item_Name) ? "—" : Model.Furniture.Item_Name)</span>
+                        </div>
+                    </div>
+
+                    <!-- Item Number -->
+                    <div class="furn-row">
+                        <div class="furn-icon"><i class="fas fa-barcode"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Item Number</span>
+                            <span class="furn-val mono-val">@(string.IsNullOrEmpty(Model.Furniture.Item_number) ? "—" : Model.Furniture.Item_number)</span>
+                        </div>
+                    </div>
+
+                    <!-- Brand -->
+                    <div class="furn-row">
+                        <div class="furn-icon"><i class="fas fa-certificate"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Brand</span>
+                            <span class="furn-val">@(string.IsNullOrEmpty(Model.Furniture.Brand) ? "—" : Model.Furniture.Brand)</span>
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="furn-row furn-highlight">
+                        <div class="furn-icon highlight"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Location</span>
+                            <span class="furn-val text-primary fw-bold fs-5">@(string.IsNullOrEmpty(Model.Furniture.Location) ? "Unassigned" : Model.Furniture.Location)</span>
+                            @if (!string.IsNullOrEmpty(Model.Furniture.RoomName))
+                            {
+                                <span class="furn-sub"><i class="fas fa-door-open me-1"></i>@Model.Furniture.RoomName</span>
+                            }
+                        </div>
+                        @if (Model.Furniture.TotalItemsInRoom > 0)
+                        {
+                            <div class="furn-badge-wrap">
+                                <span class="furn-count-badge">@Model.Furniture.TotalItemsInRoom in room</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="furn-row">
+                        <div class="furn-icon"><i class="fas fa-layer-group"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Quantity</span>
+                            <span class="furn-val">@Model.Furniture.Item_count units</span>
+                        </div>
+                    </div>
+
+                    <!-- Date Added -->
+                    <div class="furn-row">
+                        <div class="furn-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Date Added</span>
+                            <span class="furn-val">@Model.Furniture.DateAdded.ToString("MMMM dd, yyyy")</span>
+                        </div>
+                    </div>
+
+                    <!-- Condition -->
+                    <div class="furn-row last">
+                        <div class="furn-icon"><i class="fas fa-clipboard-check"></i></div>
+                        <div class="furn-body">
+                            <span class="furn-label">Condition</span>
+                            <span class="furn-val">@(string.IsNullOrEmpty(Model.Furniture.Condition) ? "No condition recorded" : Model.Furniture.Condition)</span>
+                        </div>
+                    </div>
+
+                    <div class="px-4 py-3 border-top text-center bg-light rounded-bottom-5">
+                        <p class="text-muted small mb-2">
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                            Scanned at @DateTime.Now.ToString("HH:mm · MMM dd, yyyy")
+                        </p>
+                        <a href="/Dashboard" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                            <i class="fas fa-th-large me-2"></i> Dashboard
+                        </a>
                     </div>
                 </div>
             </div>
-
-            <div class="footer-actions">
-                <p class="timestamp">Last scanned: @DateTime.Now.ToString("g")</p>
-            </div>
-        </div>
-    }
+        }
+    </div>
 </div>
 
 <style>
-    .scan-details-container {
-        max-width: 600px;
-        margin: 4rem auto;
-        padding: 0 1rem;
+    :root {
+        --card-bg: #ffffff;
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        --furniture-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+        --danger-gradient: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
     }
 
-    .glass-card {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 24px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-        padding: 2.5rem;
-    }
-
-    .asset-header {
+    .scan-page-wrapper {
+        min-height: 100vh;
+        background: #f8fafc;
+        padding: 2rem 1rem;
         display: flex;
-        gap: 1.5rem;
-        align-items: center;
-        margin-bottom: 2.5rem;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        padding-bottom: 2rem;
-    }
-
-    .asset-icon-large {
-        width: 80px;
-        height: 80px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
         justify-content: center;
-        font-size: 2.5rem;
+        align-items: flex-start;
     }
 
-    .asset-icon-large.equipment { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
-    .asset-icon-large.materials { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-    .asset-icon-large.apparel { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-
-    .header-text h1 {
-        margin: 0.25rem 0;
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
+    .scan-container {
+        width: 100%;
+        max-width: 500px;
     }
 
-    .asset-id {
-        margin: 0;
-        color: #64748b;
-        font-family: monospace;
-        font-size: 0.9rem;
+    /* Hero Section Styles */
+    .hero-section {
+        position: relative;
+        height: 220px;
+        display: flex;
+        align-items: flex-end;
+        background: var(--primary-gradient);
     }
 
-    .type-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 10px;
+    .hero-section.equipment { background: var(--primary-gradient); }
+    .hero-section.component { background: #1e293b; }
+    .hero-section.apparel { background: var(--success-gradient); }
+    .hero-section.furniture { background: var(--furniture-gradient); }
+    .hero-section.materials { background: var(--warning-gradient); }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><g fill="%23ffffff" fill-opacity="0.05" fill-rule="evenodd"><circle cx="3" cy="3" r="3"/><circle cx="13" cy="13" r="3"/></g></svg>');
+        opacity: 0.4;
+    }
+
+    .hero-icon {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        font-size: 5rem;
+        color: rgba(255, 255, 255, 0.15);
+        transform: rotate(-15deg);
+    }
+
+    .hero-content { position: relative; z-index: 2; width: 100%; }
+
+    .asset-title { font-weight: 900; letter-spacing: -0.5px; font-size: 2rem; }
+
+    .glass-badge {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        font-weight: 700;
+        text-transform: uppercase;
         font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
-    .type-badge.equipment { background: #e0e7ff; color: #4338ca; }
-    .type-badge.materials { background: #ffedd5; color: #9a3412; }
-    .type-badge.apparel { background: #dcfce7; color: #166534; }
-
-    .details-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .detail-item label {
-        display: block;
-        font-size: 0.75rem;
+    /* Status Indicators */
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(4px);
+        color: white;
         font-weight: 700;
-        text-transform: uppercase;
-        color: #94a3b8;
-        margin-bottom: 0.5rem;
-    }
-
-    .detail-item .value {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #334155;
-    }
-
-    .detail-item .value.highlight {
-        color: #6366f1;
-        font-size: 1.25rem;
-    }
-
-    .status-pill {
-        padding: 0.25rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .status-pill.working { background: #dcfce7; color: #166534; }
-    .status-pill.broken { background: #fee2e2; color: #991b1b; }
-    .status-pill.undermaintenance { background: #fef9c3; color: #854d0e; }
-
-    .footer-actions {
-        margin-top: 3rem;
-        text-align: center;
-        border-top: 1px solid rgba(0,0,0,0.05);
-        padding-top: 1.5rem;
-    }
-
-    .timestamp {
-        color: #94a3b8;
         font-size: 0.8rem;
     }
 
-    .error-icon {
-        font-size: 4rem;
-        color: #ef4444;
-        margin-bottom: 1.5rem;
+    .pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4ade80;
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+        animation: pulse-green 2s infinite;
     }
 
-    .btn-home {
-        display: inline-block;
-        margin-top: 2rem;
-        padding: 0.75rem 2rem;
-        background: #6366f1;
-        color: white;
-        text-decoration: none;
+    .status-indicator.broken .pulse { background: #fb7185; animation: pulse-red 2s infinite; }
+
+    /* Info Box Styles */
+    .info-box {
+        display: flex;
+        gap: 1.25rem;
+        padding: 1.25rem;
+        background: #f1f5f9;
+        border-radius: 20px;
+        transition: transform 0.2s;
+    }
+
+    .info-box.highlight {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .info-box i {
+        width: 44px;
+        height: 44px;
+        background: white;
         border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .info-box label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .info-box span {
         font-weight: 700;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        color: #1e293b;
+        font-size: 1.05rem;
     }
 
-    @@keyframes zoomIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
+    .qr-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        padding: 1rem;
+        border-radius: 16px;
     }
 
-    .animate-in { animation: zoomIn 0.5s ease-out; }
+    .label-text { font-size: 0.65rem; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
+    .qr-code-val { font-weight: 800; color: #475569; font-size: 1.1rem; }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .info-mini {
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 16px;
+        text-align: center;
+    }
+
+    .info-mini label { display: block; font-size: 0.65rem; font-weight: 800; color: #94a3b8; }
+    .info-mini span { font-weight: 700; color: #1e293b; font-size: 0.9rem; }
+
+    /* Animations */
+    @@keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+    }
+
+    @@keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(251, 113, 133, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(251, 113, 133, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(251, 113, 133, 0); }
+    }
+
+    @@keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    /* Error State */
+    .error-visual { position: relative; height: 100px; display: flex; align-items: center; justify-content: center; }
+    .error-blob { position: absolute; width: 80px; height: 80px; background: #fee2e2; border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; animation: morph 4s infinite linear; }
+    .error-icon-main { position: relative; font-size: 3rem; color: #ef4444; }
+
+    @@keyframes morph {
+        0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+        50% { border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; }
+        100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+    }
+
+    /* Furniture Detail Row Layout */
+    .detail-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .detail-row.last { border-bottom: none; }
+
+    .detail-icon-wrap {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(99,102,241,0.08);
+        color: #6366f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    .highlight-icon {
+        background: rgba(99,102,241,0.15);
+        color: #4338ca;
+    }
+
+    .detail-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        flex: 1;
+    }
+    .detail-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #94a3b8;
+    }
+    .detail-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .detail-value.mono {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 0.95rem;
+        color: #4338ca;
+    }
+    .detail-sub {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .detail-aside {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+    .room-count-badge {
+        background: rgba(16,185,129,0.1);
+        color: #059669;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.3rem 0.7rem;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+
+    /* Furniture Scan Row Layout */
+    .furn-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.2s;
+    }
+    .furn-row.last { border-bottom: none; }
+    .furn-row.furn-highlight { background: rgba(99,102,241,0.03); }
+
+    .furn-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        background: rgba(99,102,241,0.08);
+        color: #6366f1;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.95rem; flex-shrink: 0;
+    }
+    .furn-icon.highlight {
+        background: rgba(99,102,241,0.15);
+        color: #4338ca;
+    }
+
+    .furn-body {
+        display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0;
+    }
+    .furn-label {
+        font-size: 0.68rem; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 0.08em;
+        color: #94a3b8;
+    }
+    .furn-val {
+        font-size: 1rem; font-weight: 600; color: #1e293b;
+        word-break: break-word;
+    }
+    .furn-val.mono-val {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        color: #4338ca;
+    }
+    .furn-sub {
+        font-size: 0.78rem; color: #94a3b8; font-weight: 500;
+    }
+
+    .furn-badge-wrap {
+        flex-shrink: 0; display: flex; align-items: center;
+    }
+    .furn-count-badge {
+        background: rgba(16,185,129,0.1); color: #059669;
+        font-size: 0.7rem; font-weight: 800;
+        padding: 0.3rem 0.7rem; border-radius: 20px; white-space: nowrap;
+    }
 </style>

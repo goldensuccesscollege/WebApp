@@ -57,12 +57,17 @@ namespace QuickStockApp.Pages.Account
             // ✅ Create cookie authentication
             var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, result.Id.ToString()),
                 new Claim(ClaimTypes.Name, Input.Username),
+
                 new Claim(ClaimTypes.Role, result.Role ?? "User"),
                 new Claim("jwt_token", result.Token),
                 new Claim("CanAccessITAssets", result.CanAccessITAssets.ToString()),
                 new Claim("CanAccessApparel", result.CanAccessApparel.ToString()),
-                new Claim("CanAccessMessages", result.CanAccessMessages.ToString())
+                new Claim("CanAccessMessages", result.CanAccessMessages.ToString()),
+                new Claim("CanAccessLibrary", result.CanAccessLibrary.ToString()),
+                new Claim("CanAccessHomeEconomics", result.CanAccessHomeEconomics.ToString()),
+                new Claim("CanAccessConsumables", result.CanAccessConsumables.ToString())
             };
 
             if (result.CampusIds != null && result.CampusIds.Any())
@@ -87,7 +92,7 @@ namespace QuickStockApp.Pages.Account
                     }
                 }
             }
-            else if (!result.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            else if (!"Admin".Equals(result.Role, StringComparison.OrdinalIgnoreCase))
             {
                 TempData["ErrorMessage"] = "Access Denied: Your account is not assigned to any campus. Please contact the administrator.";
                 return RedirectToPage();
@@ -104,9 +109,9 @@ namespace QuickStockApp.Pages.Account
                 return LocalRedirect(ReturnUrl);
             }
 
-            if (result.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            if ("Admin".Equals(result.Role, StringComparison.OrdinalIgnoreCase))
             {
-                return RedirectToPage("/Campuses");
+                return RedirectToPage("/Campus/Campuses");
             }
 
             if (result.CampusIds != null && result.CampusIds.Count == 1)
@@ -114,7 +119,7 @@ namespace QuickStockApp.Pages.Account
                 return RedirectToPage("/Dashboard/Index");
             }
 
-            return RedirectToPage("/Campuses");
+            return RedirectToPage("/Campus/Campuses");
         }
 
         public async Task<IActionResult> OnPostVerifyTokenAsync(string token)

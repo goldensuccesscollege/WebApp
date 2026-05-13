@@ -20,6 +20,14 @@
             <form method="post">
                 @Html.AntiForgeryToken()
 
+                @if (TempData["ErrorMessage"] != null || !string.IsNullOrEmpty(Model.Message))
+                {
+                    <div class="alert alert-danger border-0 shadow-sm mb-4 animate-in" style="border-radius: 12px;">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        @(TempData["ErrorMessage"] ?? Model.Message)
+                    </div>
+                }
+
                 <div class="form-floating mb-3">
                     <input asp-for="Input.Username" class="form-control" id="usernameInput" placeholder="Username" required autocomplete="username">
                     <label for="usernameInput">Username</label>
@@ -107,7 +115,7 @@
         justify-content: center;
     }
 
-    .bg-primary-light { background-color: rgba(99, 102, 241, 0.1); }
+    .bg-primary-light { background-color: rgba(30, 64, 175, 0.1); }
     
     .animate-in {
         animation: slideUp 0.4s ease-out forwards;
@@ -132,7 +140,7 @@
 
     .btn-lg:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(99, 102, 241, 0.3) !important;
+        box-shadow: 0 8px 15px rgba(30, 64, 175, 0.3) !important;
     }
 </style>
 

@@ -1,7 +1,15 @@
 @page
-@model QuickStockApp.Pages.RoomsModel
+@model QuickStockApp.Pages.Inventory.RoomsModel
 @{
     ViewData["Title"] = "Room Management";
+    var isViewer = User.IsInRole("Viewer");
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin"); // Keep original role name but the logic is same
+    var isManager = User.IsInRole("Manager");
+    var isUser = User.IsInRole("User");
+    
+    var canAdd = isAdmin || isManager || isUser;
+    var canUpdate = isAdmin || isManager;
+    var canDelete = isAdmin;
 }
 
 <div class="rooms-container fade-in">
@@ -11,16 +19,19 @@
             <p class="subtitle">Organize and manage your facility locations.</p>
         </div>
         <div class="d-flex gap-2">
-            @if (User.IsInRole("Admin"))
+            @if (isAdmin)
             {
                 <a asp-page="/Admin/DisabledRooms" class="btn btn-outline-danger animate-in" style="border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; border-width: 2px;">
                     <i class="fas fa-ban"></i> Manage Disabled Rooms
                 </a>
             }
-            <button class="add-btn animate-in" onclick="openRoomModal()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Add New Room
-            </button>
+            @if (canAdd)
+            {
+                <button class="add-btn animate-in" onclick="openRoomModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add New Room
+                </button>
+            }
         </div>
     </div>
 
@@ -56,27 +67,34 @@
                                 <td><span class="description-text">@room.RoomDescription</span></td>
                                 <td class="text-right" onclick="event.stopPropagation()">
                                     <div class="action-btns">
-                                        <button class="icon-btn edit-btn" 
-                                                data-id="@room.RoomId"
-                                                data-name="@room.RoomName"
-                                                data-floor="@room.RoomFloor"
-                                                data-desc="@room.RoomDescription"
-                                                data-campusid="@room.CampusId"
-                                                onclick="editRoom(this)">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                        </button>
-                                        @if (User.IsInRole("Admin"))
+                                        @if (canUpdate)
                                         {
-                                            <form asp-page-handler="ToggleStatus" asp-route-roomId="@room.RoomId" method="post" style="display:inline;">
-                                                <button type="submit" class="icon-btn toggle-btn" title="Disable Room">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                                                </button>
-                                            </form>
-                                            <form asp-page-handler="Delete" asp-route-id="@room.RoomId" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this room?');">
-                                                <button type="submit" class="icon-btn delete-btn">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                                </button>
-                                            </form>
+                                            <button class="icon-btn edit-btn" 
+                                                    data-id="@room.RoomId"
+                                                    data-name="@room.RoomName"
+                                                    data-floor="@room.RoomFloor"
+                                                    data-desc="@room.RoomDescription"
+                                                    data-campusid="@room.CampusId"
+                                                    onclick="editRoom(this)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            </button>
+                                            @if (canDelete)
+                                            {
+                                                <form asp-page-handler="ToggleStatus" asp-route-roomId="@room.RoomId" method="post" style="display:inline;">
+                                                    <button type="submit" class="icon-btn toggle-btn" title="Disable Room">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                                    </button>
+                                                </form>
+                                                <form asp-page-handler="Delete" asp-route-id="@room.RoomId" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this room?');">
+                                                    <button type="submit" class="icon-btn delete-btn">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">View Only</span>
                                         }
                                     </div>
                                 </td>
@@ -134,17 +152,25 @@
                     <label asp-for="Room.RoomName">Room Name</label>
                     <input asp-for="Room.RoomName" id="name" placeholder="e.g., Room 403" required />
                 </div>
-                <div class="form-group">
-                    <label asp-for="Room.RoomFloor">Floor</label>
-                    <select asp-for="Room.RoomFloor" id="floor" required>
-                        <option value="">Select Floor</option>
-                        <option value="1st Floor">1st Floor</option>
-                        <option value="2nd Floor">2nd Floor</option>
-                        <option value="3rd Floor">3rd Floor</option>
-                        <option value="4th Floor">4th Floor</option>
-                        <option value="5th Floor">5th Floor</option>
-                        <option value="6th Floor">6th Floor</option>
-                    </select>
+                <div class="form-group floor-selector-group">
+                    <label asp-for="Room.RoomFloor">Location Level (Floor)</label>
+                    <div class="custom-floor-select" id="floorSelectContainer">
+                        <div class="floor-display" onclick="toggleFloorDropdown()">
+                            <i class="fas fa-layer-group"></i>
+                            <span id="selectedFloorText">Select Floor</span>
+                            <i class="fas fa-chevron-down ms-auto"></i>
+                        </div>
+                        <div class="floor-options" id="floorOptions">
+                                @foreach (var floor in new[] { "1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor", "Rooftop" })
+                            {
+                                <div class="floor-option" onclick="selectFloor('@floor')">
+                                    <i class="fas fa-level-up-alt"></i>
+                                    <span>@floor</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <input type="hidden" asp-for="Room.RoomFloor" id="floor" required />
                 </div>
                 <div class="form-group">
                     <label asp-for="Room.RoomDescription">Description</label>
@@ -161,12 +187,55 @@
 
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        --glass-bg: rgba(255, 255, 255, 0.7);
-        --glass-border: rgba(255, 255, 255, 0.3);
-        --text-dark: #1e293b;
-        --accent-color: #6366f1;
-        --danger-color: #ef4444;
+        --primary-gradient: linear-gradient(135deg, #1F3C88 0%, #3b5cbd 100%);
+        --glass-bg: #FFFFFF;
+        --glass-border: #E5E7EB;
+        --text-dark: #333333;
+        --accent-color: #1F3C88;
+        --danger-color: #D62828;
+    }
+
+    body.dark-mode .rooms-container {
+        background: radial-gradient(circle at top left, #0f172a 0%, #1e293b 100%);
+        min-height: 100vh;
+        color: #f1f5f9;
+    }
+
+    body.dark-mode .glass-panel,
+    body.dark-mode .modal-content {
+        background: rgba(30, 41, 59, 0.9) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    body.dark-mode .premium-table th {
+        color: #94a3b8;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .premium-table td {
+        color: #e2e8f0;
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .floor-badge {
+        background: rgba(255, 255, 255, 0.05);
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .clickable-row:hover {
+        background: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    body.dark-mode .form-group label {
+        color: #cbd5e1;
+    }
+
+    body.dark-mode input,
+    body.dark-mode textarea,
+    body.dark-mode select {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
     }
 
     .rooms-container {
@@ -208,12 +277,12 @@
         gap: 0.5rem;
         cursor: pointer;
         transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
     }
 
     .add-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
     }
 
     .glass-panel {
@@ -555,6 +624,91 @@
         box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
     }
 
+    /* Custom Floor Selector */
+    .custom-floor-select {
+        position: relative;
+        user-select: none;
+    }
+
+    .floor-display {
+        background: white;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+
+    .floor-display:hover {
+        border-color: var(--accent-color);
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.08);
+    }
+
+    .floor-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-top: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        display: none;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 0.5rem;
+    }
+
+    .floor-option {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--text-dark);
+    }
+
+    .floor-option:hover {
+        background: rgba(30, 64, 175, 0.08);
+        color: var(--accent-color);
+    }
+
+    .floor-option i {
+        font-size: 0.9rem;
+        opacity: 0.6;
+    }
+
+    .floor-display i:first-child {
+        color: var(--accent-color);
+    }
+
+    .floor-display .ms-auto {
+        transition: transform 0.3s;
+    }
+
+    .custom-floor-select.open .floor-display .ms-auto {
+        transform: rotate(180deg);
+    }
+
+    .custom-floor-select.open .floor-options {
+        display: block;
+        animation: slideDown 0.2s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     .animate-in {
         animation: slideUp 0.5s ease-out forwards;
     }
@@ -584,6 +738,8 @@
         
         document.getElementById('roomId').value = '0';
         document.getElementById('submitBtn').innerText = 'Add Room';
+        document.getElementById('selectedFloorText').innerText = 'Select Floor';
+        document.getElementById('floor').value = '';
         
         // Restore active campus if context is locked
         if (activeCampusId) {
@@ -601,8 +757,12 @@
 
         document.getElementById('roomId').value = data.id || "0";
         document.getElementById('name').value = data.name || "";
-        document.getElementById('floor').value = data.floor || "";
-        document.getElementById('description').value = data.desc || "";
+        
+        const floorValue = data.floor || "";
+        document.getElementById('floor').value = floorValue;
+        document.getElementById('selectedFloorText').innerText = floorValue || 'Select Floor';
+        
+        document.getElementById('desc').value = data.desc || "";
         
         const campusInput = document.getElementById('campusIdInput');
         if (campusInput) campusInput.value = data.campusid || "";
@@ -615,13 +775,30 @@
     }
 
     function viewAssets(roomId) {
-        window.location.href = `/ItAssets?SelectedRoomId=${roomId}`;
+        window.location.href = `/Inventory/ItAssets?SelectedRoomId=${roomId}`;
+    }
+
+    function toggleFloorDropdown() {
+        const container = document.getElementById('floorSelectContainer');
+        container.classList.toggle('open');
+    }
+
+    function selectFloor(floor) {
+        document.getElementById('floor').value = floor;
+        document.getElementById('selectedFloorText').innerText = floor;
+        document.getElementById('floorSelectContainer').classList.remove('open');
     }
 
     // Close modal on click outside
     window.onclick = function(event) {
         if (event.target == document.getElementById('roomModal')) {
             closeModal();
+        }
+        
+        // Close custom dropdown on click outside
+        const floorSelect = document.getElementById('floorSelectContainer');
+        if (floorSelect && !floorSelect.contains(event.target)) {
+            floorSelect.classList.remove('open');
         }
     }
 </script>

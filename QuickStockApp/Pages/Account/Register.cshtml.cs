@@ -6,7 +6,7 @@ using QuickStockApp.Services;
 
 namespace QuickStockApp.Pages
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Library Admin,Home Economics Admin")]
     public class RegisterModel : PageModel
     {
         private readonly IApiService _api;

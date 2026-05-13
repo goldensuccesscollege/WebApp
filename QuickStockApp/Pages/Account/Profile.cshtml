@@ -17,7 +17,6 @@
                     <img src="@avatarUrl" id="profileImgPreview" class="profile-avatar border border-5 border-white shadow">
                     <label for="imageUpload" class="avatar-edit-btn btn btn-primary shadow">
                         <i class="fas fa-camera"></i>
-                        <input type="file" id="imageUpload" name="ImageProfile" form="profileForm" hidden accept="image/*">
                     </label>
                 </div>
                 <div class="header-info-wrapper text-center text-md-start mb-2">
@@ -262,7 +261,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" id="profileForm" enctype="multipart/form-data">
+                <form asp-page-handler="UpdateProfile" method="post" id="profileForm" enctype="multipart/form-data">
+                    <input type="file" id="imageUpload" name="ImageProfile" hidden accept="image/*">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-muted">First Name</label>
@@ -490,7 +490,9 @@
             const [file] = this.files;
             if (file) {
                 document.getElementById('profileImgPreview').src = URL.createObjectURL(file);
-                // Auto-submit after preview if we wanted, but let's keep it manual
+                // Open the modal automatically so user can save
+                const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+                modal.show();
             }
         };
 

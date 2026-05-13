@@ -20,25 +20,69 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "RequestVerificationToken";
 });
 
-// Register ApiService
-builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+// Helper to configure HttpClients
+Action<HttpClient> configureClient = client =>
 {
     var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
     if (string.IsNullOrWhiteSpace(apiUrl))
         throw new Exception("ApiSettings:BaseUrl missing in appsettings.json");
-
     client.BaseAddress = new Uri(apiUrl);
-})
-.ConfigurePrimaryHttpMessageHandler(() => 
+};
+
+// Register ApiServices by Feature
+builder.Services.AddHttpClient<IAuthService, AuthService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IAssetService, AssetService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IRoomService, RoomService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<ICampusService, CampusService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IReportService, ReportService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IApparelService, ApparelService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IFurnitureService, FurnitureService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<ILibraryService, LibraryService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IConsumableService, ConsumableService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IProfileService, ProfileService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+builder.Services.AddHttpClient<IUserManagementService, UserManagementService>(configureClient)
+    .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
+    .AddHttpMessageHandler<UnauthorizedHandler>();
+
+// Keep IApiService for backward compatibility (delegating to specialized services)
+builder.Services.AddTransient<IApiService, ApiService>();
+
+static HttpClientHandler GetHandler(bool isDev)
 {
-    var newHandler = new HttpClientHandler();
-    if (builder.Environment.IsDevelopment())
-    {
-        newHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-    }
-    return newHandler;
-})
-.AddHttpMessageHandler<UnauthorizedHandler>();
+    var handler = new HttpClientHandler();
+    if (isDev) handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+    return handler;
+}
 
 // ✅ Authentication & Authorization
 builder.Services.AddAuthentication("MyCookieAuth")

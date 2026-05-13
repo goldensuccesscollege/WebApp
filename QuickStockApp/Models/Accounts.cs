@@ -10,13 +10,18 @@ namespace QuickStockApp.Models
     }
     public class LoginResponseDto
     {
+        public int Id { get; set; }
         public string Token { get; set; } = string.Empty;
+
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public System.Collections.Generic.List<int> CampusIds { get; set; } = new();
         public bool CanAccessITAssets { get; set; }
         public bool CanAccessApparel { get; set; }
         public bool CanAccessMessages { get; set; }
+        public bool CanAccessLibrary { get; set; }
+        public bool CanAccessHomeEconomics { get; set; }
+        public bool CanAccessConsumables { get; set; }
     }
 
     public class RegisterRequest
