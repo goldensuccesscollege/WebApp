@@ -12,48 +12,41 @@
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
 
+    var canSeeLogsReports = isAdmin || isManager || isUser;
     bool showListTab = !string.IsNullOrEmpty(Model.SearchTerm) || Model.CurrentPage > 1 || Request.Query.ContainsKey("showList");
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<div class="consumables-container animate-fade-in">
-    <!-- Header -->
-    <div class="dashboard-header mb-5">
-        <div class="row align-items-center">
-            <div class="col-lg-7">
-                <div class="title-section">
-                    <div class="badge-v3 mb-2">
-                        <i class="fas fa-box-open me-2"></i> Stock Management
-                    </div>
-                    <h1 class="premium-display-text mb-2">Consumables Inventory</h1>
-                    <p class="text-muted fs-5 mb-0">Monitor and manage school supplies with precision and ease.</p>
-                </div>
+<!-- Tab Navigation -->
+<div class="d-flex justify-content-center mb-4 animate-in">
+    <ul class="nav nav-pills bg-white p-1 rounded-pill shadow-sm" id="consumableTabs" role="tablist" style="border: 1px solid rgba(31,60,136,0.15);">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(!showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold" id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard-view" type="button" role="tab" aria-controls="dashboard-view" aria-selected="@(!showListTab ? "true" : "false")" style="transition: all 0.3s;">
+                <i class="fas fa-chart-pie me-2"></i> Overview Dashboard
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold text-secondary" id="list-tab" data-bs-toggle="pill" data-bs-target="#list-view" type="button" role="tab" aria-controls="list-view" aria-selected="@(showListTab ? "true" : "false")" style="transition: all 0.3s;">
+                <i class="fas fa-boxes me-2"></i> Product Inventory List
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="tab-content" id="consumableTabContent">
+    <!-- DASHBOARD TAB -->
+    <div class="tab-pane fade @(!showListTab ? "show active" : "")" id="dashboard-view" role="tabpanel" aria-labelledby="dashboard-tab">
+        <div class="consumables-container animate-fade-in">
+            <div class="col-12 d-flex align-items-center gap-2 mb-4">
+                <h5 class="fw-bold mb-0" style="background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                    <i class="fas fa-chart-bar me-2" style="-webkit-text-fill-color:var(--primary-color);"></i>Consumables Dashboard
+                </h5>
             </div>
-            <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
-                <div class="header-actions-v2">
-                    <form method="get" class="search-form-v2 d-inline-block me-2">
-                        <div class="premium-search-box">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" asp-for="SearchTerm" placeholder="Search products..." class="search-field" />
-                            @if (!string.IsNullOrEmpty(Model.SearchTerm))
-                            {
-                                <a href="/Inventory/Consumables" class="search-clear"><i class="fas fa-times-circle"></i></a>
-                            }
-                        </div>
-                    </form>
-                    @if (canAdd)
-                    {
-                        <button class="btn-premium-v2 animate-bounce-in" onclick="openAddModal()">
-                            <span class="btn-icon"><i class="fas fa-plus"></i></span>
-                            <span class="btn-text">Register Stock</span>
-                        </button>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Quick Stats & Chart Row -->
     <div class="row g-4 mb-5">
@@ -76,7 +69,7 @@
             </div>
         </div>
         <div class="col-xl-4">
-            <div class="row g-4 h-100">
+            <div class="row g-4 mb-4">
                 <div class="col-12">
                     <div class="stat-card-v2 bg-primary-gradient text-white">
                         <div class="stat-icon-bg"><i class="fas fa-boxes"></i></div>
@@ -98,13 +91,93 @@
                     </div>
                 </div>
             </div>
+
+            @if (canSeeLogsReports)
+            {
+                <div class="glass-card p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold mb-0 small text-muted text-uppercase"><i class="fas fa-history me-1"></i>Recent Activity</h6>
+                        <button class="btn btn-sm btn-link text-decoration-none small p-0" onclick="showLogsModal()">View all</button>
+                    </div>
+                    <div id="consumableRecentActivity" class="activity-list-sm">
+                        <div class="text-center text-muted small py-2"><div class="spinner-border spinner-border-sm"></div></div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
+    </div>
+    </div> <!-- END DASHBOARD TAB -->
 
-    <!-- Main Content Area -->
+    <!-- LIST TAB -->
+    <div class="tab-pane fade @(showListTab ? "show active" : "")" id="list-view" role="tabpanel" aria-labelledby="list-tab">
+        <div class="consumables-container animate-fade-in">
+            <!-- Header -->
+            <div class="dashboard-header mb-5">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+                        <div class="title-section">
+                            <div class="badge-v3 mb-2">
+                                <i class="fas fa-box-open me-2"></i> Stock Management
+                            </div>
+                            <h1 class="premium-display-text mb-2">Consumables Inventory</h1>
+                            <p class="text-muted fs-5 mb-0">Monitor and manage school supplies with precision and ease.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
+                        <div class="header-actions-v2">
+                            <form method="get" class="search-form-v2 d-inline-block me-2">
+                                <div class="premium-search-box">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" asp-for="SearchTerm" placeholder="Search products..." class="search-field" />
+                                    <input type="hidden" name="ShowOutOnly" value="@Model.ShowOutOnly.ToString().ToLower()" />
+                                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                                    {
+                                        <a href="/Inventory/Consumables" class="search-clear"><i class="fas fa-times-circle"></i></a>
+                                    }
+                                </div>
+                            </form>
+                            @if (canAdd)
+                            {
+                                <a href="/Inventory/AddConsumable" class="btn-premium-v2 animate-bounce-in text-decoration-none">
+                                    <span class="btn-icon"><i class="fas fa-plus"></i></span>
+                                    <span class="btn-text">Register Stock</span>
+                                </a>
+                            }
+                            @if (canUpdate)
+                            {
+                                <button class="btn btn-warning fw-bold rounded-pill px-4 py-2 ms-2 animate-bounce-in" onclick="openRequestListModal()" id="requestListBtn">
+                                    <i class="fas fa-clipboard-list me-2"></i>Request List
+                                    <span class="badge bg-danger rounded-pill ms-1" id="pendingBadge" style="display:none;">0</span>
+                                </button>
+                            }
+                            else if (isUser)
+                            {
+                                <button class="btn btn-info text-white fw-bold rounded-pill px-4 py-2 ms-2 animate-bounce-in" onclick="openRequestListModal()">
+                                    <i class="fas fa-search-location me-2"></i>Track Requests
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
     <div class="inventory-section glass-card border-0 shadow-sm">
         <div class="card-header-v2 p-4 border-bottom d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0">Product Directory</h5>
+            <div class="d-flex align-items-center gap-3">
+                <h5 class="fw-bold mb-0">Product Directory</h5>
+                <div class="btn-group rounded-pill p-1 bg-light border shadow-sm" style="font-size: 0.8rem;">
+                    <a href="?ShowOutOnly=false&SearchTerm=@Model.SearchTerm" 
+                       class="btn btn-sm rounded-pill px-3 fw-bold @(!Model.ShowOutOnly ? "btn-primary shadow-sm" : "text-muted")">
+                       <i class="fas fa-check-circle me-1"></i> Active Inventory
+                    </a>
+                    <a href="?ShowOutOnly=true&SearchTerm=@Model.SearchTerm" 
+                       class="btn btn-sm rounded-pill px-3 fw-bold @(Model.ShowOutOnly ? "btn-danger shadow-sm" : "text-muted")">
+                       <i class="fas fa-exclamation-triangle me-1"></i> Out of Stock
+                    </a>
+                </div>
+            </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="location.reload()">
                     <i class="fas fa-sync-alt"></i>
@@ -115,12 +188,13 @@
             <table class="table-premium">
                 <thead>
                     <tr>
-                        <th style="width: 40%">Product Information</th>
-                        <th>Arrival Date</th>
-                        <th class="text-center">Stock In</th>
-                        <th class="text-center">Stock Out</th>
-                        <th class="text-center">Balance</th>
-                        <th class="text-end">Actions</th>
+                        <th style="width: 20%">Product</th>
+                        <th style="width: 35%">Stock Description</th>
+                        <th style="width: 15%">Arrival Date</th>
+                        <th class="text-center" style="width: 8%">In</th>
+                        <th class="text-center" style="width: 8%">Out</th>
+                        <th class="text-center" style="width: 8%">Bal</th>
+                        <th class="text-end" style="width: 6%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -130,8 +204,8 @@
                             <td colspan="6" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="fas fa-search fa-3x text-muted opacity-20 mb-3"></i>
-                                    <h5 class="fw-bold text-muted">No products found</h5>
-                                    <p class="small text-muted">Try adjusting your search filters or add a new consumable.</p>
+                                    <h5 class="fw-bold text-muted">@(Model.ShowOutOnly ? "No out-of-stock items" : "No active inventory found")</h5>
+                                    <p class="small text-muted">@(Model.ShowOutOnly ? "Great! All your registered consumables currently have items in stock." : "Try adjusting your search filters or add a new consumable to your inventory.")</p>
                                 </div>
                             </td>
                         </tr>
@@ -145,10 +219,27 @@
                                         <i class="fas fa-box"></i>
                                     </div>
                                     <div class="product-text">
-                                        <span class="product-name fw-bold text-dark">@item.Product</span>
-                                        <span class="product-desc text-muted small">@item.Description</span>
+                                        <div class="d-flex align-items-center">
+                                            <span class="product-name fw-bold text-dark fs-6">@item.Product</span>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2" style="font-size:0.65rem; padding: 2px 8px;">@item.Unit</span>
+                                        </div>
                                     </div>
                                 </div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="fas fa-quote-left text-primary opacity-25 mt-1" style="font-size: 0.7rem;"></i>
+                                        <span class="text-muted" style="font-size: 0.8rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 300px;">
+                                            @item.Description
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted opacity-40 small italic">No specific description</span>
+                                }
                             </td>
                             <td>
                                 <span class="badge rounded-pill bg-light text-dark fw-bold border">
@@ -168,12 +259,15 @@
                             </td>
                             <td class="text-end">
                                 <div class="action-group-v2">
-                                    <button class="btn-action view" onclick="viewItems(@item.Id, '@item.Product')" title="View Items">
+                                    <button class="btn-action restock" onclick="openRestockModal(@item.Id, '@item.Product')" title="Add Quantity" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn-action view" onclick="viewItems(@item.Id, '@item.Product')" title="View Units">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     @if (canUpdate)
                                     {
-                                        <button class="btn-action edit" title="Edit Product">
+                                        <button class="btn-action edit" onclick='openEditModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(item)))' title="Edit Product">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                     }
@@ -195,7 +289,7 @@
                         @for (int i = 1; i <= Model.TotalPages; i++)
                         {
                             <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                <a class="page-link rounded-circle mx-1" href="?CurrentPage=@i&SearchTerm=@Model.SearchTerm">@i</a>
+                                <a class="page-link rounded-circle mx-1" href="?CurrentPage=@i&SearchTerm=@Model.SearchTerm&ShowOutOnly=@Model.ShowOutOnly">@i</a>
                             </li>
                         }
                     </ul>
@@ -203,52 +297,84 @@
             </div>
         }
     </div>
-</div>
+    </div> <!-- END LIST TAB -->
+</div> <!-- END TAB CONTENT -->
 
 <!-- Modal Structure remains but improved visually -->
-<div id="addModal" class="modal-overlay-v2">
+<!-- EDIT MODAL -->
+<div id="editModal" class="modal-overlay-v2">
     <div class="modal-card-v2 animate-scale-in">
         <div class="modal-card-header">
             <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon bg-primary-gradient"><i class="fas fa-plus"></i></div>
+                <div class="modal-header-icon bg-primary"><i class="fas fa-edit"></i></div>
                 <div>
-                    <h5 class="fw-800 mb-0">Register New Consumable</h5>
-                    <p class="small text-muted mb-0">Initialize stock for a new product category.</p>
+                    <h5 class="fw-800 mb-0">Edit Product</h5>
+                    <p class="small text-muted mb-0">Modify product information.</p>
                 </div>
             </div>
-            <button class="modal-close-v2" onclick="closeAddModal()">&times;</button>
+            <button class="modal-close-v2" onclick="closeEditModal()">&times;</button>
         </div>
-        <form method="post" asp-page-handler="Create" class="modal-card-body p-4">
-            <input type="hidden" asp-for="NewConsumable.CampusId" value="@activeCampusId" />
-            <div class="form-floating mb-3">
-                <input asp-for="NewConsumable.Product" class="form-control" id="productInput" placeholder="Product Name" required>
-                <label for="productInput">Product Name</label>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <div class="form-floating">
-                        <input type="number" asp-for="NewConsumable.In" class="form-control" id="qtyInput" placeholder="Quantity" min="1" value="1" required>
-                        <label for="qtyInput">Quantity (In)</label>
-                    </div>
+        <div class="modal-card-body p-4">
+            <form id="editForm">
+                <input type="hidden" id="editId" />
+                <div class="form-floating mb-3">
+                    <input type="text" id="editProduct" class="form-control" placeholder="Product Name" required>
+                    <label>Product Name</label>
                 </div>
-                <div class="col-6">
-                    <div class="form-floating">
-                        <input type="date" asp-for="NewConsumable.DateArrived" class="form-control" id="dateInput" value="@DateTime.Now.ToString("yyyy-MM-dd")" required>
-                        <label for="dateInput">Date Arrived</label>
-                    </div>
+                <div class="form-floating mb-3">
+                    <select id="editUnit" class="form-select" required>
+                        <option value="Pieces">Pieces</option>
+                        <option value="Ream">Ream</option>
+                        <option value="Gallon">Gallon</option>
+                        <option value="Box">Box</option>
+                        <option value="Pack">Pack</option>
+                        <option value="Roll">Roll</option>
+                    </select>
+                    <label>Unit of Measure</label>
                 </div>
-            </div>
-            <div class="form-floating mb-4">
-                <textarea asp-for="NewConsumable.Description" class="form-control" id="descInput" placeholder="Description" style="height: 100px"></textarea>
-                <label for="descInput">Description (Optional)</label>
-            </div>
-            <div class="d-flex gap-2 mt-4">
-                <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border" onclick="closeAddModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary rounded-pill flex-grow-1 py-3 fw-bold bg-primary-gradient border-0">Complete Registration</button>
-            </div>
-        </form>
+                <div class="form-floating mb-3">
+                    <textarea id="editDescription" class="form-control" placeholder="Description" style="height: 100px"></textarea>
+                    <label>Description</label>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border" onclick="closeEditModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary rounded-pill flex-grow-1 py-3 fw-bold bg-primary-gradient border-0" onclick="submitEdit()">Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<!-- RESTOCK MODAL -->
+<div id="restockModal" class="modal-overlay-v2">
+    <div class="modal-card-v2 animate-scale-in" style="max-width: 450px;">
+        <div class="modal-card-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modal-header-icon bg-success"><i class="fas fa-plus"></i></div>
+                <div>
+                    <h5 class="fw-800 mb-0">Add Quantity</h5>
+                    <p class="small text-muted mb-0" id="restockSubTitle">Product Name</p>
+                </div>
+            </div>
+            <button class="modal-close-v2" onclick="closeRestockModal()">&times;</button>
+        </div>
+        <div class="modal-card-body p-4">
+            <div class="alert alert-info border-0 rounded-4 mb-4" style="background: rgba(31,60,136,0.05);">
+                <i class="fas fa-info-circle me-2"></i> This will add new units to your inventory.
+            </div>
+            <input type="hidden" id="restockId" />
+            <div class="form-floating mb-4">
+                <input type="number" id="restockQty" class="form-control" placeholder="Quantity to Add" min="1" value="1" required>
+                <label>Quantity to Add</label>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border" onclick="closeRestockModal()">Cancel</button>
+                <button type="button" class="btn btn-success rounded-pill flex-grow-1 py-3 fw-bold border-0" onclick="submitRestock()">Confirm Addition</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div id="itemsModal" class="modal-overlay-v2">
     <div class="modal-card-v2 wide animate-scale-in">
@@ -257,10 +383,24 @@
                 <div class="modal-header-icon bg-info"><i class="fas fa-list-ul"></i></div>
                 <div>
                     <h5 class="fw-800 mb-0" id="modalItemTitle">Consumable Units</h5>
-                    <p class="small text-muted mb-0" id="modalItemSubtitle">Track individual unit status and usage logs.</p>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <p class="small text-muted mb-0" id="modalItemSubtitle">Track unit status.</p>
+                        <div class="btn-group rounded-pill p-1 bg-light border ms-2" style="font-size: 0.7rem;">
+                            <button type="button" id="btnShowAvailable" class="btn btn-sm rounded-pill px-2 fw-bold btn-primary shadow-sm" onclick="toggleModalUnits(false)">In Stock</button>
+                            <button type="button" id="btnShowUsed" class="btn btn-sm rounded-pill px-2 fw-bold text-muted" onclick="toggleModalUnits(true)">Used/Out</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button class="modal-close-v2" onclick="closeItemsModal()">&times;</button>
+            <div class="ms-auto d-flex gap-2">
+                @if (canUpdate)
+                {
+                    <button class="btn btn-sm btn-dark rounded-pill px-3 fw-bold" onclick="downloadBatchQrPdf()">
+                        <i class="fas fa-file-pdf me-1"></i> Batch QR
+                    </button>
+                }
+                <button class="modal-close-v2" onclick="closeItemsModal()">&times;</button>
+            </div>
         </div>
         <div class="modal-card-body p-0">
             <div class="table-responsive" style="max-height: 60vh;">
@@ -269,7 +409,8 @@
                         <tr>
                             <th>Unit Code</th>
                             <th>Status</th>
-                            <th>Date Out</th>
+                            <th>Stocked By</th>
+                            <th id="thDateOut" style="display:none;">Date Out</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -280,9 +421,114 @@
     </div>
 </div>
 
+<!-- QR Code Modal -->
+<div id="qrModal" class="modal-overlay-v2" style="z-index: 4000;">
+    <div class="modal-card-v2 animate-scale-in" style="max-width: 400px; text-align: center;">
+        <div class="modal-card-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modal-header-icon bg-dark text-white"><i class="fas fa-qrcode"></i></div>
+                <div class="text-start">
+                    <h5 class="fw-800 mb-0">Unit QR Code</h5>
+                    <p class="small text-muted mb-0">Scan to identify the unit.</p>
+                </div>
+            </div>
+            <button class="modal-close-v2" onclick="closeQrModal()">&times;</button>
+        </div>
+        <div class="modal-card-body p-4 d-flex flex-column align-items-center">
+            <h6 id="qrModalProductName" class="fw-bold text-primary mb-3"></h6>
+            <div id="qrcodeDisplay" class="p-3 bg-white border rounded-3 shadow-sm mb-3"></div>
+            <code id="qrCodeText" class="fs-5 fw-bold text-muted bg-light px-3 py-2 rounded"></code>
+        </div>
+        <div class="modal-card-footer p-3 border-top">
+            <button class="btn btn-primary w-100 rounded-pill fw-bold" onclick="downloadSingleQrPdf()">
+                <i class="fas fa-download me-2"></i> Download PDF
+            </button>
+        </div>
+    </div>
+</div>
+
 @Html.AntiForgeryToken()
 
+<div id="logsModal" class="modal-overlay-v2">
+    <div class="modal-card-v2 wide animate-scale-in">
+        <div class="modal-card-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modal-header-icon bg-dark"><i class="fas fa-history"></i></div>
+                <div>
+                    <h5 class="fw-800 mb-0">Consumable Activity Logs</h5>
+                    <p class="small text-muted mb-0">Full audit trail of registration and status changes.</p>
+                </div>
+            </div>
+            <button class="modal-close-v2" onclick="closeLogsModal()">&times;</button>
+        </div>
+        <div class="modal-card-body p-0">
+            <div class="table-responsive" style="max-height: 60vh;">
+                <table class="table-premium">
+                    <thead class="sticky-top bg-white">
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>Product</th>
+                            <th>Details</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-card-footer p-3 border-top d-flex justify-content-between align-items-center">
+            <div id="logsPaginationInfo" class="small text-muted fw-bold"></div>
+            <div id="logsPaginationControls" class="d-flex gap-2"></div>
+        </div>
+    </div>
+</div>
+
+<div id="requestListModal" class="modal-overlay-v2">
+    <div class="modal-card-v2 wide animate-scale-in">
+        <div class="modal-card-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modal-header-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i class="fas fa-clipboard-list"></i></div>
+                <div>
+                    <h5 class="fw-800 mb-0">Consumable Out Requests</h5>
+                    <p class="small text-muted mb-0">Track and manage requests to release items from inventory.</p>
+                </div>
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <div class="btn-group rounded-pill p-1 bg-light border" style="font-size: 0.75rem;">
+                    <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold btn-warning shadow-sm" id="btnShowPending" onclick="switchRequestTab('pending')">Pending</button>
+                    <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold text-muted" id="btnShowHistory" onclick="switchRequestTab('history')">Past Requests</button>
+                </div>
+                <button class="modal-close-v2" onclick="closeRequestListModal()">&times;</button>
+            </div>
+        </div>
+        <div class="modal-card-body p-0">
+            <div class="table-responsive" style="max-height: 60vh;">
+                <table class="table-premium">
+                    <thead class="sticky-top bg-white">
+                        <tr>
+                            <th>Item Code</th>
+                            <th>Product Name</th>
+                            <th>Requested By</th>
+                            <th>Status / Remarks</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
+    .activity-list-sm { 
+        display:flex;flex-direction:column;gap:.4rem; 
+        max-height: 250px; overflow-y: auto; padding-right: 4px;
+    }
+    .activity-item-sm { display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:10px;background:rgba(31,60,136,0.03);font-size:.82rem; border: 1px solid rgba(0,0,0,0.02); }
+    .log-badge-sm { font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(31,60,136,0.1);color:var(--primary-color);white-space:nowrap; }
+
     :root {
         --primary-color: #1F3C88;
         --primary-gradient: linear-gradient(135deg, #1F3C88 0%, #3b82f6 100%);
@@ -341,6 +587,17 @@
         opacity: 0.15; transform: rotate(-15deg);
     }
     .fw-extrabold { font-weight: 800; }
+
+    /* Tab pill active styles */
+    .nav-pills .nav-link.active {
+        background: var(--primary-gradient) !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(31, 60, 136, 0.3);
+    }
+    .nav-pills .nav-link:not(.active):hover {
+        background: rgba(31, 60, 136, 0.05);
+        color: var(--primary-color) !important;
+    }
 
     /* Table Styling */
     .table-premium { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -421,9 +678,60 @@
         70% { transform: scale(0.9); }
         100% { transform: scale(1); opacity: 1; }
     }
+
+    /* Toast Notifications */
+    .toast-container-v2 {
+        position: fixed; top: 2rem; right: 2rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .premium-toast {
+        background: white; border-radius: 16px; padding: 1rem 1.5rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 1rem;
+        min-width: 300px; border-left: 5px solid var(--primary-color);
+        animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .premium-toast.success { border-left-color: #10b981; }
+    .premium-toast.error { border-left-color: #ef4444; }
+    .premium-toast.warning { border-left-color: #f59e0b; }
+    
+    .toast-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
+    .toast-content { flex-grow: 1; }
+    .toast-title { font-weight: 800; font-size: 0.9rem; color: #1e293b; margin-bottom: 2px; }
+    .toast-msg { font-size: 0.8rem; color: #64748b; }
+
+    @@keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes toastOut { to { transform: translateX(100%); opacity: 0; } }
+
 </style>
 
+<div class="toast-container-v2" id="toastContainer"></div>
+
 <script>
+    function showToast(title, message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `premium-toast ${type}`;
+        
+        let icon = '<i class="fas fa-check"></i>';
+        let iconBg = 'bg-success';
+        if (type === 'error') { icon = '<i class="fas fa-times"></i>'; iconBg = 'bg-danger'; }
+        if (type === 'warning') { icon = '<i class="fas fa-exclamation"></i>'; iconBg = 'bg-warning'; }
+        if (type === 'info') { icon = '<i class="fas fa-info"></i>'; iconBg = 'bg-info'; }
+
+        toast.innerHTML = `
+            <div class="toast-icon ${iconBg}">${icon}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-msg">${message}</div>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'toastOut 0.5s forwards';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
     // --- Charting ---
     document.addEventListener('DOMContentLoaded', () => {
         const ctx = document.getElementById('inventoryChart').getContext('2d');
@@ -477,66 +785,603 @@
     });
 
     // --- Modal Logic ---
-    function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-    function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
     function closeItemsModal() { document.getElementById('itemsModal').style.display = 'none'; }
+    function showLogsModal() { document.getElementById('logsModal').style.display = 'flex'; loadLogs(1); }
+    function closeLogsModal() { document.getElementById('logsModal').style.display = 'none'; }
 
-    async function viewItems(id, name) {
-        document.getElementById('modalItemTitle').innerText = name;
-        const tbody = document.getElementById('itemsTableBody');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 fw-bold text-primary">Fetching units...</p></td></tr>';
-        document.getElementById('itemsModal').style.display = 'flex';
+    // Edit Logic
+    function openEditModal(item) {
+        document.getElementById('editId').value = item.Id;
+        document.getElementById('editProduct').value = item.Product;
+        document.getElementById('editUnit').value = item.Unit;
+        document.getElementById('editDescription').value = item.Description || '';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+    function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
+    async function submitEdit() {
+        const item = {
+            Id: document.getElementById('editId').value,
+            Product: document.getElementById('editProduct').value,
+            Unit: document.getElementById('editUnit').value,
+            Description: document.getElementById('editDescription').value
+        };
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const res = await fetch('?handler=Update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+            body: new URLSearchParams(item)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Updated', 'Product information updated successfully.', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Error', 'Failed to update product details.', 'error');
+        }
+    }
+
+    // Restock Logic
+    function openRestockModal(id, name) {
+        document.getElementById('restockId').value = id;
+        document.getElementById('restockSubTitle').innerText = name;
+        document.getElementById('restockQty').value = 1;
+        document.getElementById('restockModal').style.display = 'flex';
+    }
+    function closeRestockModal() { document.getElementById('restockModal').style.display = 'none'; }
+
+    async function submitRestock() {
+        const id = document.getElementById('restockId').value;
+        const qty = document.getElementById('restockQty').value;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const res = await fetch(`?handler=Restock&consumableId=${id}&quantity=${qty}`, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': token }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Restocked', 'New units added to inventory.', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Error', 'Failed to add new quantity.', 'error');
+        }
+    }
+
+    const _campusId = "@activeCampusId";
+    const _canSeeLogs = @(canSeeLogsReports ? "true" : "false");
+
+    async function loadDashboardData() {
+        if (!_campusId || !_canSeeLogs) return;
         try {
-            const res = await fetch(`?handler=Items&consumableId=${id}`);
-            const items = await res.json();
+            const res = await fetch(`?handler=Logs&page=1&pageSize=5`);
+            const data = await res.json();
+            const acts = data.logs || [];
+            const container = document.getElementById('consumableRecentActivity');
+            container.innerHTML = acts.length
+                ? acts.map(a => `<div class="activity-item-sm"><span class="log-badge-sm">${a.action}</span><span class="fw-bold">${a.entityName}</span><span class="text-muted ms-auto">${a.timestamp}</span></div>`).join('')
+                : '<p class="text-muted small text-center py-2">No recent activity.</p>';
+        } catch (e) { console.warn('Failed to load activity logs', e); }
+    }
+
+    async function loadLogs(page) {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        
+        try {
+            const res = await fetch(`?handler=Logs&page=${page}&pageSize=10`);
+            const data = await res.json();
+            const logs = data.logs || [];
             
+            tbody.innerHTML = logs.map(l => `
+                <tr>
+                    <td class="small fw-bold">${l.timestamp}</td>
+                    <td><span class="log-badge-sm">${l.action}</span></td>
+                    <td class="fw-bold">${l.entityName}</td>
+                    <td class="small text-muted">${l.details}</td>
+                    <td class="small fw-bold">${l.username || 'System'}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No logs found.</td></tr>';
+
+            document.getElementById('logsPaginationInfo').innerText = `Showing page ${data.currentPage} of ${data.totalPages}`;
+            
+            const controls = document.getElementById('logsPaginationControls');
+            controls.innerHTML = '';
+            if (data.currentPage > 1) {
+                controls.innerHTML += `<button class="btn btn-sm btn-light border rounded-pill px-3" onclick="loadLogs(${data.currentPage - 1})">Prev</button>`;
+            }
+            if (data.currentPage < data.totalPages) {
+                controls.innerHTML += `<button class="btn btn-sm btn-light border rounded-pill px-3" onclick="loadLogs(${data.currentPage + 1})">Next</button>`;
+            }
+        } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load logs.</td></tr>'; }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+    const _isManager = @((isAdmin || isManager) ? "true" : "false");
+    const _currentUserId = "@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value";
+    let _currentConsumableId = null;
+    let _isModalShowingOutOnly = false;
+
+    async function viewItems(id, name, showOutOnly = false) {
+        _currentConsumableId = id;
+        _isModalShowingOutOnly = showOutOnly;
+        document.getElementById('modalItemTitle').innerText = name;
+        
+        // Update toggle UI
+        const btnAvail = document.getElementById('btnShowAvailable');
+        const btnUsed = document.getElementById('btnShowUsed');
+        if (showOutOnly) {
+            btnUsed.className = "btn btn-sm rounded-pill px-2 fw-bold btn-danger shadow-sm";
+            btnAvail.className = "btn btn-sm rounded-pill px-2 fw-bold text-muted";
+        } else {
+            btnAvail.className = "btn btn-sm rounded-pill px-2 fw-bold btn-primary shadow-sm";
+            btnUsed.className = "btn btn-sm rounded-pill px-2 fw-bold text-muted";
+        }
+
+        const tbody = document.getElementById('itemsTableBody');
+        const thDateOut = document.getElementById('thDateOut');
+        
+        // Show/Hide Date Out column header
+        if (thDateOut) thDateOut.style.display = showOutOnly ? 'table-cell' : 'none';
+
+        tbody.innerHTML = '<tr><td colspan="' + (showOutOnly ? 5 : 4) + '" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 fw-bold text-primary">Fetching units...</p></td></tr>';
+        document.getElementById('itemsModal').style.display = 'flex';
+        try {
+            const res = await fetch(`?handler=Items&consumableId=${id}&showOutOnly=${showOutOnly}`);
+            const items = await res.json();
+            _currentModalItems = items; // Store globally for batch PDF
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted"><i class="fas fa-folder-open fa-2x mb-2 d-block opacity-20"></i>No units found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="${showOutOnly ? 5 : 4}" class="text-center py-5 text-muted"><i class="fas fa-folder-open fa-2x mb-2 d-block opacity-20"></i>No ${showOutOnly ? 'used' : 'available'} units found.</td></tr>`;
                 return;
             }
+            tbody.innerHTML = items.map(item => {
+                let statusHtml = '';
+                let actionHtml = '';
 
-            tbody.innerHTML = items.map(item => `
-                <tr class="${item.status === 'Out' ? 'opacity-50' : ''}">
-                    <td class="ps-4"><code class="fw-bold px-2 py-1 rounded bg-light text-dark">${item.itemCode}</code></td>
-                    <td>
-                        <span class="badge rounded-pill ${item.status === 'In Stock' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'}" style="font-size: 0.75rem; padding: 5px 12px;">
-                            ${item.status}
-                        </span>
-                    </td>
-                    <td class="text-muted small">${item.dateOut ? new Date(item.dateOut).toLocaleDateString() : '—'}</td>
-                    <td class="text-end pe-4">
-                        ${item.status === 'In Stock' ? `
-                            <button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="updateStatus(${item.id}, 'Out')">
-                                <i class="fas fa-sign-out-alt me-1"></i> Use Unit
-                            </button>
-                        ` : `
-                            <span class="text-muted small fw-bold"><i class="fas fa-check-circle me-1"></i> Used</span>
-                        `}
-                    </td>
-                </tr>
-            `).join('');
+                if (item.status === 'Out') {
+                    statusHtml = `<div>
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.75rem; padding: 5px 12px;">Used</span>
+                                    <div class="mt-1 small text-start ps-1" style="font-size: 0.65rem; line-height: 1.3;">
+                                        <div class="text-muted">Req: <span class="fw-bold text-dark">${item.requestedByUsername || '—'}</span></div>
+                                        <div class="text-muted">App: <span class="fw-bold text-dark">${item.approvedByUsername || 'Manager'}</span></div>
+                                    </div>
+                                  </div>`;
+                    actionHtml = `<span class="text-muted small fw-bold"><i class="fas fa-check-circle me-1"></i> Out</span>`;
+                } else if (item.isRequestPending) {
+                    statusHtml = `<span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle pulse-warning" style="font-size: 0.75rem; padding: 5px 12px;">
+                                    <i class="fas fa-clock me-1"></i> Awaiting Approval
+                                 </span>`;
+                    
+                    if (item.requestedByUserId === _currentUserId || _isManager) {
+                        actionHtml = `<button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelRequest(${item.pendingRequestId})">
+                                        <i class="fas fa-times me-1"></i> Cancel Request
+                                      </button>`;
+                    } else {
+                        actionHtml = `<span class="text-muted small fw-bold italic">Requested by ${item.requestedByUsername}</span>`;
+                    }
+                } else {
+                    statusHtml = `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle" style="font-size: 0.75rem; padding: 5px 12px;">In Stock</span>`;
+                    if (_isManager) {
+                        actionHtml = `<button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm" onclick="directOut(${item.id})"><i class="fas fa-sign-out-alt me-1"></i> Use Unit</button>`;
+                    } else {
+                        actionHtml = `<button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-sm" onclick="requestOut(${item.id})"><i class="fas fa-paper-plane me-1"></i> Request Out</button>`;
+                    }
+                }
+
+                return `
+                    <tr class="${item.status === 'Out' ? 'opacity-50' : ''}">
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-light border rounded" onclick="showQrModal('${item.itemCode}', '${document.getElementById('modalItemTitle').innerText.replace(/'/g, "\\'")}')" title="Show QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </button>
+                                <code class="fw-bold px-2 py-1 rounded bg-light text-dark">${item.itemCode}</code>
+                            </div>
+                        </td>
+                        <td>${statusHtml}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center" style="width:25px;height:25px;font-size:0.6rem;font-weight:700;">${(item.addedByUsername || 'S').charAt(0).toUpperCase()}</div>
+                                <span class="small fw-bold text-muted">${item.addedByUsername || 'System'}</span>
+                            </div>
+                        </td>
+                        ${showOutOnly ? `<td class="small fw-bold text-dark">${item.dateOut ? new Date(item.dateOut).toLocaleDateString() : '—'}</td>` : ''}
+                        <td class="text-end pe-4">${actionHtml}</td>
+                    </tr>
+                `;
+            }).join('');
         } catch (e) {
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-5">Failed to load unit data.</td></tr>';
         }
     }
 
-    async function updateStatus(itemId, status) {
-        if (!confirm(`Mark this unit as ${status}? This action is permanent.`)) return;
-
-        try {
-            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            const res = await fetch(`?handler=UpdateStatus&itemId=${itemId}&status=${status}`, {
-                method: 'POST',
-                headers: { 'RequestVerificationToken': token }
-            });
-            if (res.ok) {
-                location.reload();
-            } else {
-                alert("Operation failed. Please try again.");
-            }
-        } catch (e) { alert("An error occurred during the update."); }
+    function toggleModalUnits(showOutOnly) {
+        if (!_currentConsumableId) return;
+        viewItems(_currentConsumableId, document.getElementById('modalItemTitle').innerText, showOutOnly);
     }
+
+    let _currentQrData = null;
+    let _currentModalItems = []; // Populated in viewItems()
+
+    function showQrModal(itemCode, productName) {
+        _currentQrData = { code: itemCode, name: productName };
+        document.getElementById('qrModalProductName').innerText = productName;
+        document.getElementById('qrCodeText').innerText = itemCode;
+        
+        const qrContainer = document.getElementById('qrcodeDisplay');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+            text: itemCode,
+            width: 150,
+            height: 150,
+            colorDark : "#1F3C88",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        
+        document.getElementById('qrModal').style.display = 'flex';
+    }
+
+    function closeQrModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function downloadSingleQrPdf() {
+        if (!_currentQrData) return;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 80] });
+        
+        const canvas = document.querySelector('#qrcodeDisplay canvas');
+        if (!canvas) {
+            showToast('Error', 'QR Code not fully loaded yet.', 'error');
+            return;
+        }
+        const imgData = canvas.toDataURL('image/png');
+        
+        doc.setFontSize(10);
+        doc.text("QuickStock Consumables", 40, 10, { align: "center" });
+        
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        let name = _currentQrData.name;
+        if (name.length > 20) name = name.substring(0, 20) + '...';
+        doc.text(name, 40, 18, { align: "center" });
+        
+        doc.addImage(imgData, 'PNG', 20, 22, 40, 40);
+        
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text(_currentQrData.code, 40, 68, { align: "center" });
+        
+        doc.save(`QR_${_currentQrData.code}.pdf`);
+        closeQrModal();
+    }
+
+    async function downloadBatchQrPdf() {
+        if (!_currentModalItems || _currentModalItems.length === 0) {
+            showToast('Info', 'No units available to generate QR codes.', 'warning');
+            return;
+        }
+        
+        const productName = document.getElementById('modalItemTitle').innerText;
+        showToast('Generating', 'Please wait while we generate the Batch QR PDF...', 'info');
+        
+        // Small delay to allow toast to render
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const margin = 20;
+        const qrSize = 40;
+        const spacingX = 15;
+        const spacingY = 25;
+        
+        const columns = 3;
+        const rows = 4;
+        const itemsPerPage = columns * rows;
+        
+        let currentItem = 0;
+        const tempDiv = document.createElement('div');
+        
+        while (currentItem < _currentModalItems.length) {
+            if (currentItem > 0 && currentItem % itemsPerPage === 0) {
+                doc.addPage();
+            }
+            
+            const item = _currentModalItems[currentItem];
+            const pageIndex = currentItem % itemsPerPage;
+            const col = pageIndex % columns;
+            const row = Math.floor(pageIndex / columns);
+            
+            const x = margin + col * (qrSize + spacingX);
+            const y = margin + row * (qrSize + spacingY);
+            
+            tempDiv.innerHTML = '';
+            new QRCode(tempDiv, {
+                text: item.itemCode,
+                width: 128, height: 128,
+                colorDark : "#1F3C88", colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            const canvas = tempDiv.querySelector('canvas');
+            if (canvas) {
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Draw Box
+                doc.setDrawColor(200);
+                doc.rect(x - 2, y - 8, qrSize + 4, qrSize + 18);
+                
+                // Product Name
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'bold');
+                let shortName = productName.length > 20 ? productName.substring(0, 18) + '..' : productName;
+                doc.text(shortName, x + (qrSize/2), y - 3, { align: "center" });
+                
+                // QR Code
+                doc.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
+                
+                // Item Code
+                doc.setFontSize(7);
+                doc.setFont(undefined, 'normal');
+                doc.text(item.itemCode, x + (qrSize/2), y + qrSize + 5, { align: "center" });
+            }
+            
+            currentItem++;
+        }
+        
+        doc.save(`BatchQR_${productName.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+        showToast('Success', 'Batch PDF downloaded successfully.', 'success');
+    }
+
+    function refreshItemsModal() {
+        if (!_currentConsumableId) return;
+        viewItems(_currentConsumableId, document.getElementById('modalItemTitle').innerText, _isModalShowingOutOnly);
+    }
+
+    async function requestOut(itemId) {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        try {
+            const res = await fetch(`?handler=RequestOut&itemId=${itemId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
+            const data = await res.json();
+            if (data.success) { 
+                showToast('Request Sent', 'Request submitted! Awaiting manager approval.', 'info');
+                refreshItemsModal(); 
+            } else {
+                showToast('Error', data.message || 'Failed to submit request.', 'error');
+            }
+        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
+    }
+
+    async function cancelRequest(requestId) {
+        if (!confirm('Are you sure you want to cancel this out request?')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        try {
+            const res = await fetch(`?handler=CancelRequest&requestId=${requestId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Cancelled', 'Out request has been retracted.', 'warning');
+                refreshItemsModal();
+            } else {
+                showToast('Error', data.message || 'Failed to cancel request.', 'error');
+            }
+        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
+    }
+
+    async function directOut(itemId) {
+        if (!confirm('Mark this unit as Out? This action is permanent.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        try {
+            const res = await fetch(`?handler=UpdateStatus&itemId=${itemId}&status=Out`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
+            if (res.ok) { 
+                showToast('Unit Used', 'Item marked as Out successfully.', 'success');
+                refreshItemsModal(); 
+            } else { 
+                showToast('Error', 'Operation failed. Please try again.', 'error'); 
+            }
+        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
+    }
+
+    // --- Request List Modal ---
+    let _currentRequestTab = 'pending';
+    function openRequestListModal() { 
+        document.getElementById('requestListModal').style.display = 'flex'; 
+        switchRequestTab('pending'); 
+    }
+    function closeRequestListModal() { document.getElementById('requestListModal').style.display = 'none'; }
+
+    function switchRequestTab(tab) {
+        _currentRequestTab = tab;
+        const btnPending = document.getElementById('btnShowPending');
+        const btnHistory = document.getElementById('btnShowHistory');
+        
+        if (tab === 'pending') {
+            btnPending.className = "btn btn-sm rounded-pill px-3 fw-bold btn-warning shadow-sm";
+            btnHistory.className = "btn btn-sm rounded-pill px-3 fw-bold text-muted";
+            loadPendingRequests();
+        } else {
+            btnHistory.className = "btn btn-sm rounded-pill px-3 fw-bold btn-dark shadow-sm";
+            btnPending.className = "btn btn-sm rounded-pill px-3 fw-bold text-muted";
+            loadRequestHistory();
+        }
+    }
+
+    async function loadRequestHistory() {
+        const tbody = document.getElementById('requestsTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-dark"></div><p class="mt-2 fw-bold text-dark">Loading history...</p></td></tr>';
+        try {
+            const res = await fetch('?handler=RequestHistory');
+            const requests = await res.json();
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-history fa-2x mb-2 d-block opacity-20"></i>No request history found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = requests.map(r => {
+                let statusBadge = '';
+                if (r.status === 'Approved') statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle">Approved</span>';
+                else if (r.status === 'Rejected') statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Rejected</span>';
+                else if (r.status === 'Cancelled') statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Cancelled</span>';
+                else statusBadge = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle">${r.status}</span>`;
+
+                const remarksHtml = r.remarks ? `<div class="small text-muted mt-1 italic"><i class="fas fa-comment-alt me-1"></i>"${r.remarks}"</div>` : '';
+                const approverHtml = r.approvedByUsername ? `<div class="small text-muted mt-1">By: <b>${r.approvedByUsername}</b></div>` : '';
+
+                return `
+                    <tr>
+                        <td><code class="fw-bold px-2 py-1 rounded bg-light text-dark">${r.itemCode}</code></td>
+                        <td class="fw-bold">${r.productName}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width:25px;height:25px;font-size:0.6rem;font-weight:700;">${r.requestedByUsername.charAt(0).toUpperCase()}</div>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold small">${r.requestedByUsername}</span>
+                                    <span class="text-muted" style="font-size:0.65rem;">${new Date(r.requestedAt).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            ${statusBadge}
+                            ${remarksHtml}
+                            ${approverHtml}
+                        </td>
+                        <td class="text-center">
+                            <span class="small text-muted fw-bold">${r.status === 'Approved' ? '<i class="fas fa-check-circle text-success"></i> Done' : '—'}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load history.</td></tr>'; }
+    }
+
+    async function loadPendingRequests() {
+        const tbody = document.getElementById('requestsTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-warning"></div><p class="mt-2 fw-bold text-warning">Loading requests...</p></td></tr>';
+        try {
+            const res = await fetch('?handler=PendingRequests');
+            const requests = await res.json();
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-check-circle fa-2x mb-2 d-block text-success opacity-50"></i>No pending requests.</td></tr>';
+                updatePendingBadge(0); return;
+            }
+            updatePendingBadge(requests.length);
+            tbody.innerHTML = requests.map(r => `
+                <tr>
+                    <td><code class="fw-bold px-2 py-1 rounded bg-light text-dark">${r.itemCode}</code></td>
+                    <td class="fw-bold">${r.productName}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:30px;height:30px;font-size:0.7rem;font-weight:700;">${r.requestedByUsername.charAt(0).toUpperCase()}</div>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold small">${r.requestedByUsername}</span>
+                                <span class="text-muted" style="font-size:0.65rem;">${new Date(r.requestedAt).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle pulse-warning">Pending Approval</span>
+                        <div class="small text-muted mt-1 italic">Waiting for manager response...</div>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex gap-2 justify-content-center">
+                            @if (canUpdate)
+                            {
+                                <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="approveRequest(${r.id})">
+                                    <i class="fas fa-check me-1"></i>Approve
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="rejectRequest(${r.id}, '${r.itemCode}')">
+                                    <i class="fas fa-times me-1"></i>Reject
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="small text-muted fw-bold italic">Processing...</span>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load requests.</td></tr>'; }
+    }
+
+    async function approveRequest(requestId) {
+        if (!confirm('Approve this out request? The item will be immediately marked as Out.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        try {
+            const res = await fetch(`?handler=ApproveRequest&requestId=${requestId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Approved', 'Request approved. Item is now Out.', 'success');
+                loadPendingRequests();
+            } else {
+                showToast('Error', data.message || 'Failed to approve request.', 'error');
+            }
+        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
+    }
+
+    async function rejectRequest(requestId, itemCode) {
+        const reason = prompt(`Reason for rejecting item ${itemCode}:`);
+        if (reason === null) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        try {
+            const res = await fetch(`?handler=RejectRequest&requestId=${requestId}&reason=${encodeURIComponent(reason)}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Rejected', 'Request has been rejected.', 'info');
+                loadPendingRequests();
+            } else {
+                showToast('Error', data.message || 'Failed to reject request.', 'error');
+            }
+        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
+    }
+
+    function updatePendingBadge(count) {
+        const badge = document.getElementById('pendingBadge');
+        if (!badge) return;
+        badge.style.display = count > 0 ? '' : 'none';
+        badge.innerText = count;
+    }
+
+    async function loadPendingCount() {
+        if (!_isManager) return;
+        try {
+            const res = await fetch('?handler=PendingRequests');
+            const data = await res.json();
+            updatePendingBadge(Array.isArray(data) ? data.length : 0);
+        } catch {}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { 
+        loadDashboardData(); 
+        loadPendingCount(); 
+
+        // Show TempData alerts as toasts
+        @if (TempData["SuccessMessage"] != null) {
+            <text>showToast('Success', '@TempData["SuccessMessage"]', 'success');</text>
+        }
+        @if (TempData["ErrorMessage"] != null) {
+            <text>showToast('Error', '@TempData["ErrorMessage"]', 'error');</text>
+        }
+
+        // Tab Persistence: Restore last active tab
+        const activeTab = sessionStorage.getItem('activeConsumableTab');
+        const hasUrlParam = window.location.search.includes('showList');
+        
+        if (activeTab && !hasUrlParam) {
+            const tabEl = document.getElementById(activeTab);
+            if (tabEl && typeof bootstrap !== 'undefined') {
+                bootstrap.Tab.getOrCreateInstance(tabEl).show();
+            }
+        }
+
+        // Save active tab on change
+        const tabs = document.querySelectorAll('#consumableTabs button');
+        tabs.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', (e) => {
+                sessionStorage.setItem('activeConsumableTab', e.target.id);
+            });
+        });
+    });
 
     window.onclick = (e) => {
         if (e.target.classList.contains('modal-overlay-v2')) {

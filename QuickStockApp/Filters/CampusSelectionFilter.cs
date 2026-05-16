@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace QuickStockApp.Filters
 {
@@ -17,24 +16,29 @@ namespace QuickStockApp.Filters
             var user = context.HttpContext.User;
             var path = context.HttpContext.Request.Path.Value?.ToLower() ?? "";
 
-            // 1. Skip check for anonymous paths (Login, etc.) and the Campus selection page itself
+            // 1. Skip check for Login/Account pages, Campus selection page, and error pages
             if (path.Contains("/account/") || path.Contains("/campuses") || path.Contains("/error"))
             {
                 await next();
                 return;
             }
 
-            // 2. If authenticated, ensure ActiveCampusId exists
+            // 2. If authenticated, ensure ActiveCampusId exists (skip for Admin role)
             if (user.Identity?.IsAuthenticated == true)
             {
-                var activeCampusId = user.FindFirst("ActiveCampusId")?.Value;
-                
-                if (string.IsNullOrEmpty(activeCampusId))
+                var role = user.FindFirst(ClaimTypes.Role)?.Value ?? "";
+                var isAdmin = role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+                if (!isAdmin)
                 {
-                    // For security: if missing, sign out and force login
-                    await context.HttpContext.SignOutAsync("MyCookieAuth");
-                    context.Result = new RedirectToPageResult("/Account/Login");
-                    return;
+                    var activeCampusId = user.FindFirst("ActiveCampusId")?.Value;
+
+                    if (string.IsNullOrEmpty(activeCampusId))
+                    {
+                        // Missing campus selection — redirect to campus picker (do NOT sign out)
+                        context.Result = new RedirectToPageResult("/Campus/Campuses");
+                        return;
+                    }
                 }
             }
 

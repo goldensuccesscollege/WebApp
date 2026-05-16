@@ -80,6 +80,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/AddConsumable.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEFkZENvbnN1bWFibGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/ApparelList.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEFwcGFyZWxMaXN0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
