@@ -1,0 +1,128 @@
+@page
+@model QuickStockApp.Pages.Inventory.AddConsumableModel
+@{
+    ViewData["Title"] = "Add Consumable Stock";
+}
+
+<div class="page-container animate-fade-in">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb premium-breadcrumb">
+            <li class="breadcrumb-item"><a href="/Dashboard"><i class="fas fa-home"></i></a></li>
+            <li class="breadcrumb-item"><a href="/Inventory/Consumables">Consumables Inventory</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add Stock</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card overflow-hidden">
+                <div class="card-header-premium p-4 text-white" style="background: linear-gradient(135deg, #1F3C88 0%, #3b82f6 100%);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="header-icon bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <i class="fas fa-box-open fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold">Register New Consumable</h4>
+                            <p class="mb-0 text-white-50 small">Initialize stock for a new product category</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-5">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger mb-4 rounded-3 border-0 shadow-sm" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i> @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <form method="post">
+                        <input type="hidden" asp-for="NewConsumable.CampusId" />
+                        
+                        <div class="form-floating mb-4">
+                            <input asp-for="NewConsumable.Product" class="form-control" id="productInput" placeholder="Product Name" required>
+                            <label for="productInput">Product Name</label>
+                        </div>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" asp-for="NewConsumable.In" class="form-control" id="qtyInput" placeholder="Initial Quantity" min="1" required>
+                                    <label for="qtyInput">Initial Quantity</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select asp-for="NewConsumable.Unit" class="form-control" id="unitInput" required>
+                                        <option value="Pieces">Pieces</option>
+                                        <option value="Ream">Ream</option>
+                                        <option value="Gallon">Gallon</option>
+                                        <option value="Box">Box</option>
+                                        <option value="Pack">Pack</option>
+                                        <option value="Roll">Roll</option>
+                                    </select>
+                                    <label for="unitInput">Unit of Measure</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-floating mb-4">
+                            <input type="date" asp-for="NewConsumable.DateArrived" class="form-control" id="dateInput" value="@DateTime.Now.ToString("yyyy-MM-dd")" required>
+                            <label for="dateInput">Date Arrived</label>
+                        </div>
+                        
+                        <div class="form-floating mb-5">
+                            <textarea asp-for="NewConsumable.Description" class="form-control" id="descInput" placeholder="Description" style="height: 120px; resize: none;"></textarea>
+                            <label for="descInput">Stock Description (Optional)</label>
+                        </div>
+                        
+                        <div class="d-flex gap-3">
+                            <a href="/Inventory/Consumables" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border">Cancel</a>
+                            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1 py-3 fw-bold border-0" style="background: linear-gradient(135deg, #1F3C88 0%, #3b82f6 100%);">Complete Registration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-container {
+        padding: 2rem 3rem;
+        background-color: #f8fafc;
+        min-height: 80vh;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .premium-breadcrumb {
+        background: transparent;
+        padding: 0;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .premium-breadcrumb .breadcrumb-item a {
+        color: #64748b;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .premium-breadcrumb .breadcrumb-item a:hover {
+        color: #1F3C88;
+    }
+    .premium-breadcrumb .breadcrumb-item.active {
+        color: #1F3C88;
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    }
+    .form-floating > .form-control:focus { 
+        border-color: #1F3C88; 
+        box-shadow: 0 0 0 4px rgba(31, 60, 136, 0.08); 
+    }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
