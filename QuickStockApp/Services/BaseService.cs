@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json; // Added to make sure JsonContent and ReadFromJsonAsync compile cleanly
 using System.Threading.Tasks;
 
 namespace QuickStockApp.Services
@@ -16,9 +17,11 @@ namespace QuickStockApp.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        protected async Task<string> GetTokenAsync()
+        // FIXED: Removed 'async' and wrapped the string lookup inside Task.FromResult
+        protected Task<string> GetTokenAsync()
         {
-            return _httpContextAccessor.HttpContext?.User.FindFirst("jwt_token")?.Value ?? string.Empty;
+            var token = _httpContextAccessor.HttpContext?.User.FindFirst("jwt_token")?.Value ?? string.Empty;
+            return Task.FromResult(token);
         }
 
         protected async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string url, object? content = null)

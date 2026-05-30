@@ -1,0 +1,75 @@
+@model IndexModel
+
+<!-- ========================================== -->
+<!-- START OF HOME ECONOMICS MEGA CARD COMPONENT -->
+<!-- ========================================== -->
+@if (User.IsInRole("Admin") || (User.FindFirst("CanAccessHomeEconomics")?.Value == "True"))
+{
+    <div class="col-12 animate-in" style="animation-delay: 0.3s">
+        <div class="glass-card overflow-hidden border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
+            <div class="row g-0">
+                <!-- Part 1: Stats Panel -->
+                <div class="col-xl-4 col-lg-5 p-4 bg-warning-gradient text-white d-flex flex-column justify-content-between position-relative dash-panel-left">
+                    <i class="fas fa-chair position-absolute" style="right: -10px; bottom: -10px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"></i>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0 letter-spacing-05">HOME ECONOMICS</h6>
+                        </div>
+
+                        <a href="/Inventory/Furniture" class="text-decoration-none text-white group stretched-link">
+                            <div class="small opacity-80 fw-bold text-uppercase mb-1">Furniture Inventory</div>
+                            <div class="h2 fw-extrabold mb-0">@Model.TotalFurniture</div>
+                            <div class="small mt-1 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all transform-translate-x-hover">
+                                <span>View Assets</span> <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="pt-3 border-top border-white border-opacity-20">
+                        <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Locations</div>
+                        <div class="h5 fw-bold mb-0">@Model.FurnitureByLocation.Count</div>
+                    </div>
+                </div>
+                <!-- Part 2: Chart -->
+                <div class="col-xl-4 col-lg-7 p-4 bg-white border-end d-flex flex-column">
+                    <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-chart-pie me-2 text-warning"></i>Condition Distribution</h6>
+                    <div class="flex-grow-1 position-relative" style="min-height: 220px;">
+                        <canvas id="furnitureChartOnly"></canvas>
+                        @if (!Model.FurnitureByCondition.Any())
+                        {
+                            <div class="position-absolute top-50 start-50 translate-middle text-muted small">No data available</div>
+                        }
+                    </div>
+                </div>
+                <!-- Part 3: Recent Activity -->
+                <div class="col-xl-4 col-lg-12 p-4 bg-light-subtle d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-warning"></i>Recent Operations</h6>
+                        <button class="btn btn-xs btn-link text-decoration-none small p-0" onclick="showLogs('Furniture')">Furniture Logs</button>
+                    </div>
+                    <div class="activity-list flex-grow-1">
+                        @if (Model.RecentFurnitureActivities.Any())
+                        {
+                            @foreach (var a in Model.RecentFurnitureActivities.Take(5))
+                            {
+                                <div class="activity-item mb-2 shadow-none border-0" style="background: rgba(245, 158, 11, 0.04);">
+                                    <span class="activity-badge" style="background:rgba(245,158,11,0.15);color:#b45309;">@a.Action</span>
+                                    <div class="activity-info">
+                                        <span class="fw-bold text-dark small">@a.EntityName</span>
+                                        <span class="text-muted" style="font-size: 0.65rem;">@a.Username &middot; @a.Timestamp</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted small">No recent activity detected.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

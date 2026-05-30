@@ -1,0 +1,107 @@
+@model IndexModel
+
+<!-- ========================================== -->
+<!-- START OF CONSUMABLES Inventory CARD COMPONENT -->
+<!-- ========================================== -->
+@if (User.IsInRole("Admin") || (User.FindFirst("CanAccessConsumables")?.Value == "True"))
+{
+    <div class="col-12 animate-in" style="animation-delay: 0.4s">
+        <div class="glass-card overflow-hidden border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
+            <div class="row g-0">
+                <!-- Part 1: Primary Stats -->
+                <div class="col-xl-3 col-lg-4 p-4 bg-consumables-gradient text-white d-flex flex-column justify-content-between position-relative dash-panel-left">
+                    <i class="fas fa-box-open position-absolute" style="right: -10px; bottom: -10px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"></i>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0 letter-spacing-05">CONSUMABLES</h6>
+                        </div>
+                        <a href="/Inventory/Consumables" class="text-decoration-none text-white group stretched-link">
+                            <div class="mb-4">
+                                <div class="small opacity-80 fw-bold text-uppercase mb-1">Total Stock Balance</div>
+                                <div class="display-5 fw-extrabold mb-0">@Model.TotalConsumableBalance</div>
+                                <div class="small mt-2 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all transform-translate-x-hover">
+                                    <span>Manage Consumables</span> <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="pt-3 border-top border-white border-opacity-20">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Unique Types</div>
+                                <div class="h4 fw-bold mb-0">@Model.TotalConsumableTypes</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Low Stock</div>
+                                <div class="h4 fw-bold mb-0">@Model.Consumables.Count(c => c.Count <= 5)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Part 2: Alerts & Health -->
+                <div class="col-xl-4 col-lg-8 p-4 bg-white border-end d-flex flex-column">
+                    <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-exclamation-triangle me-2 text-indigo"></i>Stock Alerts &amp; Health</h6>
+                    <div class="flex-grow-1 d-flex flex-column justify-content-center">
+                        @{
+                            var lowStockItems = Model.Consumables.Where(c => c.Count <= 5).OrderBy(c => c.Count).Take(3).ToList();
+                        }
+                        @if (lowStockItems.Any())
+                        {
+                            <div class="alert alert-warning border-0 p-2.5 rounded-3 mb-0" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.15) !important;">
+                                <div class="fw-bold text-warning mb-2" style="font-size: 0.85rem;"><i class="fas fa-triangle-exclamation me-1"></i> Replenishment Required</div>
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach (var item in lowStockItems)
+                                    {
+                                        <div class="d-flex justify-content-between align-items-center bg-white px-2.5 py-1.5 rounded-2 border shadow-sm">
+                                            <span class="small fw-semibold text-slate-800 text-truncate" style="max-width: 170px;">@item.ProductName</span>
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 fw-bold" style="font-size: 0.7rem;">@item.Count left</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <div class="rounded-circle bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-check-circle fs-3 text-success"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">Stock Levels Healthy</h6>
+                                <p class="text-muted small mb-0">All consumable inventory balances are at optimal thresholds.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <!-- Part 3: Recent Activity Logs -->
+                <div class="col-xl-5 col-lg-12 p-4 bg-light-subtle d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-indigo"></i>Recent Consumable Activity</h6>
+                        <button class="btn btn-xs btn-link text-decoration-none small p-0 text-indigo" onclick="showLogs('Consumable')">View History</button>
+                    </div>
+                    <div class="activity-list flex-grow-1">
+                        @if (Model.RecentConsumableActivities.Any())
+                        {
+                            @foreach (var a in Model.RecentConsumableActivities.Take(4))
+                            {
+                                <div class="activity-item mb-2 shadow-none border-0" style="background: rgba(99, 102, 241, 0.05);">
+                                    <span class="activity-badge text-indigo" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">@a.Action</span>
+                                    <div class="activity-info">
+                                        <span class="fw-bold text-dark small">@a.EntityName</span>
+                                        <span class="text-muted" style="font-size: 0.65rem;">@a.Username &middot; @a.Timestamp</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted small">No recent activity.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

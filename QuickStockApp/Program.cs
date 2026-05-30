@@ -15,7 +15,9 @@ builder.Services.AddTransient<UnauthorizedHandler>();
 
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest
+        : Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
     options.HeaderName = "RequestVerificationToken";
 });
@@ -74,6 +76,7 @@ builder.Services.AddHttpClient<IUserManagementService, UserManagementService>(co
     .ConfigurePrimaryHttpMessageHandler(() => GetHandler(builder.Environment.IsDevelopment()))
     .AddHttpMessageHandler<UnauthorizedHandler>();
 
+
 // Keep IApiService for backward compatibility (delegating to specialized services)
 builder.Services.AddTransient<IApiService, ApiService>();
 
@@ -93,8 +96,10 @@ builder.Services.AddAuthentication("MyCookieAuth")
         options.AccessDeniedPath = "/Account/Login";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
 
-        // ✅ Ensure cookie is sent only over HTTPS
-        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+        // ✅ Ensure cookie is sent only over HTTPS (relaxed to SameAsRequest in local development)
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest
+            : Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
         options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
     });
 

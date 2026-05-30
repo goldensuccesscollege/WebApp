@@ -19,8 +19,6 @@ namespace QuickStockApp.Pages.Community
 
         public string? ApiBaseUrl { get; }
         public ProfileDto? PublicProfile { get; set; }
-        public List<PostResponseDto> Posts { get; set; } = new();
-        public List<string> Photos { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync(string username)
         {
@@ -36,32 +34,7 @@ namespace QuickStockApp.Pages.Community
                 return NotFound();
             }
 
-            Posts = await _api.GetUserPostsAsync(token, username);
-            Photos = await _api.GetUserPhotosAsync(token, username);
-
             return Page();
-        }
-
-
-        public async Task<IActionResult> OnPostToggleLikeAsync([FromQuery] int postId)
-        {
-            var token = User.FindFirst("jwt_token")?.Value;
-            if (string.IsNullOrEmpty(token)) return Unauthorized();
-
-            var (success, liked) = await _api.ToggleReactionAsync(token, postId);
-            return new JsonResult(new { success, liked });
-        }
-
-        public async Task<IActionResult> OnPostAddCommentAsync([FromQuery] int postId, [FromQuery] string content)
-        {
-            var token = User.FindFirst("jwt_token")?.Value;
-            if (string.IsNullOrEmpty(token)) return Unauthorized();
-
-            var comment = await _api.AddCommentAsync(token, postId, content);
-            if (comment != null)
-                return new JsonResult(new { success = true, comment });
-
-            return new JsonResult(new { success = false });
         }
     }
 }

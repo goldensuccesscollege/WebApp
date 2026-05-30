@@ -56,8 +56,8 @@ namespace QuickStockApp.Pages.Community
 
         public async Task<IActionResult> OnPostAddAsync()
         {
-            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin");
-            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("User")) return Forbid();
+            var isAnyAdmin = User.IsInRole("Admin");
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("Staff")) return Forbid();
 
             if (Book.CampusId <= 0)
             {
@@ -81,7 +81,7 @@ namespace QuickStockApp.Pages.Community
 
         public async Task<IActionResult> OnPostUpdateAsync()
         {
-            var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin");
+            var isAnyAdmin = User.IsInRole("Admin");
             if (!isAnyAdmin && !User.IsInRole("Manager")) return Forbid();
 
             var result = await _apiService.UpdateLibraryBookAsync(Book);

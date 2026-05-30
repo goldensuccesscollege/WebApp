@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuickStockApp.Models;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace QuickStockApp.Pages.Inventory
 {
+    [Authorize]
     public class FurnitureModel : PageModel
     {
         private readonly IApiService _apiService;
@@ -24,8 +26,17 @@ namespace QuickStockApp.Pages.Inventory
 
         public string? SelectedCampusName { get; set; }
 
-        public async Task OnGetAsync(string? searchTerm = null)
+        public async Task<IActionResult> OnGetAsync(string? searchTerm = null)
         {
+            var hasAccess = User.IsInRole("Admin") || 
+                            User.IsInRole("Home Economics Admin") ||
+                            User.FindFirst("CanAccessHomeEconomics")?.Value == "True";
+
+            if (!hasAccess)
+            {
+                return Forbid();
+            }
+
             var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
             SelectedCampusName = User.FindFirst("ActiveCampusName")?.Value;
 
@@ -34,12 +45,14 @@ namespace QuickStockApp.Pages.Inventory
                 Furnitures = await _apiService.GetFurnituresAsync(campusId: campusId, searchTerm: searchTerm);
                 Rooms = await _apiService.GetRoomsAsync(campusId);
             }
+
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAddFurnitureAsync()
         {
             var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Home Economics Admin");
-            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("User")) return Forbid();
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("Staff")) return Forbid();
 
             if (Furniture.CampusId <= 0)
             {

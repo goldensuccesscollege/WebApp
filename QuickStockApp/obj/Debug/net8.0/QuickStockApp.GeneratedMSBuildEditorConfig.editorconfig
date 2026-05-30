@@ -60,10 +60,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ2FtcHVzXENhbXB1c2VzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Projects/QuickStockApp/QuickStockApp/Pages/Community/Chat.cshtml]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tbXVuaXR5XENoYXQuY3NodG1s
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Projects/QuickStockApp/QuickStockApp/Pages/Community/Library.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tbXVuaXR5XExpYnJhcnkuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -76,16 +72,36 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Dashboard/_ApparelCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkXF9BcHBhcmVsQ2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Dashboard/_ConsumablesCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkXF9Db25zdW1hYmxlc0NhcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Dashboard/_HomeEconomicsCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkXF9Ib21lRWNvbm9taWNzQ2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Dashboard/_ItAssetsCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkXF9JdEFzc2V0c0NhcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Projects/QuickStockApp/QuickStockApp/Pages/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/AddConsumable.cshtml]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEFkZENvbnN1bWFibGUuY3NodG1s
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/ApparelList.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEFwcGFyZWxMaXN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/ConsumableLogs.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XENvbnN1bWFibGVMb2dzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/ConsumableRequests.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XENvbnN1bWFibGVSZXF1ZXN0cy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Projects/QuickStockApp/QuickStockApp/Pages/Inventory/Consumables.cshtml]

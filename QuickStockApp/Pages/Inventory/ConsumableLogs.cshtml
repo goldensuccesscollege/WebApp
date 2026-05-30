@@ -1,0 +1,360 @@
+@page
+@model QuickStockApp.Pages.Inventory.ConsumableLogsModel
+@{
+    ViewData["Title"] = "Consumables Activity Logs";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="container-fluid px-4 py-4 main-content-container">
+    <!-- Header Area -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 animate-in">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="/Inventory/Consumables" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Back to Inventory">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h1 class="h2 mb-0 text-dark fw-800 tracking-tight">Consumable Activity Logs</h1>
+            </div>
+            <p class="text-muted small mb-0 ms-5">Historical audit trail of creations, additions, and deductions of consumables for @Model.CampusName.</p>
+        </div>
+        <div class="action-group d-flex gap-2">
+            <a href="/Inventory/Consumables" class="btn btn-outline-primary rounded-pill px-4 shadow-sm py-2 fw-bold" style="border-color: #1F3C88; color: #1F3C88;">
+                <i class="bi bi-box-seam me-2"></i> Consumables Inventory
+            </a>
+        </div>
+    </div>
+
+    <!-- Consumables Activity Logs Panel -->
+    <div class="saas-table-container animate-in">
+        <div class="p-4 border-bottom bg-slate-50 d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
+            <div>
+                <h5 class="fw-bold mb-1 text-dark tracking-tight"><i class="bi bi-clock-history me-2 text-primary"></i>Operation History Logs</h5>
+                <p class="text-muted small mb-0">List of all inventory mutations recorded under the active campus.</p>
+            </div>
+            <span class="badge rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem; background: rgba(31,60,136,0.1); color: #1F3C88; border: 1px solid rgba(31,60,136,0.2);">
+                <i class="bi bi-activity me-1"></i> @Model.ConsumableLogs.Count Operations
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th class="ps-4" style="width: 30%;">Product Name</th>
+                        <th style="width: 20%;">Product Type</th>
+                        <th style="width: 15%;">Count (Quantity)</th>
+                        <th style="width: 20%;">Status</th>
+                        <th class="pe-4 text-end" style="width: 15%;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ConsumableLogs == null || !Model.ConsumableLogs.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-slate-400">
+                                <div class="py-4 d-flex flex-column align-items-center">
+                                    <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                        <i class="bi bi-clock fs-4 text-slate-500"></i>
+                                    </div>
+                                    <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">No activity logged yet</span>
+                                    <span class="small text-slate-500">Inventory transactions will automatically stream here.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var log in Model.ConsumableLogs)
+                        {
+                            var parsedCount = Model.GetLogCount(log.Details);
+                            var parsedType = Model.GetLogType(log.Details, "pieces");
+                            
+                            // Determine dynamic status status badges and styling
+                            var statusText = log.Status ?? (log.Action == "Create" ? "Create Unit" : log.Action == "Add Stock" ? "Add Quantity" : "Deduct Quantity");
+                            var statusClass = statusText switch
+                            {
+                                "Create Unit" => "status-create",
+                                "Add Quantity" => "status-add",
+                                "Deduct Quantity" => "status-deduct",
+                                _ => "status-create"
+                            };
+
+                            var statusDotColor = statusText switch
+                            {
+                                "Create Unit" => "bg-indigo-500",
+                                "Add Quantity" => "bg-emerald-500",
+                                "Deduct Quantity" => "bg-rose-500",
+                                _ => "bg-slate-500"
+                            };
+                            
+                            <tr>
+                                <td class="ps-4 fw-semibold text-slate-900">@log.EntityName</td>
+                                <td>
+                                    @{
+                                        var typeClass = parsedType.ToLower() switch
+                                        {
+                                            "gallon" => "type-gallon",
+                                            "gallons" => "type-gallon",
+                                            "pieces" => "type-pieces",
+                                            "piece" => "type-pieces",
+                                            "pecies" => "type-pieces",
+                                            "box" => "type-box",
+                                            "roll" => "type-roll",
+                                            "pack" => "type-pack",
+                                            "bottle" => "type-bottle",
+                                            "ream" => "type-roll",
+                                            _ => ""
+                                        };
+                                    }
+                                    <span class="saas-type-pill @typeClass">
+                                        <i class="bi bi-tag-fill"></i> @parsedType
+                                    </span>
+                                </td>
+                                <td class="fw-bold">@parsedCount Units</td>
+                                <td>
+                                    <span class="saas-badge-status @statusClass">
+                                        <span class="status-dot @statusDotColor"></span>
+                                        @statusText
+                                    </span>
+                                </td>
+                                <td class="pe-4 text-end small text-muted">
+                                    <i class="bi bi-clock me-1 text-slate-400"></i>
+                                    @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* SaaS Dashboard Design System */
+    :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+
+        --emerald-50: #ecfdf5;
+        --emerald-600: #059669;
+        
+        --rose-50: #fff1f2;
+        --rose-500: #f43f5e;
+        --rose-600: #e11d48;
+
+        --primary-brand: #1F3C88;
+        --shadow-premium: 0 15px 30px rgba(31, 60, 136, 0.08);
+    }
+
+    body {
+        background-color: #fafafa;
+        color: var(--slate-700);
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .main-content-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .fw-800 { font-weight: 800; }
+    .tracking-tight { letter-spacing: -0.03em; }
+
+    /* Table Styles */
+    .saas-table-container {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .saas-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .saas-table thead {
+        background-color: var(--slate-50);
+        border-bottom: 1px solid var(--slate-200);
+    }
+
+    .saas-table th {
+        padding: 14px 18px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--slate-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border: none;
+    }
+
+    .saas-table tbody tr {
+        border-bottom: 1px solid var(--slate-100);
+        transition: background-color 0.15s ease;
+    }
+
+    .saas-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .saas-table tbody tr:hover {
+        background-color: rgba(248, 250, 252, 0.6);
+    }
+
+    .saas-table td {
+        padding: 14px 18px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--slate-700);
+    }
+
+    /* Product Type Pills */
+    .saas-type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        background-color: var(--slate-100);
+        color: var(--slate-700);
+        border: 1px solid var(--slate-200);
+    }
+
+    .saas-type-pill.type-gallon {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border-color: #bae6fd;
+    }
+
+    .saas-type-pill.type-pieces {
+        background-color: #f3e8ff;
+        color: #6b21a8;
+        border-color: #e9d5ff;
+    }
+
+    .saas-type-pill.type-box {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    .saas-type-pill.type-roll {
+        background-color: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+    }
+
+    .saas-type-pill.type-pack {
+        background-color: #ccfbf1;
+        color: #115e59;
+        border-color: #99f6e4;
+    }
+
+    .saas-type-pill.type-bottle {
+        background-color: #fce7f3;
+        color: #9d174d;
+        border-color: #fbcfe8;
+    }
+
+    /* Status Badges */
+    .saas-badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 6px;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-create {
+        background-color: #e0e7ff;
+        color: #4f46e5;
+        border: 1px solid rgba(79, 70, 229, 0.2);
+    }
+
+    .status-add {
+        background-color: var(--emerald-50);
+        color: var(--emerald-600);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-deduct {
+        background-color: var(--rose-50);
+        color: var(--rose-600);
+        border: 1px solid rgba(244, 63, 94, 0.2);
+    }
+
+    .bg-indigo-500 { background-color: #6366f1 !important; }
+    .bg-emerald-500 { background-color: #10b981 !important; }
+    .bg-rose-500 { background-color: #f43f5e !important; }
+
+    /* Micro animations */
+    .animate-in {
+        animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dark Mode compatibility */
+    body.dark-mode {
+        background-color: #0b0f19;
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .saas-table-container {
+        background: #0f172a;
+        border-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table thead {
+        background-color: #1e293b;
+        border-bottom-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table th {
+        color: var(--slate-400);
+    }
+
+    body.dark-mode .saas-table tbody tr {
+        border-bottom-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table tbody tr:hover {
+        background-color: rgba(30, 41, 59, 0.4);
+    }
+
+    body.dark-mode .saas-table td {
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .saas-type-pill {
+        background-color: var(--slate-800);
+        color: var(--slate-300);
+        border-color: var(--slate-700);
+    }
+</style>

@@ -14,7 +14,7 @@ namespace QuickStockApp.Models
         public string Token { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
+        public string Role { get; set; } = "Staff";
         public System.Collections.Generic.List<int> CampusIds { get; set; } = new();
         public bool CanAccessITAssets { get; set; }
         public bool CanAccessApparel { get; set; }
@@ -33,7 +33,7 @@ namespace QuickStockApp.Models
         public string Title { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public string Role { get; set; } = "User";
+        public string Role { get; set; } = "Staff";
         public bool IsFromApi { get; set; } = false;
     }
 }

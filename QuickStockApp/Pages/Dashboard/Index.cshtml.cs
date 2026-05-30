@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using QuickStockApp.Services;
 using QuickStockApp.Models;
@@ -12,10 +13,12 @@ namespace QuickStockApp.Pages.Dashboard
     public class IndexModel : PageModel
     {
         private readonly IApiService _apiService;
+        private readonly IConsumableService _consumableService;
 
-        public IndexModel(IApiService apiService)
+        public IndexModel(IApiService apiService, IConsumableService consumableService)
         {
             _apiService = apiService;
+            _consumableService = consumableService;
         }
 
         // IT Assets
@@ -38,20 +41,34 @@ namespace QuickStockApp.Pages.Dashboard
         public List<RecentActivityDto> Activities { get; set; } = new();
         public bool CanSeeLogs { get; set; }
 
+        // Consumables
+        public int TotalConsumableTypes { get; set; }
+        public int TotalConsumableBalance { get; set; }
+        public List<RecentActivityDto> RecentConsumableActivities { get; set; } = new();
+        public List<ConsumableResponse> Consumables { get; set; } = new();
+
         // Home Economics / Furniture
         public int TotalFurniture { get; set; }
         public List<LocationCountDto> FurnitureByLocation { get; set; } = new();
         public List<ConditionCountDto> FurnitureByCondition { get; set; } = new();
         public List<RecentActivityDto> RecentFurnitureActivities { get; set; } = new();
 
-        // Consumables
-        public int TotalConsumableTypes { get; set; }
-        public int TotalConsumableBalance { get; set; }
-        public List<RecentActivityDto> RecentConsumableActivities { get; set; } = new();
+        // Enhanced Dashboard Properties
+        public int ActiveAssets { get; set; }
+        public int CriticalAssets { get; set; }
+        public int AssetHealthPercentage { get; set; }
+        public string? MostCommonAssetType { get; set; }
+        public string? MostProblematicRoom { get; set; }
+        public int MonthlyActivities { get; set; }
+        public int NewAssetsThisMonth { get; set; }
+        public string? SystemOverview { get; set; }
+        public List<string> Alerts { get; set; } = new();
+        public List<RoomAssetDto> AssetsByRoom { get; set; } = new();
+        public List<RecentActivityDto> RecentActivities { get; set; } = new();
 
         public async System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> OnGetAsync()
         {
-            CanSeeLogs = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin") || User.IsInRole("Manager") || User.IsInRole("User");
+            CanSeeLogs = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
 
             var activeName = User.FindFirst("ActiveCampusName")?.Value;
             var activeIdString = User.FindFirst("ActiveCampusId")?.Value;
@@ -85,9 +102,22 @@ namespace QuickStockApp.Pages.Dashboard
 
                     TotalConsumableTypes = stats.TotalConsumableTypes;
                     TotalConsumableBalance = stats.TotalConsumableBalance;
-                    RecentConsumableActivities = stats.RecentConsumableActivities;
+                    RecentConsumableActivities = stats.RecentConsumableActivities ?? new();
+                    Consumables = await _consumableService.GetAllConsumablesAsync(campusId);
 
                     Activities = stats.RecentActivities;
+
+                    ActiveAssets = stats.ActiveAssets;
+                    CriticalAssets = stats.CriticalAssets;
+                    AssetHealthPercentage = stats.AssetHealthPercentage;
+                    MostCommonAssetType = stats.MostCommonAssetType;
+                    MostProblematicRoom = stats.MostProblematicRoom;
+                    MonthlyActivities = stats.MonthlyActivities;
+                    NewAssetsThisMonth = stats.NewAssetsThisMonth;
+                    SystemOverview = stats.SystemOverview;
+                    Alerts = stats.Alerts ?? new();
+                    AssetsByRoom = stats.AssetsByRoom ?? new();
+                    RecentActivities = stats.RecentActivities ?? new();
                 }
             }
 
@@ -112,6 +142,68 @@ namespace QuickStockApp.Pages.Dashboard
 
             var result = await _apiService.GetAuditLogsPaginatedAsync(campusId, page, pageSize, entityType);
             return new JsonResult(result);
+        }
+
+        public async Task<JsonResult> OnGetNotificationsAsync()
+        {
+            var activeIdString = User.FindFirst("ActiveCampusId")?.Value;
+            int? campusId = int.TryParse(activeIdString, out int acid) ? acid : null;
+            
+            var requests = await _consumableService.GetConsumableRequestsAsync(campusId);
+            
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var isStaff = User.IsInRole("Staff");
+            var isManager = User.IsInRole("Manager");
+            var isAdmin = User.IsInRole("Admin");
+
+            var notifications = new List<object>();
+
+            if (isAdmin || isManager)
+            {
+                // Admin and Managers should see pending requests that need approval
+                var pending = requests.Where(r => r.Status == "Pending").OrderByDescending(r => r.Timestamp).Take(10);
+                foreach (var req in pending)
+                {
+                    notifications.Add(new
+                    {
+                        id = req.Id,
+                        title = $"New Request: {req.RequestType} {req.ProductName}",
+                        message = $"Staff {req.RequestorName} requested to {req.RequestType.ToLower()} {req.Count} {req.ProductType}.",
+                        timestamp = req.Timestamp,
+                        status = req.Status,
+                        url = "/Inventory/ConsumableRequests"
+                    });
+                }
+            }
+            
+            if (isStaff)
+            {
+                // Staff should see approved or rejected requests as notifications
+                var myResolved = requests
+                    .Where(r => r.RequestorId == currentUserId && r.Status != "Pending")
+                    .OrderByDescending(r => r.Timestamp)
+                    .Take(10);
+                
+                foreach (var req in myResolved)
+                {
+                    var isApproved = req.Status == "Approved";
+                    var message = isApproved 
+                        ? $"Your request to {req.RequestType.ToLower()} {req.Count} {req.ProductType} of {req.ProductName} was approved!"
+                        : $"Your request to {req.RequestType.ToLower()} {req.Count} {req.ProductType} of {req.ProductName} was rejected. Reason: {req.RejectionReason}";
+                    
+                    notifications.Add(new
+                    {
+                        id = req.Id,
+                        title = isApproved ? "Request Approved" : "Request Rejected",
+                        message = message,
+                        timestamp = req.Timestamp,
+                        status = req.Status,
+                        url = "/Inventory/ConsumableRequests"
+                    });
+                }
+            }
+
+            return new JsonResult(notifications);
         }
     }
 }

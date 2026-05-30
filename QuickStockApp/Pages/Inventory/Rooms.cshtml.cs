@@ -61,7 +61,7 @@ namespace QuickStockApp.Pages.Inventory
         public async Task<IActionResult> OnPostAddAsync()
         {
             var isAnyAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
-            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("User")) return Forbid();
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("Staff")) return Forbid();
 
             if (Room.CampusId <= 0)
             {

@@ -5,14 +5,13 @@
 }
 
 <div class="container-fluid py-4">
-    <!-- Header -->
     <div class="row mb-4 animate-in">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-1">
-                        <h1 class="fw-bold mb-0" style="font-size:2rem; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                            <i class="fas fa-school me-2" style="-webkit-text-fill-color: var(--primary-color);"></i>GSC — Cebu Overview
+                        <h1 class="fw-bold mb-0" style="font-size:2rem; color: #1F3C88;">
+                            <i class="fas fa-school me-2"></i>GSC — Cebu Overview
                         </h1>
                         <span class="badge rounded-pill px-3 py-2" style="background: linear-gradient(135deg,#1F3C88,#6366f1); color:#fff; font-size:0.75rem; letter-spacing:0.03em;">
                             <i class="fas fa-university me-1"></i>@Model.CampusName
@@ -20,357 +19,26 @@
                     </div>
                     <p class="text-muted mb-0">Welcome back, <strong>@User.Identity?.Name</strong>! Here's your inventory at a glance.</p>
                 </div>
-                <span class="badge rounded-pill px-4 py-2 fs-6" style="background: rgba(31,60,136,0.1); color: var(--primary-color); border: 1.5px solid rgba(31,60,136,0.2);">
+                <span class="badge rounded-pill px-4 py-2 fs-6" style="background: rgba(31,60,136,0.1); color: #1F3C88; border: 1.5px solid rgba(31,60,136,0.2);">
                     <i class="fas fa-clock me-1"></i> @DateTime.Now.ToString("MMM dd, yyyy")
                 </span>
             </div>
         </div>
     </div>
 
-    @{
-        var isFullAdmin = User.IsInRole("Admin");
-        var isLibraryAdmin = User.IsInRole("Library Admin");
-        var isHEAdmin = User.IsInRole("Home Economics Admin");
-
-        var canAccessIT = isFullAdmin || (User.FindFirst("CanAccessITAssets")?.Value == "True");
-        var canAccessApparel = isFullAdmin || (User.FindFirst("CanAccessApparel")?.Value == "True");
-        var canAccessHE = isFullAdmin || isHEAdmin || (User.FindFirst("CanAccessHomeEconomics")?.Value == "True");
-        var canAccessLibrary = isFullAdmin || isLibraryAdmin || (User.FindFirst("CanAccessLibrary")?.Value == "True");
-        var canAccessConsumables = isFullAdmin || (User.FindFirst("CanAccessConsumables")?.Value == "True");
-        
-        int accessCount = (canAccessIT ? 1 : 0) + (canAccessApparel ? 1 : 0) + (canAccessHE ? 1 : 0);
-        var statColClass = accessCount >= 2 ? "col-xl-3 col-md-6" : "col-xl-6 col-md-6";
-        var colClass = accessCount >= 2 ? "col-lg-6" : "col-lg-12";
-    }
-
-    <!-- ===== CONSOLIDATED MODULE MEGA CARDS ===== -->
     <div class="row g-4 mb-5">
-        
-        @if (canAccessIT)
-        {
-            <!-- IT INFRASTRUCTURE MEGA CARD -->
-            <div class="col-12 animate-in" style="animation-delay: 0.1s">
-                <div class="glass-card overflow-hidden border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
-                    <div class="row g-0">
-                        <!-- Part 1: Primary Stats -->
-                        <div class="col-xl-3 col-lg-4 p-4 bg-primary-gradient text-white d-flex flex-column justify-content-between position-relative">
-                            <i class="fas fa-laptop-code position-absolute" style="right: -10px; bottom: -10px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"></i>
-                            <div>
-                                <div class="d-flex align-items-center gap-2 mb-4">
-                                    <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                        <i class="fas fa-microchip"></i>
-                                    </div>
-                                    <h6 class="fw-bold mb-0 letter-spacing-05">IT ASSETS</h6>
-                                </div>
-                                <a href="/Inventory/ItAssets" class="text-decoration-none text-white group">
-                                    <div class="mb-4">
-                                        <div class="small opacity-80 fw-bold text-uppercase mb-1">Total Inventory</div>
-                                        <div class="display-5 fw-extrabold mb-0">@Model.TotalAssets</div>
-                                        <div class="small mt-2 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all transform-translate-x-hover">
-                                            <span>Manage Assets</span> <i class="fas fa-arrow-right"></i>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="pt-3 border-top border-white border-opacity-20">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Active Rooms</div>
-                                        <div class="h4 fw-bold mb-0">@Model.RoomCount</div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Operational</div>
-                                        <div class="h4 fw-bold mb-0">@(Model.AssetsByStatus.FirstOrDefault(x => x.Status == "Working")?.Count ?? 0)</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Part 2: Chart Breakdown -->
-                        <div class="col-xl-4 col-lg-8 p-4 bg-white border-end d-flex flex-column">
-                            <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Status Distribution</h6>
-                            <div class="flex-grow-1 position-relative" style="min-height: 180px;">
-                                <canvas id="itAssetsChartCombined"></canvas>
-                                @if (!Model.AssetsByStatus.Any()) {
-                                    <div class="position-absolute top-50 start-50 translate-middle text-muted small">No data</div>
-                                }
-                            </div>
-                        </div>
-                        <!-- Part 3: Recent Activity Logs -->
-                        <div class="col-xl-5 col-lg-12 p-4 bg-light-subtle d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-primary"></i>Recent IT Activity</h6>
-                                <button class="btn btn-xs btn-link text-decoration-none small p-0" onclick="showLogs('ItAsset')">View History</button>
-                            </div>
-                            <div class="activity-list flex-grow-1">
-                                @if (Model.RecentItActivities.Any()) {
-                                    @foreach (var a in Model.RecentItActivities.Take(4)) {
-                                        <div class="activity-item mb-2 shadow-none border-0" style="background: rgba(31, 60, 136, 0.05);">
-                                            <span class="activity-badge it-badge">@a.Action</span>
-                                            <div class="activity-info">
-                                                <span class="fw-bold text-dark small">@a.EntityName</span>
-                                                <span class="text-muted" style="font-size: 0.65rem;">@a.Username &middot; @a.Timestamp</span>
-                                            </div>
-                                        </div>
-                                    }
-                                } else {
-                                    <div class="text-center py-4 text-muted small">No recent activity.</div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
 
-        @if (canAccessApparel)
-        {
-            <!-- APPAREL MEGA CARD -->
-            <div class="col-12 animate-in" style="animation-delay: 0.2s">
-                <div class="glass-card overflow-hidden border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
-                    <div class="row g-0">
-                        <!-- Part 1: Primary Stats -->
-                        <div class="col-xl-3 col-lg-4 p-4 bg-success-gradient text-white d-flex flex-column justify-content-between position-relative">
-                            <i class="fas fa-tshirt position-absolute" style="right: -10px; bottom: -10px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"></i>
-                            <div>
-                                <div class="d-flex align-items-center gap-2 mb-4">
-                                    <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                        <i class="fas fa-tags"></i>
-                                    </div>
-                                    <h6 class="fw-bold mb-0 letter-spacing-05">APPAREL</h6>
-                                </div>
-                                <a href="/Inventory/ApparelList" class="text-decoration-none text-white group">
-                                    <div class="mb-4">
-                                        <div class="small opacity-80 fw-bold text-uppercase mb-1">Items In Stock</div>
-                                        <div class="display-5 fw-extrabold mb-0">@Model.TotalApparelInStock</div>
-                                        <div class="small mt-2 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all transform-translate-x-hover">
-                                            <span>Manage Inventory</span> <i class="fas fa-arrow-right"></i>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="pt-3 border-top border-white border-opacity-20">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Sold</div>
-                                        <div class="h4 fw-bold mb-0">@Model.TotalApparelSold</div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Categories</div>
-                                        <div class="h4 fw-bold mb-0">@Model.TotalApparelTypes</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Part 2: Chart Breakdown -->
-                        <div class="col-xl-4 col-lg-8 p-4 bg-white border-end d-flex flex-column">
-                            <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-chart-pie me-2 text-success"></i>Category Distribution</h6>
-                            <div class="flex-grow-1 position-relative" style="min-height: 180px;">
-                                <canvas id="apparelChartCombined"></canvas>
-                                @if (!Model.ApparelByCategory.Any()) {
-                                    <div class="position-absolute top-50 start-50 translate-middle text-muted small">No data</div>
-                                }
-                            </div>
-                        </div>
-                        <!-- Part 3: Recent Activity Logs -->
-                        <div class="col-xl-5 col-lg-12 p-4 bg-light-subtle d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-success"></i>Recent Apparel Activity</h6>
-                                <button class="btn btn-xs btn-link text-decoration-none small p-0" onclick="showLogs('Apparel')">View History</button>
-                            </div>
-                            <div class="activity-list flex-grow-1">
-                                @if (Model.RecentApparelActivities.Any()) {
-                                    @foreach (var a in Model.RecentApparelActivities.Take(4)) {
-                                        <div class="activity-item mb-2 shadow-none border-0" style="background: rgba(46, 125, 50, 0.05);">
-                                            <span class="activity-badge ap-badge">@a.Action</span>
-                                            <div class="activity-info">
-                                                <span class="fw-bold text-dark small">@a.EntityName</span>
-                                                <span class="text-muted" style="font-size: 0.65rem;">@a.Username &middot; @a.Timestamp</span>
-                                            </div>
-                                        </div>
-                                    }
-                                } else {
-                                    <div class="text-center py-4 text-muted small">No recent activity.</div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
+        <partial name="_ItAssetsCard" model="Model" />
 
-        @if (canAccessHE || canAccessConsumables)
-        {
-            <!-- HOME ECONOMICS & SUPPLIES MEGA CARD -->
-            <div class="col-12 animate-in" style="animation-delay: 0.3s">
-                <div class="glass-card overflow-hidden border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
-                    <div class="row g-0">
-                        <!-- Part 1: Unified Stats Panel -->
-                        <div class="col-xl-4 col-lg-5 p-4 bg-warning-gradient text-white d-flex flex-column justify-content-between position-relative">
-                            <i class="fas fa-boxes position-absolute" style="right: -10px; bottom: -10px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"></i>
-                            <div>
-                                <div class="d-flex align-items-center gap-2 mb-4">
-                                    <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                        <i class="fas fa-blender"></i>
-                                    </div>
-                                    <h6 class="fw-bold mb-0 letter-spacing-05">HOME ECONOMICS & SUPPLIES</h6>
-                                </div>
-                                
-                                <div class="row g-3">
-                                    @if (canAccessHE)
-                                    {
-                                        <div class="col-12 mb-3">
-                                            <a href="/Inventory/Furniture" class="text-decoration-none text-white group">
-                                                <div class="small opacity-80 fw-bold text-uppercase mb-1">Furniture Inventory</div>
-                                                <div class="h2 fw-extrabold mb-0">@Model.TotalFurniture</div>
-                                                <div class="small mt-1 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all">
-                                                    <span>View Assets</span> <i class="fas fa-arrow-right"></i>
-                                                </div>
-                                            </a>
-                                        </div>
-                                    }
-                                    @if (canAccessConsumables)
-                                    {
-                                        <div class="col-12">
-                                            <a href="/Inventory/Consumables" class="text-decoration-none text-white group">
-                                                <div class="small opacity-80 fw-bold text-uppercase mb-1">Consumables Balance</div>
-                                                <div class="h2 fw-extrabold mb-0">@Model.TotalConsumableBalance</div>
-                                                <div class="small mt-1 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all">
-                                                    <span>Manage Supplies</span> <i class="fas fa-arrow-right"></i>
-                                                </div>
-                                            </a>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
+        <partial name="_ApparelCard" model="Model" />
 
-                            <div class="pt-3 border-top border-white border-opacity-20">
-                                <div class="row text-center">
-                                    @if (canAccessHE)
-                                    {
-                                        <div class="col-6 border-end border-white border-opacity-10">
-                                            <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Locations</div>
-                                            <div class="h5 fw-bold mb-0">@Model.FurnitureByLocation.Count</div>
-                                        </div>
-                                    }
-                                    @if (canAccessConsumables)
-                                    {
-                                        <div class="col-6">
-                                            <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Products</div>
-                                            <div class="h5 fw-bold mb-0">@Model.TotalConsumableTypes</div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+        <partial name="_HomeEconomicsCard" model="Model" />
 
-                        <!-- Part 2: Dynamic Insights (Condition/Types) -->
-                        <div class="col-xl-4 col-lg-7 p-4 bg-white border-end d-flex flex-column">
-                            <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-chart-pie me-2 text-warning"></i>Distribution Insights</h6>
-                            <div class="flex-grow-1 position-relative" style="min-height: 220px;">
-                                <canvas id="homeEconomicsChartCombined"></canvas>
-                                @if (!Model.FurnitureByCondition.Any() && Model.TotalConsumableTypes == 0) {
-                                    <div class="position-absolute top-50 start-50 translate-middle text-muted small">No data available</div>
-                                }
-                            </div>
-                        </div>
+        <partial name="_ConsumablesCard" model="Model" />
 
-                        <!-- Part 3: Recent Activity (Unified HE/Consumables) -->
-                        <div class="col-xl-4 col-lg-12 p-4 bg-light-subtle d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-warning"></i>Recent Operations</h6>
-                                <div class="d-flex gap-2">
-                                    @if (canAccessHE) { <button class="btn btn-xs btn-link text-decoration-none small p-0" onclick="showLogs('Furniture')">Furniture Logs</button> }
-                                    @if (canAccessConsumables) { <button class="btn btn-xs btn-link text-decoration-none small p-0" onclick="showLogs('Consumable')">Consumable Logs</button> }
-                                </div>
-                            </div>
-                            <div class="activity-list flex-grow-1">
-                                @{
-                                    var combinedActivities = Model.RecentFurnitureActivities
-                                        .Concat(Model.RecentConsumableActivities)
-                                        .OrderByDescending(x => x.Timestamp)
-                                        .Take(5);
-                                }
-                                @if (combinedActivities.Any()) {
-                                    @foreach (var a in combinedActivities) {
-                                        var isConsumable = Model.RecentConsumableActivities.Contains(a);
-                                        <div class="activity-item mb-2 shadow-none border-0" style="background: @(isConsumable ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.04)");">
-                                            <span class="activity-badge" style="background:rgba(245,158,11,0.15);color:#b45309;">@a.Action</span>
-                                            <div class="activity-info">
-                                                <span class="fw-bold text-dark small">@a.EntityName</span>
-                                                <span class="text-muted" style="font-size: 0.65rem;">@a.Username &middot; @a.Timestamp</span>
-                                            </div>
-                                        </div>
-                                    }
-                                } else {
-                                    <div class="text-center py-4 text-muted small">No recent activity detected.</div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
     </div>
-    }
 </div>
 
-<style>
-    .modal-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(8px);
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease;
-    }
-    .modal-content.glass-panel {
-        background: rgba(255, 255, 255, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        overflow: hidden;
-    }
-    .modal-header {
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        background: rgba(255,255,255,0.5);
-    }
-    .modal-footer-custom {
-        padding: 1.25rem 2rem;
-        background: #f8fafc;
-        border-top: 1px solid #f1f5f9;
-    }
-    .table thead th {
-        background: #f8fafc;
-        color: #64748b;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 700;
-        border-top: none;
-        padding: 1rem;
-    }
-    .table td {
-        padding: 1rem;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .animate-in {
-        animation: slideUp 0.4s ease-out forwards;
-    }
-    @@keyframes slideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @@keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-</style>
-
-<!-- Audit Logs Modal -->
 <div id="logsModal" class="modal-overlay" style="display: none;">
     <div class="modal-content glass-panel animate-in" style="max-width: 900px; width: 95%;">
         <div class="modal-header d-flex justify-content-between align-items-center">
@@ -410,27 +78,138 @@
 </div>
 
 <style>
-    .bg-primary-gradient { background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%); }
-    .bg-success-gradient { background: linear-gradient(135deg, #2E7D32 0%, #22c55e 100%); }
-    .bg-warning-gradient { background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%); }
-    
-    .letter-spacing-05 { letter-spacing: 0.05em; }
-    .line-height-1 { line-height: 1; }
-    .fw-extrabold { font-weight: 900; }
-    
-    .transform-translate-x-hover { transition: transform 0.3s ease; }
-    .group:hover .transform-translate-x-hover { transform: translateX(5px); }
-    .group-hover-opacity-100 { opacity: 0; transition: opacity 0.3s ease; }
-    .group:hover .group-hover-opacity-100 { opacity: 1; }
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(8px);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    }
 
-    .text-indigo { color: #6366f1; }
+    .modal-content.glass-panel {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
 
-    /* Stat cards */
+    .modal-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        background: rgba(255,255,255,0.5);
+    }
+
+    .modal-footer-custom {
+        padding: 1.25rem 2rem;
+        background: #f8fafc;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        border-top: none;
+        padding: 1rem;
+    }
+
+    .table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .animate-in {
+        animation: slideUp 0.4s ease-out forwards;
+    }
+
+    /* LABEL: Solved keyframes breaking context error by using escape sequence '@@' */
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .bg-primary-gradient {
+        background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%);
+    }
+
+    .bg-success-gradient {
+        background: linear-gradient(135deg, #2E7D32 0%, #22c55e 100%);
+    }
+
+    .bg-warning-gradient {
+        background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);
+    }
+
+    .bg-consumables-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    }
+
+    .letter-spacing-05 {
+        letter-spacing: 0.05em;
+    }
+
+    .line-height-1 {
+        line-height: 1;
+    }
+
+    .fw-extrabold {
+        font-weight: 900;
+    }
+
+    .transform-translate-x-hover {
+        transition: transform 0.3s ease;
+    }
+
+    .group:hover .transform-translate-x-hover {
+        transform: translateX(5px);
+    }
+
+    .group-hover-opacity-100 {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .group:hover .group-hover-opacity-100 {
+        opacity: 1;
+    }
+
+    .text-indigo {
+        color: #6366f1;
+    }
+
     .dash-stat-card {
         display: flex;
         align-items: center;
         gap: 1rem;
-        background: var(--glass-bg, rgba(255,255,255,0.85));
+        background: rgba(255,255,255,0.85);
         border: 1.5px solid rgba(99,102,241,0.08);
         border-radius: 18px;
         padding: 1.1rem 1.3rem;
@@ -439,276 +218,306 @@
         cursor: pointer;
         position: relative;
     }
-    .dash-stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 30px rgba(99,102,241,0.13);
-        border-color: var(--accent, #6366f1);
-    }
+
+        .dash-stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(99,102,241,0.13);
+            border-color: #6366f1;
+        }
+
     .dash-stat-icon {
-        width: 52px; height: 52px;
+        width: 52px;
+        height: 52px;
         border-radius: 14px;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
         transition: transform 0.25s;
     }
-    .dash-stat-card:hover .dash-stat-icon { transform: scale(1.12); }
-    .dash-stat-value { font-size: 1.7rem; font-weight: 800; color: var(--text-dark); line-height: 1; }
-    .dash-stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-top: 2px; text-transform: uppercase; }
-    .dash-stat-arrow { margin-left: auto; color: var(--accent, var(--primary-color)); opacity: 0.6; }
 
-    /* Activity items */
-    .activity-list { 
-        display: flex; flex-direction: column; gap: 0.6rem; 
-        max-height: 220px; overflow-y: auto; padding-right: 5px; 
+    .dash-stat-card:hover .dash-stat-icon {
+        transform: scale(1.12);
     }
-    .activity-list::-webkit-scrollbar { width: 4px; }
-    .activity-list::-webkit-scrollbar-track { background: transparent; }
-    .activity-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
-    body.dark-mode .activity-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+    .dash-stat-value {
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1;
+    }
+
+    .dash-stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 700;
+        margin-top: 2px;
+        text-transform: uppercase;
+    }
+
+    .dash-stat-arrow {
+        margin-left: auto;
+        color: #1F3C88;
+        opacity: 0.6;
+    }
+
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+        .activity-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .activity-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .activity-list::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
 
     .activity-item {
-        display: flex; align-items: center; gap: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
         padding: 0.55rem 0.8rem;
         border-radius: 10px;
         background: rgba(31, 60, 136, 0.04);
         border: 1px solid rgba(31, 60, 136, 0.08);
         transition: background 0.2s;
     }
-    .activity-item:hover { background: rgba(31, 60, 136, 0.09); }
+
+        .activity-item:hover {
+            background: rgba(31, 60, 136, 0.09);
+        }
+
     .activity-badge {
-        font-size: 0.7rem; font-weight: 700; padding: 3px 10px;
-        border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
-    }
-    .it-badge { background: rgba(31, 60, 136, 0.1); color: var(--primary-color); }
-    .ap-badge { background: rgba(46, 125, 50, 0.1); color: var(--success-color); }
-    .activity-info { display: flex; flex-direction: column; min-width: 0; }
-    .activity-info span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Summary boxes */
-    .summary-box {
-        border: 2px solid; border-radius: 14px;
-        padding: 0.8rem 0.4rem;
-    }
-    .summary-val { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); }
-    .summary-lbl { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
-
-    /* Modal */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 2000; }
-    .glass-panel { background: rgba(255,255,255,0.98); border-radius: 28px; border: 1px solid rgba(255,255,255,0.4); padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-    
-    .modal-header { padding: 1.5rem 2rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important; }
-    .modal-body { padding: 0; }
-    .table-responsive { margin: 0; }
-    .table { margin-bottom: 0; }
-    .table thead th { background: #f8fafc; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-top: none; }
-    .table tbody td { padding: 1rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
-    .table tbody tr:hover { background: rgba(99, 102, 241, 0.02); }
-    
-    .modal-footer-custom { padding: 1.25rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; }
-
-    /* Animate */
-    .animate-in { animation: slideUp 0.45s ease-out forwards; opacity: 0; }
-    @@keyframes slideUp {
-        from { opacity: 0; transform: translateY(18px); }
-        to { opacity: 1; transform: translateY(0); }
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
     }
 
-    /* Dark mode overrides */
-    body.dark-mode .dash-stat-card, body.dark-mode .glass-card { background: rgba(30,41,59,0.85) !important; border-color: rgba(255,255,255,0.08) !important; }
-    body.dark-mode .activity-item { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.08) !important; }
-    body.dark-mode .dash-stat-label, body.dark-mode .summary-lbl { color: #94a3b8 !important; }
-    body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6, body.dark-mode .text-dark {
-        color: #f1f5f9 !important;
+    .it-badge {
+        background: rgba(31, 60, 136, 0.1);
+        color: #1F3C88;
+    }
+
+    .ap-badge {
+        background: rgba(46, 125, 50, 0.1);
+        color: #2E7D32;
+    }
+
+    .activity-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+        .activity-info span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+    .table tbody tr:hover {
+        background: rgba(99, 102, 241, 0.02);
+    }
+
+    body.dark-mode .dash-stat-card {
+        background: rgba(30,41,59,0.85) !important;
+    }
+
+    .dash-panel-left {
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .dash-panel-left:hover {
+        filter: brightness(1.1) contrast(1.02);
+        box-shadow: inset 0 0 100px rgba(255, 255, 255, 0.08) !important;
     }
 </style>
 
-@section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-    @{ var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }; }
-    // --- DATA FROM SERVER ---
-    const assetsByStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AssetsByStatus, jsonOpts));
-    const assetsByType   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AssetsByType, jsonOpts));
-    const apparelByCat   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApparelByCategory, jsonOpts));
-    const apparelStock   = { inStock: @Model.TotalApparelInStock, sold: @Model.TotalApparelSold };
-    const furnitureByCond = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FurnitureByCondition, jsonOpts));
-    const campusId       = "@User.FindFirst("ActiveCampusId")?.Value";
 
-    // --- CHARTS INITIALIZATION ---
-    const PALETTE = ['#1F3C88', '#F4C430', '#D62828', '#2E7D32', '#6366f1', '#64748b'];
-    
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '75%',
-        plugins: {
-            legend: {
-                position: 'right',
-                labels: {
-                    padding: 15,
-                    usePointStyle: true,
-                    pointStyle: 'circle',
-                    font: { size: 11, weight: '600' }
+
+@section Scripts {
+    <script>
+        @{
+            var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+        }
+
+        // LABEL: Wrapped inside string quotes and JSON.parse() to completely stop JavaScript expression warnings
+        const assetsByStatus  = JSON.parse('@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AssetsByStatus, jsonOpts))') || [];
+        const assetsByType    = JSON.parse('@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AssetsByType, jsonOpts))') || [];
+        const apparelByCat    = JSON.parse('@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApparelByCategory, jsonOpts))') || [];
+        const furnitureByCond = JSON.parse('@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FurnitureByCondition, jsonOpts))') || [];
+
+        const apparelStock   = { inStock: @Model.TotalApparelInStock, sold: @Model.TotalApparelSold };
+        const campusId        = "@User.FindFirst("ActiveCampusId")?.Value";
+
+        const PALETTE = ['#1F3C88', '#F4C430', '#D62828', '#2E7D32', '#6366f1', '#64748b'];
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { padding: 15, usePointStyle: true, pointStyle: 'circle', font: { size: 11, weight: '600' } }
                 }
             }
-        }
-    };
+        };
 
-    // 1. IT Assets Chart
-    const itChartEl = document.getElementById('itAssetsChartCombined');
-    if (itChartEl && assetsByStatus.length) {
-        new Chart(itChartEl, {
-            type: 'doughnut',
-            data: {
-                labels: assetsByStatus.map(x => x.status),
-                datasets: [{ 
-                    data: assetsByStatus.map(x => x.count), 
-                    backgroundColor: PALETTE, 
-                    borderWidth: 0,
-                    hoverOffset: 15
-                }]
-            },
-            options: chartOptions
-        });
-    }
-
-    // 2. Apparel Chart
-    const apChartEl = document.getElementById('apparelChartCombined');
-    if (apChartEl && apparelByCat.length) {
-        new Chart(apChartEl, {
-            type: 'doughnut',
-            data: {
-                labels: apparelByCat.map(x => x.category),
-                datasets: [{ 
-                    data: apparelByCat.map(x => x.count), 
-                    backgroundColor: PALETTE, 
-                    borderWidth: 0,
-                    hoverOffset: 15
-                }]
-            },
-            options: chartOptions
-        });
-    }
-
-    // 3. Home Economics & Supplies Chart (Combined)
-    const heChartEl = document.getElementById('homeEconomicsChartCombined');
-    if (heChartEl) {
-        let labels = [];
-        let data = [];
-        let colors = [];
-
-        if (furnitureByCond.length) {
-            furnitureByCond.forEach(x => {
-                labels.push(`Furniture: ${x.condition}`);
-                data.push(x.count);
-                colors.push(x.condition === 'Good' ? '#10b981' : x.condition === 'Fair' ? '#f59e0b' : '#ef4444');
-            });
-        }
-
-        if (apparelStock.inStock > 0) { // Using this as a proxy for showing something if Consumables has data
-             // We'll just add a placeholder or actual consumable types if we had them grouped.
-             // For now, let's just show Total Consumable Types as a slice if available
-             const totalConsumableTypes = @Model.TotalConsumableTypes;
-             if (totalConsumableTypes > 0) {
-                 labels.push('Consumable Types');
-                 data.push(totalConsumableTypes);
-                 colors.push('#6366f1');
-             }
-        }
-
-        if (labels.length) {
-            new Chart(heChartEl, {
+        // 1. IT Assets Chart Engine
+        const itChartEl = document.getElementById('itAssetsChartCombined');
+        if (itChartEl && assetsByStatus.length) {
+            new Chart(itChartEl, {
                 type: 'doughnut',
                 data: {
-                    labels: labels,
-                    datasets: [{ 
-                        data: data, 
-                        backgroundColor: colors, 
-                        borderWidth: 0,
-                        hoverOffset: 15
-                    }]
+                    labels: assetsByStatus.map(x => x.status),
+                    datasets: [{ data: assetsByStatus.map(x => x.count), backgroundColor: PALETTE, borderWidth: 0, hoverOffset: 15 }]
                 },
                 options: chartOptions
             });
         }
-    }
 
-    // --- AUDIT LOGS MODAL ---
-    let currentPage = 1, totalPages = 1;
-    const pageSize = 10;
-    let currentEntityType = null;
-
-    function showLogs(entityType = null) {
-        currentEntityType = entityType;
-        currentPage = 1;
-        const title = entityType === 'ItAsset' ? 'IT Asset Audit Logs'
-                    : entityType === 'Apparel' ? 'Apparel Audit Logs'
-                    : entityType === 'Furniture' ? 'Furniture Audit Logs'
-                    : 'System Audit Logs';
-        document.getElementById('logsModalTitle').innerHTML = `<i class="fas fa-clipboard-list me-2"></i>${title}`;
-        document.getElementById('logsModal').style.display = 'flex';
-        loadLogs();
-    }
-
-    function closeLogs() { document.getElementById('logsModal').style.display = 'none'; }
-
-    async function loadLogs() {
-        const tableBody = document.getElementById('logsTableBody');
-        tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
-        const etParam = currentEntityType ? `&entityType=${currentEntityType}` : '';
-        const url = `?handler=Logs&page=${currentPage}&pageSize=${pageSize}${etParam}`;
-        try {
-            const res = await fetch(url);
-            if (res.ok) {
-                const data = await res.json();
-                totalPages = data.totalPages;
-                renderLogs(data.logs);
-            }
-        } catch { tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error loading logs.</td></tr>'; }
-    }
-
-    function renderLogs(logs) {
-        const tableBody = document.getElementById('logsTableBody');
-        if (!logs.length) { tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No logs found.</td></tr>'; return; }
-        tableBody.innerHTML = logs.map(l => {
-            let statusClass = 'bg-light text-dark';
-            const s = (l.status || '').toLowerCase();
-            if (s === 'working' || s === 'available' || s === 'in stock') statusClass = 'bg-success-subtle text-success border-success-subtle';
-            else if (s === 'broken' || s === 'sold') statusClass = 'bg-danger-subtle text-danger border-danger-subtle';
-            else if (s.includes('maintenance')) statusClass = 'bg-warning-subtle text-warning border-warning-subtle';
-
-            return `
-            <tr>
-                <td><span class="badge rounded-pill bg-light text-dark border text-uppercase" style="font-size: 0.65rem;">${l.action}</span></td>
-                <td class="fw-bold text-dark">${l.entityName}</td>
-                <td><span class="badge rounded-pill border ${statusClass}" style="font-size: 0.7rem;">${l.status || 'N/A'}</span></td>
-                <td><span class="badge" style="background:${l.entityType==='Apparel'?'rgba(16,185,129,0.1)':'rgba(99,102,241,0.1)'}; color:${l.entityType==='Apparel'?'#10b981':'#6366f1'}; border: 1px solid currentColor; font-size: 0.7rem;">${l.entityType}</span></td>
-                <td class="text-secondary">${l.username ?? '—'}</td>
-                <td class="text-muted small">${new Date(l.timestamp).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</td>
-                <td class="text-muted small" style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${l.details}">${l.details}</td>
-            </tr>`;
-        }).join('');
-        document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages || 1}`;
-        document.getElementById('prevBtn').disabled = currentPage === 1;
-        document.getElementById('nextBtn').disabled = currentPage >= totalPages;
-    }
-
-    async function changePage(d) { currentPage += d; await loadLogs(); }
-
-    window.addEventListener('click', e => { if (e.target === document.getElementById('logsModal')) closeLogs(); });
-
-    // Handle showLogs query parameter
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const logType = urlParams.get('showLogs');
-        if (logType) {
-            if (logType.toLowerCase() === 'all') showLogs(null);
-            else showLogs(logType);
-            
-            // Clean up URL
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
+        // 2. Apparel Chart Engine
+        const apChartEl = document.getElementById('apparelChartCombined');
+        if (apChartEl && apparelByCat.length) {
+            new Chart(apChartEl, {
+                type: 'doughnut',
+                data: {
+                    labels: apparelByCat.map(x => x.category),
+                    datasets: [{ data: apparelByCat.map(x => x.count), backgroundColor: PALETTE, borderWidth: 0, hoverOffset: 15 }]
+                },
+                options: chartOptions
+            });
         }
-    });
-</script>
+
+        // 3. Home Economics Chart Engine
+        const heChartEl = document.getElementById('furnitureChartOnly');
+        if (heChartEl) {
+            let labels = [];
+            let data = [];
+            let colors = [];
+
+            if (furnitureByCond.length) {
+                furnitureByCond.forEach(x => {
+                    labels.push(`Furniture: ${x.condition}`);
+                    data.push(x.count);
+                    colors.push(x.condition === 'Good' ? '#10b981' : x.condition === 'Fair' ? '#f59e0b' : '#ef4444');
+                });
+            }
+
+            if (apparelStock.inStock > 0) {
+                 const totalConsumableTypes = @Model.TotalConsumableTypes;
+                 if (totalConsumableTypes > 0) {
+                     labels.push('Consumable Types');
+                     data.push(totalConsumableTypes);
+                     colors.push('#6366f1');
+                 }
+            }
+
+            if (labels.length) {
+                new Chart(heChartEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{ data: data, backgroundColor: colors, borderWidth: 0, hoverOffset: 15 }]
+                    },
+                    options: chartOptions
+                });
+            }
+        }
+
+        // ==========================================
+        // BACKEND AJAX AUDIT ENGINE LOGIC
+        // ==========================================
+        let currentLogType = '';
+        let currentLogPage = 1;
+        const LOG_PAGE_SIZE = 10;
+
+        async function showLogs(entityType) {
+            currentLogType = entityType;
+            currentLogPage = 1;
+
+            const titleEl = document.getElementById('logsModalTitle');
+            if (entityType === 'ItAsset') titleEl.innerHTML = '<i class="fas fa-desktop me-2 text-primary"></i>IT Asset Audit Logs';
+            else if (entityType === 'Apparel') titleEl.innerHTML = '<i class="fas fa-tshirt me-2 text-success"></i>Apparel Audit Logs';
+            else if (entityType === 'Furniture') titleEl.innerHTML = '<i class="fas fa-chair me-2 text-warning"></i>Furniture Audit Logs';
+            else if (entityType === 'Consumable') titleEl.innerHTML = '<i class="fas fa-box-open me-2 text-indigo"></i>Consumables Audit Logs';
+            else titleEl.innerHTML = '<i class="fas fa-history me-2 text-secondary"></i>System Audit Logs';
+
+            document.getElementById('logsModal').style.display = 'flex';
+            await fetchLogData();
+        }
+
+        function closeLogs() {
+            document.getElementById('logsModal').style.display = 'none';
+        }
+
+        async function changePage(direction) {
+            currentLogPage += direction;
+            await fetchLogData();
+        }
+
+        async function fetchLogData() {
+            const tableBody = document.getElementById('logsTableBody');
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading logs stream...</td></tr>';
+
+            try {
+                const response = await fetch(`?handler=Logs&page=${currentLogPage}&pageSize=${LOG_PAGE_SIZE}&entityType=${currentLogType}`);
+                if (!response.ok) throw new Error("Connection failed.");
+
+                const data = await response.json();
+                const logs = data.items || data || [];
+                tableBody.innerHTML = '';
+
+                if (logs.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No operational history logs found.</td></tr>';
+                    document.getElementById('nextBtn').disabled = true;
+                    return;
+                }
+
+                logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-1 small fw-bold text-uppercase">${log.action || 'Log'}</span></td>
+                        <td class="fw-bold text-dark">${log.entityName || 'N/A'}</td>
+                        <td><span class="text-success small"><i class="fas fa-check-circle me-1"></i>Success</span></td>
+                        <td><small class="text-muted text-uppercase font-monospace" style="font-size:0.7rem;">${log.entityType || currentLogType}</small></td>
+                        <td><span class="badge rounded-pill bg-light text-dark border px-2.5">${log.username || 'System'}</span></td>
+                        <td><small class="text-muted">${log.timestamp || 'Just now'}</small></td>
+                        <td><button class="btn btn-xs btn-outline-primary py-0 px-2 fs-7 rounded" onclick="alert('Details: ${log.details || 'No data edits.'}')">View</button></td>
+                    `;
+                    tableBody.innerHTML += tr.outerHTML;
+                });
+
+                document.getElementById('pageInfo').innerText = `Page ${currentLogPage}`;
+                document.getElementById('prevBtn').disabled = (currentLogPage === 1);
+                document.getElementById('nextBtn').disabled = (logs.length < LOG_PAGE_SIZE);
+
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to render data stream.</td></tr>';
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('logsModal');
+            if (event.target === modal) closeLogs();
+        }
+    </script>
 }

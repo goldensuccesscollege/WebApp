@@ -18,8 +18,6 @@ namespace QuickStockApp.Services
         private readonly ILibraryService _library;
         private readonly IProfileService _profile;
         private readonly IUserManagementService _userMgmt;
-        private readonly IConsumableService _consumables;
-
         public ApiService(
             IAuthService auth,
             IAssetService assets,
@@ -30,8 +28,7 @@ namespace QuickStockApp.Services
             IFurnitureService furniture,
             ILibraryService library,
             IProfileService profile,
-            IUserManagementService userMgmt,
-            IConsumableService consumables)
+            IUserManagementService userMgmt)
         {
             _auth = auth;
             _assets = assets;
@@ -43,7 +40,6 @@ namespace QuickStockApp.Services
             _library = library;
             _profile = profile;
             _userMgmt = userMgmt;
-            _consumables = consumables;
         }
 
         // Auth
@@ -54,16 +50,9 @@ namespace QuickStockApp.Services
         public Task<bool> ResetPasswordAsync(string email, string token, string newPassword) => _auth.ResetPasswordAsync(email, token, newPassword);
         public Task<bool> CheckResetTokenAsync(string email, string token) => _auth.CheckResetTokenAsync(email, token);
 
-        // Profile
         public Task<ProfileDto?> GetProfileAsync(string jwtToken) => _profile.GetProfileAsync(jwtToken);
         public Task<(bool Success, string Message)> UpdateProfileAsync(string jwtToken, UpdateProfileRequest request, Stream? imageStream, string? fileName) => _profile.UpdateProfileAsync(jwtToken, request, imageStream, fileName);
         public Task<ProfileDto?> GetPublicProfileAsync(string jwtToken, string username) => _profile.GetPublicProfileAsync(jwtToken, username);
-        public Task<(bool Success, string Message)> CreatePostAsync(string jwtToken, string content, List<(Stream Stream, string FileName)> images) => _profile.CreatePostAsync(jwtToken, content, images);
-        public Task<List<PostResponseDto>> GetUserPostsAsync(string jwtToken, string username) => _profile.GetUserPostsAsync(jwtToken, username);
-        public Task<bool> DeletePostAsync(string jwtToken, int postId) => _profile.DeletePostAsync(jwtToken, postId);
-        public Task<List<string>> GetUserPhotosAsync(string jwtToken, string username) => _profile.GetUserPhotosAsync(jwtToken, username);
-        public Task<(bool Success, bool Liked)> ToggleReactionAsync(string jwtToken, int postId) => _profile.ToggleReactionAsync(jwtToken, postId);
-        public Task<CommentDto?> AddCommentAsync(string jwtToken, int postId, string content) => _profile.AddCommentAsync(jwtToken, postId, content);
 
         // Assets
         public Task<List<ItAssetDto>> GetItAssetsAsync(int? roomId = null, int? campusId = null, string? searchTerm = null) => _assets.GetItAssetsAsync(roomId, campusId, searchTerm);
@@ -131,10 +120,5 @@ namespace QuickStockApp.Services
         public Task<(bool Success, string Message)> UpdateFurnitureAsync(FurnitureDto furniture) => _furniture.UpdateFurnitureAsync(furniture);
         public Task<(bool Success, string Message)> TransferFurnitureAsync(int id, int targetRoomId) => _furniture.TransferFurnitureAsync(id, targetRoomId);
 
-        // Consumables
-        public Task<ConsumableListResponse> GetConsumablesAsync(int? campusId = null, string? searchTerm = null, int page = 1, int pageSize = 10) => _consumables.GetConsumablesAsync(campusId, searchTerm, page, pageSize);
-        public Task<List<ConsumableItemDto>> GetConsumableItemsAsync(int consumableId) => _consumables.GetConsumableItemsAsync(consumableId);
-        public Task<(bool Success, string Message)> CreateConsumableAsync(ConsumableDto consumable) => _consumables.CreateConsumableAsync(consumable);
-        public Task<bool> UpdateConsumableItemStatusAsync(int itemId, string status) => _consumables.UpdateItemStatusAsync(itemId, status);
     }
 }

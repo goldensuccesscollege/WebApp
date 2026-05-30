@@ -2,13 +2,12 @@
 @model QuickStockApp.Pages.Community.LibraryModel
 @{
     ViewData["Title"] = "Library";
-    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+    var isAdmin = User.IsInRole("Admin");
     var isManager = User.IsInRole("Manager");
-    var isUser = User.IsInRole("User");
-    var isViewer = User.IsInRole("Viewer");
+    var isStaff = User.IsInRole("Staff");
     
     // Permission helpers
-    var canAdd = isAdmin || isManager || isUser;
+    var canAdd = isAdmin || isManager || isStaff;
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
 }

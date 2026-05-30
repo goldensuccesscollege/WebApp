@@ -30,6 +30,24 @@ namespace QuickStockApp.Models
 
         // Combined
         public List<RecentActivityDto> RecentActivities { get; set; } = new();
+
+        // Enhanced Dashboard Properties
+        public int ActiveAssets { get; set; }
+        public int CriticalAssets { get; set; }
+        public int AssetHealthPercentage { get; set; }
+        public string? MostCommonAssetType { get; set; }
+        public string? MostProblematicRoom { get; set; }
+        public int MonthlyActivities { get; set; }
+        public int NewAssetsThisMonth { get; set; }
+        public string? SystemOverview { get; set; }
+        public List<string> Alerts { get; set; } = new();
+        public List<RoomAssetDto> AssetsByRoom { get; set; } = new();
+    }
+
+    public class RoomAssetDto
+    {
+        public string Room { get; set; } = string.Empty;
+        public int Count { get; set; }
     }
 
     public class LocationCountDto

@@ -29,22 +29,6 @@ namespace QuickStockApp.Pages.Account
         public string? SuccessMessage { get; set; }
         public string? ErrorMessage { get; set; }
 
-        public List<PostResponseDto> Posts { get; set; } = new();
-        public List<string> Photos { get; set; } = new();
-
-        [BindProperty]
-        public string? PostContent { get; set; }
-
-        public async Task<IActionResult> OnPostToggleLikeAsync([FromQuery] int postId)
-        {
-            var token = User.FindFirst("jwt_token")?.Value;
-            if (string.IsNullOrEmpty(token)) return Unauthorized();
-
-            var (success, liked) = await _api.ToggleReactionAsync(token, postId);
-            
-            return new JsonResult(new { success, liked });
-        }
-
         public async Task<IActionResult> OnGetAsync()
         {
             var token = User.FindFirst("jwt_token")?.Value;
@@ -64,9 +48,6 @@ namespace QuickStockApp.Pages.Account
             ProfileRequest.Birthday = CurrentProfile.Birthday;
             ProfileRequest.Address = CurrentProfile.Address;
             ProfileRequest.PhoneNumber = CurrentProfile.PhoneNumber;
-
-            Posts = await _api.GetUserPostsAsync(token, CurrentProfile.Username);
-            Photos = await _api.GetUserPhotosAsync(token, CurrentProfile.Username);
 
             return Page();
         }
@@ -91,57 +72,6 @@ namespace QuickStockApp.Pages.Account
             if (success) TempData["SuccessMessage"] = "Profile updated successfully!";
             else TempData["ErrorMessage"] = message;
 
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostCreatePostAsync(List<IFormFile> PostImages)
-        {
-            var token = User.FindFirst("jwt_token")?.Value;
-            if (string.IsNullOrEmpty(token))
-                return RedirectToPage("/Account/Login");
-
-            if (string.IsNullOrWhiteSpace(PostContent) && (PostImages == null || !PostImages.Any()))
-            {
-                ErrorMessage = "Please add some text or a photo to post.";
-                return await OnGetAsync();
-            }
-
-            var imageFiles = new List<(Stream Stream, string FileName)>();
-            if (PostImages != null)
-            {
-                foreach (var file in PostImages)
-                {
-                    imageFiles.Add((file.OpenReadStream(), file.FileName));
-                }
-            }
-
-            var (success, message) = await _api.CreatePostAsync(token, PostContent ?? "", imageFiles);
-            if (success) TempData["SuccessMessage"] = "Post shared!";
-            else TempData["ErrorMessage"] = message;
-
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostAddCommentAsync([FromQuery] int postId, [FromQuery] string content)
-        {
-            var token = User.FindFirst("jwt_token")?.Value;
-            if (string.IsNullOrEmpty(token)) return Unauthorized();
-
-            var comment = await _api.AddCommentAsync(token, postId, content);
-            if (comment != null)
-                return new JsonResult(new { success = true, comment });
-
-            return new JsonResult(new { success = false });
-        }
-
-        public async Task<IActionResult> OnPostDeletePostAsync(int postId)
-        {
-            var token = User.FindFirst("jwt_token")?.Value;
-            if (string.IsNullOrEmpty(token)) return RedirectToPage("/Account/Login");
-
-            var success = await _api.DeletePostAsync(token, postId);
-            if (success) TempData["SuccessMessage"] = "Post deleted.";
-            
             return RedirectToPage();
         }
     }

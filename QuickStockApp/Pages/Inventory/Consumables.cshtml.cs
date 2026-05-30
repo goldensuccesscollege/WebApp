@@ -3,138 +3,253 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuickStockApp.Models;
 using QuickStockApp.Services;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace QuickStockApp.Pages.Inventory
+namespace QuickStockApp.Pages
 {
     [Authorize]
     public class ConsumablesModel : PageModel
     {
         private readonly IConsumableService _consumableService;
-        private readonly IApiService _apiService;
+        private readonly IReportService _reportService;
 
-        public ConsumablesModel(IConsumableService consumableService, IApiService apiService)
+        public ConsumablesModel(IConsumableService consumableService, IReportService reportService)
         {
             _consumableService = consumableService;
-            _apiService = apiService;
+            _reportService = reportService;
         }
 
-        public List<ConsumableDto> Consumables { get; set; } = new();
-        public int TotalItems { get; set; }
-        public int TotalPages { get; set; }
-        
-        [BindProperty(SupportsGet = true)]
-        public string? SearchTerm { get; set; }
-        
-        [BindProperty(SupportsGet = true)]
-        public int CurrentPage { get; set; } = 1;
-        public int PageSize { get; set; } = 10;
+        // Expose data layers directly to the .cshtml layout view
+        public List<ConsumableResponse> ConsumablesList { get; set; } = new();
+        public int ThisWeekInflow { get; set; }
+        public int ThisWeekOutflow { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public bool ShowOutOnly { get; set; } = false;
+        public int? SelectedCampusId { get; set; }
 
+        [BindProperty]
+        public int TargetItemId { get; set; }
 
-        public async Task OnGetAsync()
+        [BindProperty]
+        public CreateConsumableCommand NewConsumable { get; set; } = new();
+
+        [BindProperty]
+        public int QuantityDelta { get; set; }
+
+        [TempData]
+        public string? FeedbackMessage { get; set; }
+
+        [TempData]
+        public bool IsSuccessState { get; set; }
+
+        public async Task<IActionResult> OnGetAsync()
         {
-            var activeCampusId = User.FindFirst("ActiveCampusId")?.Value;
-            int? campusId = int.TryParse(activeCampusId, out int acid) ? acid : null;
+            var hasAccess = User.IsInRole("Admin") || 
+                            User.FindFirst("CanAccessConsumables")?.Value == "True";
 
-            var response = await _consumableService.GetConsumablesAsync(campusId, SearchTerm, CurrentPage, PageSize, ShowOutOnly);
-            Consumables = response.Consumables;
-            TotalItems = response.TotalCount;
-            TotalPages = (int)Math.Ceiling((double)TotalItems / PageSize);
-        }
-
-
-        public async Task<JsonResult> OnGetItemsAsync(int consumableId, bool showOutOnly = false)
-        {
-            var items = await _consumableService.GetConsumableItemsAsync(consumableId, showOutOnly);
-            return new JsonResult(items);
-        }
-
-        public async Task<IActionResult> OnPostUpdateStatusAsync(int itemId, string status)
-        {
-            var success = await _consumableService.UpdateItemStatusAsync(itemId, status);
-            return success ? new OkResult() : new BadRequestResult();
-        }
-
-        public async Task<IActionResult> OnPostUpdateAsync(ConsumableDto consumable)
-        {
-            var success = await _consumableService.UpdateConsumableAsync(consumable);
-            return success ? new JsonResult(new { success = true }) : new JsonResult(new { success = false });
-        }
-
-        public async Task<IActionResult> OnPostRestockAsync(int consumableId, int quantity)
-        {
-            var success = await _consumableService.RestockConsumableAsync(consumableId, quantity);
-            return success ? new JsonResult(new { success = true }) : new JsonResult(new { success = false });
-        }
-
-        public async Task<IActionResult> OnGetLogsAsync(int page = 1, int pageSize = 10)
-        {
-            int? filterCampusId = null;
-            var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
-            if (int.TryParse(activeCampusClaim, out int acid)) filterCampusId = acid;
-
-            var result = await _apiService.GetAuditLogsPaginatedAsync(filterCampusId, page, pageSize, "Consumable");
-            return new JsonResult(result);
-        }
-
-        public async Task<JsonResult> OnGetStatsAsync(int campusId)
-        {
-            var response = await _apiService.GetDashboardStatsAsync(campusId);
-            return new JsonResult(response.Stats);
-        }
-
-        // ---- Out Request Workflow ----
-
-        public async Task<IActionResult> OnPostRequestOutAsync(int itemId)
-        {
-            var (success, message) = await _consumableService.RequestItemOutAsync(itemId);
-            return new JsonResult(new { success, message });
-        }
-
-        public async Task<JsonResult> OnGetPendingRequestsAsync()
-        {
-            var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
-            int campusId = int.TryParse(activeCampusClaim, out int acid) ? acid : 0;
-            var requests = await _consumableService.GetPendingOutRequestsAsync(campusId);
-            return new JsonResult(requests);
-        }
-
-        public async Task<JsonResult> OnGetRequestHistoryAsync(string? status = null)
-        {
-            var activeCampusClaim = User.FindFirst("ActiveCampusId")?.Value;
-            int campusId = int.TryParse(activeCampusClaim, out int acid) ? acid : 0;
-            
-            string? userId = null;
-            if (!(User.IsInRole("Admin") || User.IsInRole("Manager")))
+            if (!hasAccess)
             {
-                userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                return Forbid();
             }
 
-            var requests = await _consumableService.GetOutRequestHistoryAsync(campusId, status, userId);
-            return new JsonResult(requests);
+            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
+            int? activeCampusId = SelectedCampusId > 0 ? SelectedCampusId : null;
+            if (!activeCampusId.HasValue && int.TryParse(campusIdStr, out int acid))
+            {
+                activeCampusId = acid;
+            }
+
+            ConsumablesList = await _consumableService.GetAllConsumablesAsync(activeCampusId);
+
+            var logsResult = await _reportService.GetAuditLogsPaginatedAsync(activeCampusId, 1, 500, "Consumable");
+            var logsList = logsResult?.Logs ?? new List<AuditLogDto>();
+            
+            ThisWeekInflow = 0;
+            ThisWeekOutflow = 0;
+            
+            var cutoffDate = System.DateTime.UtcNow.AddDays(-7);
+            foreach (var log in logsList)
+            {
+                if (log.Timestamp >= cutoffDate)
+                {
+                    int count = 0;
+                    if (!string.IsNullOrEmpty(log.Details))
+                    {
+                        var parts = log.Details.Split('|');
+                        foreach (var part in parts)
+                        {
+                            if (part.Contains("Count:"))
+                            {
+                                int.TryParse(part.Replace("Count:", "").Trim(), out count);
+                            }
+                        }
+                    }
+
+                    if (log.Action == "Add Stock" || log.Action == "Create")
+                    {
+                        ThisWeekInflow += count;
+                    }
+                    else if (log.Action == "Deduct Stock")
+                    {
+                        ThisWeekOutflow += count;
+                    }
+                }
+            }
+
+            return Page();
         }
 
-        public async Task<IActionResult> OnPostApproveRequestAsync(int requestId)
+        public async Task<IActionResult> OnPostAddStockAsync()
         {
-            var (success, message) = await _consumableService.ApproveOutRequestAsync(requestId);
-            return new JsonResult(new { success, message });
+            if (QuantityDelta <= 0)
+            {
+                FeedbackMessage = "Quantity must be greater than zero.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            // Resolve SelectedCampusId from user profile claim if not loaded
+            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
+            int campusId = 1;
+            if (int.TryParse(campusIdStr, out int acid))
+            {
+                campusId = acid;
+            }
+
+            // Intercept if User is in Staff Role
+            if (User.IsInRole("Staff"))
+            {
+                // Fetch details to map Name and Type to the Request
+                var consumables = await _consumableService.GetAllConsumablesAsync(campusId);
+                var item = consumables.Find(c => c.Id == TargetItemId);
+
+                var requestCommand = new CreateConsumableRequestCommand
+                {
+                    RequestType = "Add",
+                    ProductName = item?.ProductName ?? "Unknown Item",
+                    ProductType = item?.ProductType ?? "pieces",
+                    Count = QuantityDelta,
+                    TargetItemId = TargetItemId,
+                    CampusId = campusId
+                };
+
+                var (reqSuccess, reqMessage) = await _consumableService.CreateConsumableRequestAsync(requestCommand);
+                FeedbackMessage = reqMessage;
+                IsSuccessState = reqSuccess;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            var command = new AddStockCommand { Id = TargetItemId, Quantity = QuantityDelta };
+            var (success, message) = await _consumableService.AddStockAsync(command);
+
+            FeedbackMessage = message;
+            IsSuccessState = success;
+
+            return RedirectToPage(new { SelectedCampusId });
         }
 
-        public async Task<IActionResult> OnPostRejectRequestAsync(int requestId, string reason)
+        public async Task<IActionResult> OnPostDeductStockAsync()
         {
-            var (success, message) = await _consumableService.RejectOutRequestAsync(requestId, reason ?? "");
-            return new JsonResult(new { success, message });
+            if (QuantityDelta <= 0)
+            {
+                FeedbackMessage = "Quantity must be greater than zero.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
+            int campusId = 1;
+            if (int.TryParse(campusIdStr, out int acid))
+            {
+                campusId = acid;
+            }
+
+            // Intercept if User is in Staff Role
+            if (User.IsInRole("Staff"))
+            {
+                var consumables = await _consumableService.GetAllConsumablesAsync(campusId);
+                var item = consumables.Find(c => c.Id == TargetItemId);
+
+                var requestCommand = new CreateConsumableRequestCommand
+                {
+                    RequestType = "Deduct",
+                    ProductName = item?.ProductName ?? "Unknown Item",
+                    ProductType = item?.ProductType ?? "pieces",
+                    Count = QuantityDelta,
+                    TargetItemId = TargetItemId,
+                    CampusId = campusId
+                };
+
+                var (reqSuccess, reqMessage) = await _consumableService.CreateConsumableRequestAsync(requestCommand);
+                FeedbackMessage = reqMessage;
+                IsSuccessState = reqSuccess;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            var command = new DeductStockCommand { Id = TargetItemId, Quantity = QuantityDelta };
+            var (success, message) = await _consumableService.DeductStockAsync(command);
+
+            FeedbackMessage = message;
+            IsSuccessState = success;
+
+            return RedirectToPage(new { SelectedCampusId });
         }
 
-        public async Task<IActionResult> OnPostCancelRequestAsync(int requestId)
+        public async Task<IActionResult> OnPostCreateConsumableAsync()
         {
-            var (success, message) = await _consumableService.CancelOutRequestAsync(requestId);
-            return new JsonResult(new { success, message });
+            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
+            int campusId = 1;
+            if (int.TryParse(campusIdStr, out int acid))
+            {
+                campusId = acid;
+            }
+            NewConsumable.CampusId = campusId;
+
+            if (string.IsNullOrWhiteSpace(NewConsumable.ProductName))
+            {
+                FeedbackMessage = "Product Name is required.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            if (string.IsNullOrWhiteSpace(NewConsumable.ProductType))
+            {
+                FeedbackMessage = "Product Type / Unit is required.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            if (NewConsumable.Count < 0)
+            {
+                FeedbackMessage = "Count cannot be negative.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            // Intercept if User is in Staff Role
+            if (User.IsInRole("Staff"))
+            {
+                var requestCommand = new CreateConsumableRequestCommand
+                {
+                    RequestType = "Create",
+                    ProductName = NewConsumable.ProductName,
+                    ProductType = NewConsumable.ProductType,
+                    Count = NewConsumable.Count,
+                    CampusId = campusId
+                };
+
+                var (reqSuccess, reqMessage) = await _consumableService.CreateConsumableRequestAsync(requestCommand);
+                FeedbackMessage = reqMessage;
+                IsSuccessState = reqSuccess;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
+            var (success, message) = await _consumableService.CreateConsumableAsync(NewConsumable);
+            FeedbackMessage = message;
+            IsSuccessState = success;
+
+            return RedirectToPage(new { SelectedCampusId });
         }
     }
 }

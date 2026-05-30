@@ -5,15 +5,15 @@
     var campusId = User.FindFirst("ActiveCampusId")?.Value;
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
     var isManager = User.IsInRole("Manager");
-    var isUser = User.IsInRole("User");
+    var isStaff = User.IsInRole("Staff");
     var isViewer = User.IsInRole("Viewer");
     
     // Permission helpers
-    var canAdd = isAdmin || isManager || isUser;
+    var canAdd = isAdmin || isManager || isStaff;
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
-    var canTransfer = isAdmin || isManager || isUser;
-    var canSeeLogsReports = isAdmin || isManager || isUser;
+    var canTransfer = isAdmin || isManager || isStaff;
+    var canSeeLogsReports = isAdmin || isManager || isStaff;
 
     bool showListTab = Model.SelectedRoomId.HasValue || !string.IsNullOrEmpty(Model.SearchTerm) || Request.Query["tab"] == "list";
 }
@@ -42,9 +42,9 @@
             <!-- Stats row -->
     <div class="row g-3 mb-3" id="itDashStats">
         <div class="col-12 d-flex align-items-center gap-2 mb-1">
-            <h5 class="fw-bold mb-0" style="background: var(--primary-gradient,linear-gradient(135deg,#6366f1,#a855f7)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+            <h1 class="fw-bold mb-0" style="background: var(--primary-gradient,linear-gradient(135deg,#6366f1,#a855f7)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
                 <i class="fas fa-chart-bar me-2" style="-webkit-text-fill-color:#6366f1;"></i>IT Assets Dashboard
-            </h5>
+            </h1>
             <button class="btn btn-sm btn-link text-muted p-0 ms-auto" onclick="toggleDashboard()" id="dashToggleBtn" title="Toggle dashboard">
                 <i class="fas fa-chevron-up" id="dashToggleIcon"></i>
             </button>
@@ -1395,15 +1395,15 @@ Unique ID: ${data.id}
             // Summary Statistics
             const stats = {};
             assets.forEach(a => {
-                const type = a.type || 'Other';
+                const itemName = a.name || 'Unknown';
                 const status = (a.status || '').toLowerCase();
-                if (!stats[type]) {
-                    stats[type] = { working: 0, broken: 0, maintenance: 0 };
+                if (!stats[itemName]) {
+                    stats[itemName] = { working: 0, broken: 0, maintenance: 0 };
                 }
                 
-                if (status === 'working') stats[type].working++;
-                else if (status === 'broken') stats[type].broken++;
-                else if (status.includes('maintenance')) stats[type].maintenance++;
+                if (status === 'working') stats[itemName].working++;
+                else if (status === 'broken') stats[itemName].broken++;
+                else if (status.includes('maintenance')) stats[itemName].maintenance++;
             });
 
             doc.setFontSize(11);
@@ -1411,17 +1411,25 @@ Unique ID: ${data.id}
             doc.setFont(undefined, 'bold');
             doc.text("Asset Status Summary:", 14, 54);
             
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            let currentY = 60;
-            
-            Object.keys(stats).forEach(type => {
-                const s = stats[type];
+            const summaryBody = [];
+            Object.keys(stats).forEach(itemName => {
+                const s = stats[itemName];
                 if (s.working > 0 || s.broken > 0 || s.maintenance > 0) {
-                    doc.text(`${type}: ${s.working} Working, ${s.broken} Broken, ${s.maintenance} Maintenance`, 14, currentY);
-                    currentY += 6;
+                    summaryBody.push([itemName, s.working, s.broken, s.maintenance]);
                 }
             });
+
+            doc.autoTable({
+                startY: 58,
+                head: [['Item Name', 'Working', 'Broken', 'Maintenance']],
+                body: summaryBody,
+                theme: 'grid',
+                headStyles: { fillColor: [241, 245, 249], textColor: [30, 41, 59], fontStyle: 'bold' },
+                styles: { fontSize: 9 },
+                margin: { top: 10, left: 14, right: 14 }
+            });
+
+            const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 58;
  
             const tableData = assets.map(a => [
                 a.name || 'N/A',
@@ -1433,7 +1441,7 @@ Unique ID: ${data.id}
             ]);
  
             doc.autoTable({
-                startY: currentY + 4,
+                startY: finalY + 10,
                 head: [['Asset Name', 'Brand/Model', 'Serial Number', 'Location', 'Status', 'QR ID']],
                 body: tableData,
                 theme: 'striped',

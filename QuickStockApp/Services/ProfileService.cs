@@ -13,12 +13,6 @@ namespace QuickStockApp.Services
         Task<ProfileDto?> GetProfileAsync(string jwtToken);
         Task<(bool Success, string Message)> UpdateProfileAsync(string jwtToken, UpdateProfileRequest profile, Stream? imageStream, string? fileName);
         Task<ProfileDto?> GetPublicProfileAsync(string jwtToken, string username);
-        Task<(bool Success, string Message)> CreatePostAsync(string jwtToken, string content, List<(Stream Stream, string FileName)> images);
-        Task<List<PostResponseDto>> GetUserPostsAsync(string jwtToken, string username);
-        Task<bool> DeletePostAsync(string jwtToken, int postId);
-        Task<List<string>> GetUserPhotosAsync(string jwtToken, string username);
-        Task<(bool Success, bool Liked)> ToggleReactionAsync(string jwtToken, int postId);
-        Task<CommentDto?> AddCommentAsync(string jwtToken, int postId, string content);
     }
 
     public class ProfileService : BaseService, IProfileService
@@ -83,105 +77,6 @@ namespace QuickStockApp.Services
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                 var response = await _http.SendAsync(request);
                 return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<ProfileDto>() : null;
-            }
-            catch { return null; }
-        }
-
-        public async Task<(bool Success, string Message)> CreatePostAsync(string jwtToken, string content, List<(Stream Stream, string FileName)> images)
-        {
-            try
-            {
-                var formData = new MultipartFormDataContent();
-                formData.Add(new StringContent(content), "Content");
-                foreach (var img in images)
-                {
-                    var streamContent = new StreamContent(img.Stream);
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-                    formData.Add(streamContent, "Images", img.FileName);
-                }
-
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/Profile/posts");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                request.Content = formData;
-
-                var response = await _http.SendAsync(request);
-                var result = await response.Content.ReadAsStringAsync();
-                return (response.IsSuccessStatusCode, result);
-            }
-            catch (Exception ex) { return (false, ex.Message); }
-        }
-
-        public async Task<List<PostResponseDto>> GetUserPostsAsync(string jwtToken, string username)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/Profile/posts/{username}");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                var response = await _http.SendAsync(request);
-                return response.IsSuccessStatusCode ? (await response.Content.ReadFromJsonAsync<List<PostResponseDto>>() ?? new()) : new();
-            }
-            catch { return new(); }
-        }
-
-        public async Task<bool> DeletePostAsync(string jwtToken, int postId)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/Profile/posts/{postId}");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                var response = await _http.SendAsync(request);
-                return response.IsSuccessStatusCode;
-            }
-            catch { return false; }
-        }
-
-        public async Task<List<string>> GetUserPhotosAsync(string jwtToken, string username)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/Profile/photos/{username}");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                var response = await _http.SendAsync(request);
-                return response.IsSuccessStatusCode ? (await response.Content.ReadFromJsonAsync<List<string>>() ?? new()) : new();
-            }
-            catch { return new(); }
-        }
-
-        public async Task<(bool Success, bool Liked)> ToggleReactionAsync(string jwtToken, int postId)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Post, $"api/Profile/posts/{postId}/react");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                var response = await _http.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var liked = json.Contains("\"liked\":true") || json.Contains(":true");
-                    return (true, liked);
-                }
-                return (false, false);
-            }
-            catch { return (false, false); }
-        }
-
-        public async Task<CommentDto?> AddCommentAsync(string jwtToken, int postId, string content)
-        {
-            try
-            {
-                var contentData = new MultipartFormDataContent();
-                contentData.Add(new StringContent(content), "content");
-
-                var request = new HttpRequestMessage(HttpMethod.Post, $"api/Profile/posts/{postId}/comments");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                request.Content = contentData;
-
-                var response = await _http.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<CommentDto>();
-                }
-                return null;
             }
             catch { return null; }
         }

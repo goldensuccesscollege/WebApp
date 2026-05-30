@@ -1,0 +1,81 @@
+@model IndexModel
+
+@if (User.IsInRole("Admin") || (User.FindFirst("CanAccessApparel")?.Value == "True"))
+{
+    <div class="col-12 animate-in" style="animation-delay: 0.2s">
+        <div class="glass-card overflow-hidden border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
+            <div class="row g-0">
+                <!-- Part 1: Primary Stats -->
+                <div class="col-xl-3 col-lg-4 p-4 bg-success-gradient text-white d-flex flex-column justify-content-between position-relative dash-panel-left">
+                    <i class="fas fa-tshirt position-absolute" style="right: -10px; bottom: -10px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"></i>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <div class="rounded-circle bg-white bg-opacity-20 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0 letter-spacing-05">APPAREL</h6>
+                        </div>
+                        <a href="/Inventory/ApparelList" class="text-decoration-none text-white group stretched-link">
+                            <div class="mb-4">
+                                <div class="small opacity-80 fw-bold text-uppercase mb-1">Items In Stock</div>
+                                <div class="display-5 fw-extrabold mb-0">@Model.TotalApparelInStock</div>
+                                <div class="small mt-2 d-flex align-items-center gap-1 opacity-0 group-hover-opacity-100 transition-all transform-translate-x-hover">
+                                    <span>Manage Inventory</span> <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="pt-3 border-top border-white border-opacity-20">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Sold</div>
+                                <div class="h4 fw-bold mb-0">@Model.TotalApparelSold</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small opacity-70 fw-bold text-uppercase" style="font-size: 0.6rem;">Categories</div>
+                                <div class="h4 fw-bold mb-0">@Model.TotalApparelTypes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Part 2: Chart Breakdown -->
+                <div class="col-xl-4 col-lg-8 p-4 bg-white border-end d-flex flex-column">
+                    <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-chart-pie me-2 text-success"></i>Category Distribution</h6>
+                    <div class="flex-grow-1 position-relative" style="min-height: 180px;">
+                        <canvas id="apparelChartCombined"></canvas>
+                        @if (!Model.ApparelByCategory.Any())
+                        {
+                            <div class="position-absolute top-50 start-50 translate-middle text-muted small">No data</div>
+                        }
+                    </div>
+                </div>
+                <!-- Part 3: Recent Activity Logs -->
+                <div class="col-xl-5 col-lg-12 p-4 bg-light-subtle d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-success"></i>Recent Apparel Activity</h6>
+                        <button class="btn btn-xs btn-link text-decoration-none small p-0" onclick="showLogs('Apparel')">View History</button>
+                    </div>
+                    <div class="activity-list flex-grow-1">
+                        @if (Model.RecentApparelActivities.Any())
+                        {
+                            @foreach (var a in Model.RecentApparelActivities.Take(4))
+                            {
+                                <div class="activity-item mb-2 shadow-none border-0" style="background: rgba(46, 125, 50, 0.05);">
+                                    <span class="activity-badge ap-badge">@a.Action</span>
+                                    <div class="activity-info">
+                                        <span class="fw-bold text-dark small">@a.EntityName</span>
+                                        <span class="text-muted" style="font-size: 0.65rem;">@a.Username &middot; @a.Timestamp</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted small">No recent activity.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
