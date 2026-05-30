@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace QuickStockApp.Pages.Admin
 {
-    [Authorize(Roles = "Admin,Library Admin,Home Economics Admin")]
+    [Authorize(Roles = "Admin")]
     public class UserManagementModel : PageModel
     {
         private readonly IApiService _api;
@@ -97,6 +97,17 @@ namespace QuickStockApp.Pages.Admin
             return RedirectToPage();
         }
 
+        public async Task<IActionResult> OnPostRemoveCampusAccessAsync(int userId, int campusId)
+        {
+            if (IsSelf(userId))
+            {
+                TempData["ErrorMessage"] = "You cannot modify your own campus access from here.";
+                return RedirectToPage();
+            }
+            await _api.RemoveUserCampusAccessAsync(userId, campusId);
+            return RedirectToPage();
+        }
+
         public async Task<IActionResult> OnPostToggleBlockAsync(int userId, int campusId)
         {
             if (IsSelf(userId))
@@ -122,12 +133,7 @@ namespace QuickStockApp.Pages.Admin
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostToggleMessageAccessAsync(int id)
-        {
-            if (IsSelf(id)) return RedirectToPage();
-            await _api.ToggleUserMessageAccessAsync(id);
-            return RedirectToPage();
-        }
+
 
         public async Task<IActionResult> OnPostToggleLibraryAccessAsync(int id)
         {
@@ -143,6 +149,7 @@ namespace QuickStockApp.Pages.Admin
 
         public async Task<IActionResult> OnPostToggleConsumablesAccessAsync(int id)
         {
+            if (IsSelf(id)) return RedirectToPage();
             await _api.ToggleUserConsumablesAccessAsync(id);
             return RedirectToPage();
         }

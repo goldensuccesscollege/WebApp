@@ -18,16 +18,9 @@ namespace QuickStockApp.Services
         Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
         Task<bool> CheckResetTokenAsync(string email, string token);
         
-        // Profile
         Task<ProfileDto?> GetProfileAsync(string jwtToken);
         Task<(bool Success, string Message)> UpdateProfileAsync(string jwtToken, UpdateProfileRequest request, Stream? imageStream, string? fileName);
         Task<ProfileDto?> GetPublicProfileAsync(string jwtToken, string username);
-        Task<(bool Success, string Message)> CreatePostAsync(string jwtToken, string content, List<(Stream Stream, string FileName)> images);
-        Task<List<PostResponseDto>> GetUserPostsAsync(string jwtToken, string username);
-        Task<bool> DeletePostAsync(string jwtToken, int postId);
-        Task<List<string>> GetUserPhotosAsync(string jwtToken, string username);
-        Task<(bool Success, bool Liked)> ToggleReactionAsync(string jwtToken, int postId);
-        Task<CommentDto?> AddCommentAsync(string jwtToken, int postId, string content);
         Task<List<ItAssetDto>> GetItAssetsAsync(int? roomId = null, int? campusId = null, string? searchTerm = null);
         Task<(bool Success, string Message)> AddItAssetAsync(ItAssetDto asset);
         Task<(bool Success, string Message)> UpdateItAssetAsync(ItAssetDto asset);
@@ -91,11 +84,6 @@ namespace QuickStockApp.Services
         Task<(bool Success, string Message)> UpdateFurnitureAsync(FurnitureDto furniture);
         Task<(bool Success, string Message)> TransferFurnitureAsync(int id, int targetRoomId);
 
-        // Consumables
-        Task<ConsumableListResponse> GetConsumablesAsync(int? campusId = null, string? searchTerm = null, int page = 1, int pageSize = 10);
-        Task<List<ConsumableItemDto>> GetConsumableItemsAsync(int consumableId);
-        Task<(bool Success, string Message)> CreateConsumableAsync(ConsumableDto consumable);
-        Task<bool> UpdateConsumableItemStatusAsync(int itemId, string status);
     }
 }
 

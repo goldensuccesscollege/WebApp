@@ -6,15 +6,15 @@
     var isViewer = User.IsInRole("Viewer");
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
     var isManager = User.IsInRole("Manager");
-    var isUser = User.IsInRole("User");
+    var isStaff = User.IsInRole("Staff");
     var campusId = User.FindFirst("ActiveCampusId")?.Value;
     
     // Permission helpers
-    var canAdd = isAdmin || isManager || isUser;
+    var canAdd = isAdmin || isManager || isStaff;
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
-    var canTransfer = isAdmin || isManager || isUser;
-    var canSeeLogs = isAdmin || isManager || isUser;
+    var canTransfer = isAdmin || isManager || isStaff;
+    var canSeeLogs = isAdmin || isManager || isStaff;
 
     bool showListTab = !string.IsNullOrEmpty(Request.Query["searchTerm"]) || Request.Query.ContainsKey("showList");
 }

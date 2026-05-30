@@ -1,1391 +1,1458 @@
 @page
-@model QuickStockApp.Pages.Inventory.ConsumablesModel
+@model QuickStockApp.Pages.ConsumablesModel
 @{
-    ViewData["Title"] = "Consumables Inventory";
-    var activeCampusId = User.FindFirst("ActiveCampusId")?.Value;
-    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
+    ViewData["Title"] = "Consumable Inventory Management";
+    var isStaff = User.IsInRole("Staff");
     var isManager = User.IsInRole("Manager");
-    var isUser = User.IsInRole("User");
-    var isViewer = User.IsInRole("Viewer");
-    
-    var canAdd = isAdmin || isManager || isUser;
-    var canUpdate = isAdmin || isManager;
-    var canDelete = isAdmin;
-
-    var canSeeLogsReports = isAdmin || isManager || isUser;
-    bool showListTab = !string.IsNullOrEmpty(Model.SearchTerm) || Model.CurrentPage > 1 || Request.Query.ContainsKey("showList");
+    var isAdmin = User.IsInRole("Admin");
+    var canApprove = isAdmin || isManager;
 }
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- Tab Navigation -->
-<div class="d-flex justify-content-center mb-4 animate-in">
-    <ul class="nav nav-pills bg-white p-1 rounded-pill shadow-sm" id="consumableTabs" role="tablist" style="border: 1px solid rgba(31,60,136,0.15);">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(!showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold" id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard-view" type="button" role="tab" aria-controls="dashboard-view" aria-selected="@(!showListTab ? "true" : "false")" style="transition: all 0.3s;">
-                <i class="fas fa-chart-pie me-2"></i> Overview Dashboard
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(showListTab ? "active" : "") rounded-pill px-4 py-2 fw-bold text-secondary" id="list-tab" data-bs-toggle="pill" data-bs-target="#list-view" type="button" role="tab" aria-controls="list-view" aria-selected="@(showListTab ? "true" : "false")" style="transition: all 0.3s;">
-                <i class="fas fa-boxes me-2"></i> Product Inventory List
-            </button>
-        </li>
-    </ul>
-</div>
-
-<div class="tab-content" id="consumableTabContent">
-    <!-- DASHBOARD TAB -->
-    <div class="tab-pane fade @(!showListTab ? "show active" : "")" id="dashboard-view" role="tabpanel" aria-labelledby="dashboard-tab">
-        <div class="consumables-container animate-fade-in">
-            <div class="col-12 d-flex align-items-center gap-2 mb-4">
-                <h5 class="fw-bold mb-0" style="background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-                    <i class="fas fa-chart-bar me-2" style="-webkit-text-fill-color:var(--primary-color);"></i>Consumables Dashboard
-                </h5>
-            </div>
-
-
-    <!-- Quick Stats & Chart Row -->
-    <div class="row g-4 mb-5">
-        <div class="col-xl-8">
-            <div class="glass-card p-4 h-100 position-relative overflow-hidden">
-                <div class="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h5 class="fw-bold text-dark mb-1">Inventory Performance</h5>
-                        <p class="small text-muted mb-0">Overview of stock flow across the campus</p>
-                    </div>
-                    <div class="chart-legend-v2 d-flex gap-3">
-                        <div class="legend-item"><span class="dot bg-success"></span> <small class="fw-bold">In</small></div>
-                        <div class="legend-item"><span class="dot bg-danger"></span> <small class="fw-bold">Out</small></div>
-                        <div class="legend-item"><span class="dot bg-primary"></span> <small class="fw-bold">Balance</small></div>
-                    </div>
-                </div>
-                <div style="height: 300px;">
-                    <canvas id="inventoryChart"></canvas>
-                </div>
-            </div>
+<div class="container-fluid px-4 py-4 main-content-container">
+    <!-- Header Area -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 animate-in">
+        <div>
+            <h1 class="h2 mb-1 text-dark fw-800 tracking-tight">Consumable Inventory</h1>
+            <p class="text-muted small mb-0">Monitor quantity states, manage stock balances, and apply real-time adjustments.</p>
         </div>
-        <div class="col-xl-4">
-            <div class="row g-4 mb-4">
-                <div class="col-12">
-                    <div class="stat-card-v2 bg-primary-gradient text-white">
-                        <div class="stat-icon-bg"><i class="fas fa-boxes"></i></div>
-                        <div class="stat-body">
-                            <h6 class="text-uppercase small fw-bold opacity-80 mb-1">Total Products</h6>
-                            <h2 class="display-6 fw-extrabold mb-0">@Model.Consumables.Count</h2>
-                            <div class="mt-2 small opacity-70">Diverse categories registered</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="stat-card-v2 bg-white border">
-                        <div class="stat-icon-bg text-light"><i class="fas fa-balance-scale"></i></div>
-                        <div class="stat-body">
-                            <h6 class="text-uppercase small fw-bold text-muted mb-1">Total Current Balance</h6>
-                            <h2 class="display-6 fw-extrabold text-primary mb-0">@Model.Consumables.Sum(c => c.Balance)</h2>
-                            <div class="mt-2 small text-success fw-bold"><i class="fas fa-arrow-up"></i> High Availability</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if (canSeeLogsReports)
-            {
-                <div class="glass-card p-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h6 class="fw-bold mb-0 small text-muted text-uppercase"><i class="fas fa-history me-1"></i>Recent Activity</h6>
-                        <button class="btn btn-sm btn-link text-decoration-none small p-0" onclick="showLogsModal()">View all</button>
-                    </div>
-                    <div id="consumableRecentActivity" class="activity-list-sm">
-                        <div class="text-center text-muted small py-2"><div class="spinner-border spinner-border-sm"></div></div>
-                    </div>
-                </div>
-            }
+        <div class="action-group d-flex gap-2">
+            <a href="/Inventory/ConsumableLogs" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm py-2 fw-bold" style="border-color: #64748b; color: #64748b; font-size: 0.9rem;">
+                <i class="bi bi-clock-history me-2"></i> View Activity Logs
+            </a>
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2 fw-bold" onclick="openCreateModal()" style="background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%); border: none; font-size: 0.9rem;">
+                <i class="bi bi-plus-lg me-2"></i> Create Consumable
+            </button>
         </div>
     </div>
-    </div>
-    </div> <!-- END DASHBOARD TAB -->
 
-    <!-- LIST TAB -->
-    <div class="tab-pane fade @(showListTab ? "show active" : "")" id="list-view" role="tabpanel" aria-labelledby="list-tab">
-        <div class="consumables-container animate-fade-in">
-            <!-- Header -->
-            <div class="dashboard-header mb-5">
-                <div class="row align-items-center">
-                    <div class="col-lg-7">
-                        <div class="title-section">
-                            <div class="badge-v3 mb-2">
-                                <i class="fas fa-box-open me-2"></i> Stock Management
-                            </div>
-                            <h1 class="premium-display-text mb-2">Consumables Inventory</h1>
-                            <p class="text-muted fs-5 mb-0">Monitor and manage school supplies with precision and ease.</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
-                        <div class="header-actions-v2">
-                            <form method="get" class="search-form-v2 d-inline-block me-2">
-                                <div class="premium-search-box">
-                                    <i class="fas fa-search search-icon"></i>
-                                    <input type="text" asp-for="SearchTerm" placeholder="Search products..." class="search-field" />
-                                    <input type="hidden" name="ShowOutOnly" value="@Model.ShowOutOnly.ToString().ToLower()" />
-                                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
-                                    {
-                                        <a href="/Inventory/Consumables" class="search-clear"><i class="fas fa-times-circle"></i></a>
-                                    }
-                                </div>
-                            </form>
-                            @if (canAdd)
-                            {
-                                <a href="/Inventory/AddConsumable" class="btn-premium-v2 animate-bounce-in text-decoration-none">
-                                    <span class="btn-icon"><i class="fas fa-plus"></i></span>
-                                    <span class="btn-text">Register Stock</span>
-                                </a>
-                            }
-                            @if (canUpdate)
-                            {
-                                <button class="btn btn-warning fw-bold rounded-pill px-4 py-2 ms-2 animate-bounce-in" onclick="openRequestListModal()" id="requestListBtn">
-                                    <i class="fas fa-clipboard-list me-2"></i>Request List
-                                    <span class="badge bg-danger rounded-pill ms-1" id="pendingBadge" style="display:none;">0</span>
-                                </button>
-                            }
-                            else if (isUser)
-                            {
-                                <button class="btn btn-info text-white fw-bold rounded-pill px-4 py-2 ms-2 animate-bounce-in" onclick="openRequestListModal()">
-                                    <i class="fas fa-search-location me-2"></i>Track Requests
-                                </button>
-                            }
-                        </div>
-                    </div>
+    <!-- Feedback Message -->
+    @if (!string.IsNullOrEmpty(Model.FeedbackMessage))
+    {
+        <div class="alert @(Model.IsSuccessState ? "alert-success border-success-subtle" : "alert-danger border-danger-subtle") alert-dismissible fade show shadow-premium rounded-4 mb-4 animate-scale" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="alert-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center @(Model.IsSuccessState ? "bg-success text-white" : "bg-danger text-white")" style="width: 38px; height: 38px;">
+                    <i class="bi @(Model.IsSuccessState ? "bi-check-lg" : "bi-exclamation-triangle-fill") fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark">@(Model.IsSuccessState ? "Action Successful" : "Action Failed")</h6>
+                    <span class="text-secondary small">@Model.FeedbackMessage</span>
                 </div>
             </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
-            <!-- Main Content Area -->
-    <div class="inventory-section glass-card border-0 shadow-sm">
-        <div class="card-header-v2 p-4 border-bottom d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-3">
-                <h5 class="fw-bold mb-0">Product Directory</h5>
-                <div class="btn-group rounded-pill p-1 bg-light border shadow-sm" style="font-size: 0.8rem;">
-                    <a href="?ShowOutOnly=false&SearchTerm=@Model.SearchTerm" 
-                       class="btn btn-sm rounded-pill px-3 fw-bold @(!Model.ShowOutOnly ? "btn-primary shadow-sm" : "text-muted")">
-                       <i class="fas fa-check-circle me-1"></i> Active Inventory
-                    </a>
-                    <a href="?ShowOutOnly=true&SearchTerm=@Model.SearchTerm" 
-                       class="btn btn-sm rounded-pill px-3 fw-bold @(Model.ShowOutOnly ? "btn-danger shadow-sm" : "text-muted")">
-                       <i class="fas fa-exclamation-triangle me-1"></i> Out of Stock
-                    </a>
+    <!-- Dashboard Statistics Widgets -->
+    <div class="row g-4 mb-4 animate-in">
+        <div class="col-12 col-md-4">
+            <div class="saas-kpi-card p-4 h-100 card-hover-effect">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="kpi-label">Unique Products</span>
+                    <div class="kpi-icon-box bg-slate-50 text-slate-600">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="location.reload()">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
+                <div class="kpi-value-wrapper">
+                    <h3 class="kpi-value">@(Model.ConsumablesList?.Count ?? 0)</h3>
+                    <span class="kpi-trend text-muted"><i class="bi bi-info-circle me-1"></i>active tracked types</span>
+                </div>
             </div>
         </div>
+        <div class="col-12 col-md-4">
+            <div class="saas-kpi-card p-4 h-100 card-hover-effect">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="kpi-label">Recent Activity Summary</span>
+                    <div class="kpi-icon-box bg-slate-50 text-slate-600">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                </div>
+                <div class="kpi-value-wrapper" style="margin-top: 0.75rem;">
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span class="fw-800 text-emerald-600 fs-3">+@Model.ThisWeekInflow</span>
+                        <span class="text-secondary small fw-bold text-uppercase tracking-wider" style="font-size: 0.7rem; letter-spacing: 0.05em;">Units Inflow (This Week)</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span class="fw-800 text-rose-600 fs-3">-@Model.ThisWeekOutflow</span>
+                        <span class="text-secondary small fw-bold text-uppercase tracking-wider" style="font-size: 0.7rem; letter-spacing: 0.05em;">Units Outflow (This Week)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="saas-kpi-card p-4 h-100 card-hover-effect" style="cursor: pointer; transition: all 0.2s ease-in-out;" onclick="toggleLowStockFilter(this)" id="lowStockKpiCard" title="Click to filter low stock items">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="kpi-label">Low Stock Alerts</span>
+                    <div class="kpi-icon-box @(Model.ConsumablesList?.Any(c => c.Count <= 5) == true ? "bg-rose-50 text-rose-600 animate-pulse-slow" : "bg-slate-50 text-slate-400")">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="kpi-value-wrapper">
+                    <h3 class="kpi-value @(Model.ConsumablesList?.Count(c => c.Count <= 5) > 0 ? "text-rose-600" : "")">
+                        @(Model.ConsumablesList?.Count(c => c.Count <= 5) ?? 0)
+                        <span class="kpi-value-unit">Items</span>
+                    </h3>
+                    @if (Model.ConsumablesList?.Any(c => c.Count <= 5) == true)
+                    {
+                        <span class="kpi-trend text-rose-600"><i class="bi bi-alarm-fill me-1"></i>requires replenishment</span>
+                    }
+                    else
+                    {
+                        <span class="kpi-trend text-slate-500"><i class="bi bi-check-circle-fill me-1"></i>all stock levels healthy</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="saas-filter-panel p-3 mb-4 animate-in">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-lg-4">
+                <div class="saas-search-wrapper">
+                    <i class="bi bi-search search-icon-inline"></i>
+                    <input type="text" id="tableSearchInput" class="saas-search-input" placeholder="Search consumables..." aria-label="Search">
+                </div>
+            </div>
+            <div class="col-12 col-lg-8 d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
+                <span class="text-muted small me-2 d-none d-md-inline-block"><i class="bi bi-funnel me-1"></i>Filter by Type:</span>
+                <button class="saas-btn-filter active" onclick="filterByProductType('All', this)">All Types</button>
+                @if (Model.ConsumablesList != null)
+                {
+                    var uniqueTypes = Model.ConsumablesList
+                        .Where(c => !string.IsNullOrEmpty(c.ProductType))
+                        .Select(c => c.ProductType)
+                        .Distinct()
+                        .OrderBy(t => t);
+                    foreach (var type in uniqueTypes)
+                    {
+                        <button class="saas-btn-filter" onclick="filterByProductType('@type', this)">@type</button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Data Table Container -->
+    <div class="saas-table-container animate-in">
         <div class="table-responsive">
-            <table class="table-premium">
+            <table class="saas-table">
                 <thead>
                     <tr>
-                        <th style="width: 20%">Product</th>
-                        <th style="width: 35%">Stock Description</th>
-                        <th style="width: 15%">Arrival Date</th>
-                        <th class="text-center" style="width: 8%">In</th>
-                        <th class="text-center" style="width: 8%">Out</th>
-                        <th class="text-center" style="width: 8%">Bal</th>
-                        <th class="text-end" style="width: 6%">Actions</th>
+                        <th class="ps-4" style="width: 35%;">Product Name</th>
+                        <th style="width: 20%;">Product Type</th>
+                        <th style="width: 20%;">Count (Quantity)</th>
+                        <th style="width: 15%;">Date Arrived</th>
+                        <th class="text-end pe-4" style="width: 10%;">Stock Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @if (!Model.Consumables.Any())
+                <tbody id="consumablesTableBody">
+                    @if (Model.ConsumablesList == null || !Model.ConsumablesList.Any())
                     {
                         <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <div class="empty-state">
-                                    <i class="fas fa-search fa-3x text-muted opacity-20 mb-3"></i>
-                                    <h5 class="fw-bold text-muted">@(Model.ShowOutOnly ? "No out-of-stock items" : "No active inventory found")</h5>
-                                    <p class="small text-muted">@(Model.ShowOutOnly ? "Great! All your registered consumables currently have items in stock." : "Try adjusting your search filters or add a new consumable to your inventory.")</p>
+                            <td colspan="5" class="text-center py-5 text-slate-400">
+                                <div class="py-4 d-flex flex-column align-items-center">
+                                    <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                        <i class="bi bi-box-seam fs-4 text-slate-500"></i>
+                                    </div>
+                                    <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">No tracked consumables located</span>
+                                    <span class="small text-slate-500">Your active database register does not have any items matching current filters.</span>
                                 </div>
                             </td>
                         </tr>
                     }
-                    @foreach (var item in Model.Consumables)
+                    else
                     {
-                        <tr class="product-row animate-in">
-                            <td>
-                                <div class="product-identity">
-                                    <div class="product-avatar-v2" style="background: rgba(31,60,136,0.05); color: var(--primary-color);">
-                                        <i class="fas fa-box"></i>
+                        @foreach (var item in Model.ConsumablesList)
+                        {
+                            <tr class="consumable-row"
+                                data-product-name="@item.ProductName"
+                                data-product-type="@item.ProductType"
+                                data-count="@item.Count">
+                                <td class="ps-4">
+                                    <div class="product-name-cell">
+                                        <div class="row-indicator-bar @(item.Count <= 5 ? "bg-danger-indicator" : "bg-success-indicator")"></div>
+                                        @item.ProductName
                                     </div>
-                                    <div class="product-text">
-                                        <div class="d-flex align-items-center">
-                                            <span class="product-name fw-bold text-dark fs-6">@item.Product</span>
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2" style="font-size:0.65rem; padding: 2px 8px;">@item.Unit</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(item.Description))
-                                {
-                                    <div class="d-flex align-items-start gap-2">
-                                        <i class="fas fa-quote-left text-primary opacity-25 mt-1" style="font-size: 0.7rem;"></i>
-                                        <span class="text-muted" style="font-size: 0.8rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 300px;">
-                                            @item.Description
-                                        </span>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <span class="text-muted opacity-40 small italic">No specific description</span>
-                                }
-                            </td>
-                            <td>
-                                <span class="badge rounded-pill bg-light text-dark fw-bold border">
-                                    @item.DateArrived.ToString("MMM dd, yyyy")
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <span class="stock-badge in">@item.In</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="stock-badge out">@item.Out</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="balance-indicator @(item.Balance < 10 ? "low" : "")">
-                                    <span class="balance-val">@item.Balance</span>
-                                </div>
-                            </td>
-                            <td class="text-end">
-                                <div class="action-group-v2">
-                                    <button class="btn-action restock" onclick="openRestockModal(@item.Id, '@item.Product')" title="Add Quantity" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn-action view" onclick="viewItems(@item.Id, '@item.Product')" title="View Units">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    @if (canUpdate)
+                                </td>
+                                <td>
+                                    @if (string.IsNullOrEmpty(item.ProductType))
                                     {
-                                        <button class="btn-action edit" onclick='openEditModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(item)))' title="Edit Product">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                        <span class="saas-type-pill unassigned">
+                                            <i class="bi bi-tag"></i> Unassigned
+                                        </span>
                                     }
-                                </div>
-                            </td>
-                        </tr>
+                                    else
+                                    {
+                                        var typeClass = item.ProductType.ToLower() switch
+                                        {
+                                            "gallon" => "type-gallon",
+                                            "gallons" => "type-gallon",
+                                            "pieces" => "type-pieces",
+                                            "piece" => "type-pieces",
+                                            "pecies" => "type-pieces",
+                                            "box" => "type-box",
+                                            "roll" => "type-roll",
+                                            "pack" => "type-pack",
+                                            "bottle" => "type-bottle",
+                                            "ream" => "type-roll",
+                                            _ => ""
+                                        };
+                                        <span class="saas-type-pill @typeClass">
+                                            <i class="bi bi-tag-fill"></i> @item.ProductType
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.Count <= 5)
+                                    {
+                                        <span class="saas-badge-status status-danger">
+                                            <span class="status-dot bg-rose-500"></span>
+                                            @item.Count Units Left
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="saas-badge-status status-success">
+                                            <span class="status-dot bg-emerald-500"></span>
+                                            @item.Count Available
+                                        </span>
+                                    }
+                                </td>
+                                <td class="small text-muted">
+                                    <i class="bi bi-clock me-1 text-slate-400"></i>
+                                    @(item.DateArrive?.ToString("yyyy-MM-dd HH:mm") ?? "N/A")
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="saas-btn-action btn-action-plus"
+                                                title="Add Stock Quantity" data-bs-toggle="tooltip"
+                                                onclick="launchMutationModal(@item.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(item.ProductName ?? "")', @item.Count, true)">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                        <button type="button" class="saas-btn-action btn-action-minus"
+                                                title="Deduct Stock Quantity" data-bs-toggle="tooltip"
+                                                onclick="launchMutationModal(@item.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(item.ProductName ?? "")', @item.Count, false)">
+                                            <i class="bi bi-dash-lg"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
-        </div>
-        
-        <!-- Pagination Placeholder -->
-        @if (Model.TotalPages > 1)
-        {
-            <div class="p-4 border-top d-flex justify-content-between align-items-center">
-                <span class="small text-muted fw-bold">Page @Model.CurrentPage of @Model.TotalPages</span>
-                <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                        @for (int i = 1; i <= Model.TotalPages; i++)
-                        {
-                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                <a class="page-link rounded-circle mx-1" href="?CurrentPage=@i&SearchTerm=@Model.SearchTerm&ShowOutOnly=@Model.ShowOutOnly">@i</a>
-                            </li>
-                        }
-                    </ul>
-                </nav>
-            </div>
-        }
-    </div>
-    </div> <!-- END LIST TAB -->
-</div> <!-- END TAB CONTENT -->
+</div>
 
-<!-- Modal Structure remains but improved visually -->
-<!-- EDIT MODAL -->
-<div id="editModal" class="modal-overlay-v2">
-    <div class="modal-card-v2 animate-scale-in">
-        <div class="modal-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon bg-primary"><i class="fas fa-edit"></i></div>
-                <div>
-                    <h5 class="fw-800 mb-0">Edit Product</h5>
-                    <p class="small text-muted mb-0">Modify product information.</p>
+</div>
+
+<!-- Stock Transaction Modal (Redesigned) -->
+<div class="modal fade" id="mutationTransactionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-premium rounded-4 overflow-hidden modal-blur">
+            <form method="post" id="mutationForm">
+                <!-- Header Banner -->
+                <div class="modal-header border-0 text-white py-3 transition-all" id="modalHeaderBanner">
+                    <h5 class="modal-title fw-800 d-flex align-items-center gap-2" id="modalTitleText">
+                        <i class="bi bi-arrow-left-right"></i> Inventory Adjustment
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-            <button class="modal-close-v2" onclick="closeEditModal()">&times;</button>
-        </div>
-        <div class="modal-card-body p-4">
-            <form id="editForm">
-                <input type="hidden" id="editId" />
-                <div class="form-floating mb-3">
-                    <input type="text" id="editProduct" class="form-control" placeholder="Product Name" required>
-                    <label>Product Name</label>
+                
+                <div class="modal-body px-4 py-4">
+                    @if (isStaff)
+                    {
+                        <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(31, 60, 136, 0.08); border-color: rgba(31, 60, 136, 0.15); color: #1f3c88;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>As Staff, this action will submit a request to Admin/Manager for approval.</span>
+                        </div>
+                    }
+                    <!-- Hidden inputs -->
+                    <input type="hidden" asp-for="TargetItemId" id="hiddenItemId" />
+
+                    <!-- Product Label -->
+                    <div class="mb-4">
+                        <small class="text-uppercase tracking-wider text-muted fw-bold d-block mb-1" style="font-size: 0.75rem;">Target Item</small>
+                        <h4 class="fw-800 text-dark mb-0" id="modalTargetLabel">Product Name</h4>
+                    </div>
+
+                    <!-- In/Out Switch Segments -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Transaction Mode</label>
+                        <div class="segmented-control p-1 rounded-3 d-flex bg-light border">
+                            <button type="button" class="btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn" id="toggleInBtn" onclick="setModalMode(true)">
+                                <i class="bi bi-box-arrow-in-down"></i> Stock In
+                            </button>
+                            <button type="button" class="btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn" id="toggleOutBtn" onclick="setModalMode(false)">
+                                <i class="bi bi-box-arrow-up"></i> Stock Out
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quantity Input with Spinner Controls -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2 text-center d-block" style="font-size: 0.75rem;">Adjustment Quantity</label>
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                            <button type="button" class="btn spinner-btn shadow-sm" onclick="adjustDelta(-1)">
+                                <i class="bi bi-dash-lg fs-5"></i>
+                            </button>
+                            <input type="number" class="form-control form-control-lg fw-bold text-center spinner-input"
+                                   asp-for="QuantityDelta" value="1" min="1" id="inputQuantityDelta" required />
+                            <button type="button" class="btn spinner-btn shadow-sm" onclick="adjustDelta(1)">
+                                <i class="bi bi-plus-lg fs-5"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback text-center fw-semibold mt-2" id="clientValidationErrorMsg" style="display: none;"></div>
+                    </div>
+
+                    <!-- Balance Visualizer Panel -->
+                    <div class="balance-visualizer p-3 rounded-4 border mb-2">
+                        <div class="row align-items-center">
+                            <div class="col text-center">
+                                <span class="d-block text-muted small text-uppercase tracking-wider fw-bold mb-1" style="font-size: 0.65rem;">Current Stock</span>
+                                <span class="fw-800 fs-4 text-dark" id="previewCurrentStock">0</span>
+                            </div>
+                            <div class="col-auto text-muted">
+                                <i class="bi bi-plus-lg fs-5" id="previewOperatorIcon"></i>
+                            </div>
+                            <div class="col text-center">
+                                <span class="d-block text-muted small text-uppercase tracking-wider fw-bold mb-1" id="previewAdjustmentLabel" style="font-size: 0.65rem;">Adding</span>
+                                <span class="fw-800 fs-4" id="previewAdjustmentValue">+1</span>
+                            </div>
+                            <div class="col-auto text-muted">
+                                <i class="bi bi-chevron-right fs-5"></i>
+                            </div>
+                            <div class="col text-center">
+                                <span class="d-block text-muted small text-uppercase tracking-wider fw-bold mb-1" style="font-size: 0.65rem;">New Balance</span>
+                                <span class="fw-800 fs-3 text-primary" id="previewNewStock">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-text text-center small text-secondary mt-2 px-2" id="allocationWarningHint"></div>
                 </div>
-                <div class="form-floating mb-3">
-                    <select id="editUnit" class="form-select" required>
-                        <option value="Pieces">Pieces</option>
-                        <option value="Ream">Ream</option>
-                        <option value="Gallon">Gallon</option>
-                        <option value="Box">Box</option>
-                        <option value="Pack">Pack</option>
-                        <option value="Roll">Roll</option>
-                    </select>
-                    <label>Unit of Measure</label>
-                </div>
-                <div class="form-floating mb-3">
-                    <textarea id="editDescription" class="form-control" placeholder="Description" style="height: 100px"></textarea>
-                    <label>Description</label>
-                </div>
-                <div class="d-flex gap-2 mt-4">
-                    <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border" onclick="closeEditModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary rounded-pill flex-grow-1 py-3 fw-bold bg-primary-gradient border-0" onclick="submitEdit()">Save Changes</button>
+
+                <div class="modal-footer bg-light border-top-0 px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn text-white px-4 py-2 rounded-pill fw-bold" id="modalSubmitButton">Apply Adjustments</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- RESTOCK MODAL -->
-<div id="restockModal" class="modal-overlay-v2">
-    <div class="modal-card-v2 animate-scale-in" style="max-width: 450px;">
-        <div class="modal-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon bg-success"><i class="fas fa-plus"></i></div>
-                <div>
-                    <h5 class="fw-800 mb-0">Add Quantity</h5>
-                    <p class="small text-muted mb-0" id="restockSubTitle">Product Name</p>
+<!-- Create Consumable Modal -->
+<div class="modal fade" id="createConsumableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-premium rounded-4 overflow-hidden modal-blur">
+            <form method="post" asp-page-handler="CreateConsumable">
+                <div class="modal-header border-0 text-white py-3 transition-all" style="background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%) !important;">
+                    <h5 class="modal-title fw-800 d-flex align-items-center gap-2">
+                        <i class="bi bi-box-seam"></i> Create Consumable Item
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-            <button class="modal-close-v2" onclick="closeRestockModal()">&times;</button>
-        </div>
-        <div class="modal-card-body p-4">
-            <div class="alert alert-info border-0 rounded-4 mb-4" style="background: rgba(31,60,136,0.05);">
-                <i class="fas fa-info-circle me-2"></i> This will add new units to your inventory.
-            </div>
-            <input type="hidden" id="restockId" />
-            <div class="form-floating mb-4">
-                <input type="number" id="restockQty" class="form-control" placeholder="Quantity to Add" min="1" value="1" required>
-                <label>Quantity to Add</label>
-            </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-light rounded-pill flex-grow-1 py-3 fw-bold border" onclick="closeRestockModal()">Cancel</button>
-                <button type="button" class="btn btn-success rounded-pill flex-grow-1 py-3 fw-bold border-0" onclick="submitRestock()">Confirm Addition</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div id="itemsModal" class="modal-overlay-v2">
-    <div class="modal-card-v2 wide animate-scale-in">
-        <div class="modal-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon bg-info"><i class="fas fa-list-ul"></i></div>
-                <div>
-                    <h5 class="fw-800 mb-0" id="modalItemTitle">Consumable Units</h5>
-                    <div class="d-flex align-items-center gap-2 mt-1">
-                        <p class="small text-muted mb-0" id="modalItemSubtitle">Track unit status.</p>
-                        <div class="btn-group rounded-pill p-1 bg-light border ms-2" style="font-size: 0.7rem;">
-                            <button type="button" id="btnShowAvailable" class="btn btn-sm rounded-pill px-2 fw-bold btn-primary shadow-sm" onclick="toggleModalUnits(false)">In Stock</button>
-                            <button type="button" id="btnShowUsed" class="btn btn-sm rounded-pill px-2 fw-bold text-muted" onclick="toggleModalUnits(true)">Used/Out</button>
+                
+                <div class="modal-body px-4 py-4">
+                    @if (isStaff)
+                    {
+                        <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(31, 60, 136, 0.08); border-color: rgba(31, 60, 136, 0.15); color: #1f3c88;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>As Staff, creating an item will submit a request to Admin/Manager for approval.</span>
                         </div>
+                    }
+                    <!-- Product Name -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Product Name</label>
+                        <input type="text" class="form-control form-control-lg rounded-3" asp-for="NewConsumable.ProductName" placeholder="e.g. A4 Copy Paper" required />
+                    </div>
+
+                    <!-- Product Type / Dropdown -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Product Type / Unit</label>
+                        <select class="form-select form-control-lg rounded-3" asp-for="NewConsumable.ProductType" required style="font-weight: 500;">
+                            <option value="" disabled selected>Select unit type...</option>
+                            <option value="ream">ream</option>
+                            <option value="gallons">gallons</option>
+                            <option value="pack">pack</option>
+                            <option value="pieces">pieces</option>
+                        </select>
+                    </div>
+
+                    <!-- Initial Count -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Initial Quantity</label>
+                        <input type="number" class="form-control form-control-lg rounded-3" asp-for="NewConsumable.Count" min="0" value="0" required />
                     </div>
                 </div>
-            </div>
-            <div class="ms-auto d-flex gap-2">
-                @if (canUpdate)
-                {
-                    <button class="btn btn-sm btn-dark rounded-pill px-3 fw-bold" onclick="downloadBatchQrPdf()">
-                        <i class="fas fa-file-pdf me-1"></i> Batch QR
+
+                <div class="modal-footer bg-light border-top-0 px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn text-white px-4 py-2 rounded-pill fw-bold" style="background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%) !important; border: none;">
+                        @(isStaff ? "Submit Creation Request" : "Create Item")
                     </button>
-                }
-                <button class="modal-close-v2" onclick="closeItemsModal()">&times;</button>
-            </div>
-        </div>
-        <div class="modal-card-body p-0">
-            <div class="table-responsive" style="max-height: 60vh;">
-                <table class="table-premium">
-                    <thead class="sticky-top bg-white">
-                        <tr>
-                            <th>Unit Code</th>
-                            <th>Status</th>
-                            <th>Stocked By</th>
-                            <th id="thDateOut" style="display:none;">Date Out</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itemsTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- QR Code Modal -->
-<div id="qrModal" class="modal-overlay-v2" style="z-index: 4000;">
-    <div class="modal-card-v2 animate-scale-in" style="max-width: 400px; text-align: center;">
-        <div class="modal-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon bg-dark text-white"><i class="fas fa-qrcode"></i></div>
-                <div class="text-start">
-                    <h5 class="fw-800 mb-0">Unit QR Code</h5>
-                    <p class="small text-muted mb-0">Scan to identify the unit.</p>
                 </div>
-            </div>
-            <button class="modal-close-v2" onclick="closeQrModal()">&times;</button>
-        </div>
-        <div class="modal-card-body p-4 d-flex flex-column align-items-center">
-            <h6 id="qrModalProductName" class="fw-bold text-primary mb-3"></h6>
-            <div id="qrcodeDisplay" class="p-3 bg-white border rounded-3 shadow-sm mb-3"></div>
-            <code id="qrCodeText" class="fs-5 fw-bold text-muted bg-light px-3 py-2 rounded"></code>
-        </div>
-        <div class="modal-card-footer p-3 border-top">
-            <button class="btn btn-primary w-100 rounded-pill fw-bold" onclick="downloadSingleQrPdf()">
-                <i class="fas fa-download me-2"></i> Download PDF
-            </button>
-        </div>
-    </div>
-</div>
-
-@Html.AntiForgeryToken()
-
-<div id="logsModal" class="modal-overlay-v2">
-    <div class="modal-card-v2 wide animate-scale-in">
-        <div class="modal-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon bg-dark"><i class="fas fa-history"></i></div>
-                <div>
-                    <h5 class="fw-800 mb-0">Consumable Activity Logs</h5>
-                    <p class="small text-muted mb-0">Full audit trail of registration and status changes.</p>
-                </div>
-            </div>
-            <button class="modal-close-v2" onclick="closeLogsModal()">&times;</button>
-        </div>
-        <div class="modal-card-body p-0">
-            <div class="table-responsive" style="max-height: 60vh;">
-                <table class="table-premium">
-                    <thead class="sticky-top bg-white">
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Action</th>
-                            <th>Product</th>
-                            <th>Details</th>
-                            <th>User</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="modal-card-footer p-3 border-top d-flex justify-content-between align-items-center">
-            <div id="logsPaginationInfo" class="small text-muted fw-bold"></div>
-            <div id="logsPaginationControls" class="d-flex gap-2"></div>
-        </div>
-    </div>
-</div>
-
-<div id="requestListModal" class="modal-overlay-v2">
-    <div class="modal-card-v2 wide animate-scale-in">
-        <div class="modal-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="modal-header-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i class="fas fa-clipboard-list"></i></div>
-                <div>
-                    <h5 class="fw-800 mb-0">Consumable Out Requests</h5>
-                    <p class="small text-muted mb-0">Track and manage requests to release items from inventory.</p>
-                </div>
-            </div>
-            <div class="ms-auto d-flex align-items-center gap-2">
-                <div class="btn-group rounded-pill p-1 bg-light border" style="font-size: 0.75rem;">
-                    <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold btn-warning shadow-sm" id="btnShowPending" onclick="switchRequestTab('pending')">Pending</button>
-                    <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold text-muted" id="btnShowHistory" onclick="switchRequestTab('history')">Past Requests</button>
-                </div>
-                <button class="modal-close-v2" onclick="closeRequestListModal()">&times;</button>
-            </div>
-        </div>
-        <div class="modal-card-body p-0">
-            <div class="table-responsive" style="max-height: 60vh;">
-                <table class="table-premium">
-                    <thead class="sticky-top bg-white">
-                        <tr>
-                            <th>Item Code</th>
-                            <th>Product Name</th>
-                            <th>Requested By</th>
-                            <th>Status / Remarks</th>
-                            <th class="text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="requestsTableBody"></tbody>
-                </table>
-            </div>
+            </form>
         </div>
     </div>
 </div>
 
 <style>
-    .activity-list-sm { 
-        display:flex;flex-direction:column;gap:.4rem; 
-        max-height: 250px; overflow-y: auto; padding-right: 4px;
-    }
-    .activity-item-sm { display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:10px;background:rgba(31,60,136,0.03);font-size:.82rem; border: 1px solid rgba(0,0,0,0.02); }
-    .log-badge-sm { font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(31,60,136,0.1);color:var(--primary-color);white-space:nowrap; }
-
+    /* SaaS Dashboard Design System (Tailwind UI / Shadcn inspired) */
     :root {
-        --primary-color: #1F3C88;
-        --primary-gradient: linear-gradient(135deg, #1F3C88 0%, #3b82f6 100%);
-        --glass-bg: rgba(255, 255, 255, 0.85);
-        --glass-border: rgba(255, 255, 255, 0.4);
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+
+        --emerald-50: #ecfdf5;
+        --emerald-600: #059669;
+        
+        --rose-50: #fff1f2;
+        --rose-500: #f43f5e;
+        --rose-600: #e11d48;
+
+        --primary-brand: #1F3C88;
+        --primary-brand-light: #3153b8;
+        --shadow-premium: 0 15px 30px rgba(31, 60, 136, 0.08);
     }
 
     body {
+        background-color: #fafafa;
+        color: var(--slate-700);
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .main-content-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* KPI Cards Styles */
+    .saas-kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .saas-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border-color: var(--slate-300);
+    }
+
+    .kpi-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--slate-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .kpi-icon-box {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .bg-slate-50 { background-color: var(--slate-50); }
+    .text-slate-600 { color: var(--slate-600); }
+    .text-slate-400 { color: var(--slate-400); }
+
+    .bg-emerald-50 { background-color: var(--emerald-50); }
+    .text-emerald-600 { color: var(--emerald-600); }
+
+    .bg-rose-50 { background-color: var(--rose-50); }
+    .text-rose-600 { color: var(--rose-600); }
+
+    .kpi-value-wrapper {
+        margin-top: 1rem;
+    }
+
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        color: var(--slate-900);
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-value-unit {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--slate-400);
+        margin-left: 0.2rem;
+    }
+
+    .kpi-trend {
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Filter Panel Styles */
+    .saas-filter-panel {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .saas-search-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon-inline {
+        position: absolute;
+        left: 14px;
+        color: var(--slate-400);
+        font-size: 0.95rem;
+    }
+
+    .saas-search-input {
+        width: 100%;
+        padding: 8px 14px 8px 38px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border: 1px solid var(--slate-200);
+        border-radius: 8px;
+        background-color: var(--slate-50);
+        color: var(--slate-900);
+        transition: all 0.15s ease;
+    }
+
+    .saas-search-input:focus {
+        background-color: #ffffff;
+        border-color: var(--slate-400);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .saas-search-input::placeholder {
+        color: var(--slate-400);
+    }
+
+    .saas-btn-filter {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 6px;
+        border: 1px solid var(--slate-200);
+        background-color: #ffffff;
+        color: var(--slate-600);
+        transition: all 0.15s ease;
+    }
+
+    .saas-btn-filter:hover {
+        background-color: var(--slate-50);
+        color: var(--slate-900);
+        border-color: var(--slate-300);
+    }
+
+    .saas-btn-filter.active {
+        background-color: var(--slate-900);
+        border-color: var(--slate-900);
+        color: #ffffff;
+    }
+
+    /* Table Styles */
+    .saas-table-container {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .saas-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .saas-table thead {
+        background-color: var(--slate-50);
+        border-bottom: 1px solid var(--slate-200);
+    }
+
+    .saas-table th {
+        padding: 14px 18px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--slate-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border: none;
+    }
+
+    .saas-table tbody tr {
+        border-bottom: 1px solid var(--slate-100);
+        transition: background-color 0.15s ease;
+    }
+
+    .saas-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .saas-table tbody tr:hover {
+        background-color: rgba(248, 250, 252, 0.6);
+    }
+
+    .saas-table td {
+        padding: 14px 18px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--slate-700);
+    }
+
+    .product-name-cell {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        color: var(--slate-900);
+    }
+
+    /* Left Indicator vertical bar */
+    .row-indicator-bar {
+        width: 3px;
+        height: 20px;
+        border-radius: 2px;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .bg-success-indicator { background-color: var(--emerald-600); }
+    .bg-danger-indicator { background-color: var(--rose-500); }
+
+    /* Product Type Pills */
+    .saas-type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        background-color: var(--slate-100);
+        color: var(--slate-700);
+        border: 1px solid var(--slate-200);
+    }
+
+    .saas-type-pill.unassigned {
+        background-color: var(--slate-50);
+        color: var(--slate-400);
+        border-style: dashed;
+    }
+
+    /* Dynamic Product Type Color Coding */
+    .saas-type-pill.type-gallon {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border-color: #bae6fd;
+    }
+    .saas-type-pill.type-gallon i {
+        color: #0284c7 !important;
+    }
+
+    .saas-type-pill.type-pieces {
+        background-color: #f3e8ff;
+        color: #6b21a8;
+        border-color: #e9d5ff;
+    }
+    .saas-type-pill.type-pieces i {
+        color: #8b5cf6 !important;
+    }
+
+    .saas-type-pill.type-box {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+    .saas-type-pill.type-box i {
+        color: #ef4444 !important;
+    }
+
+    .saas-type-pill.type-roll {
+        background-color: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+    }
+    .saas-type-pill.type-roll i {
+        color: #f59e0b !important;
+    }
+
+    .saas-type-pill.type-pack {
+        background-color: #ccfbf1;
+        color: #115e59;
+        border-color: #99f6e4;
+    }
+    .saas-type-pill.type-pack i {
+        color: #14b8a6 !important;
+    }
+
+    .saas-type-pill.type-bottle {
+        background-color: #fce7f3;
+        color: #9d174d;
+        border-color: #fbcfe8;
+    }
+    .saas-type-pill.type-bottle i {
+        color: #ec4899 !important;
+    }
+
+    /* Dark Mode variants */
+    body.dark-mode .saas-type-pill.type-gallon {
+        background-color: rgba(3, 105, 161, 0.2);
+        color: #38bdf8;
+        border-color: rgba(3, 105, 161, 0.4);
+    }
+    body.dark-mode .saas-type-pill.type-pieces {
+        background-color: rgba(107, 33, 168, 0.2);
+        color: #c084fc;
+        border-color: rgba(107, 33, 168, 0.4);
+    }
+    body.dark-mode .saas-type-pill.type-box {
+        background-color: rgba(153, 27, 27, 0.2);
+        color: #fca5a5;
+        border-color: rgba(153, 27, 27, 0.4);
+    }
+    body.dark-mode .saas-type-pill.type-roll {
+        background-color: rgba(146, 64, 14, 0.2);
+        color: #fcd34d;
+        border-color: rgba(146, 64, 14, 0.4);
+    }
+    body.dark-mode .saas-type-pill.type-pack {
+        background-color: rgba(17, 94, 89, 0.2);
+        color: #2dd4bf;
+        border-color: rgba(17, 94, 89, 0.4);
+    }
+    body.dark-mode .saas-type-pill.type-bottle {
+        background-color: rgba(157, 23, 77, 0.2);
+        color: #f472b6;
+        border-color: rgba(157, 23, 77, 0.4);
+    }
+
+    /* Status Badges */
+    .saas-badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 6px;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-success {
+        background-color: var(--emerald-50);
+        color: var(--emerald-600);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-danger {
+        background-color: var(--rose-50);
+        color: var(--rose-600);
+        border: 1px solid rgba(244, 63, 94, 0.2);
+    }
+
+    .status-pending {
+        background-color: #fffbeb;
+        color: #d97706;
+        border: 1px solid rgba(217, 119, 6, 0.2);
+    }
+
+    .bg-amber-500 { background-color: #f59e0b !important; }
+
+    .status-create {
+        background-color: #e0e7ff;
+        color: #4f46e5;
+        border: 1px solid rgba(79, 70, 229, 0.2);
+    }
+
+    .status-add {
+        background-color: var(--emerald-50);
+        color: var(--emerald-600);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-deduct {
+        background-color: var(--rose-50);
+        color: var(--rose-600);
+        border: 1px solid rgba(244, 63, 94, 0.2);
+    }
+
+    .bg-indigo-500 { background-color: #6366f1 !important; }
+    .bg-emerald-500 { background-color: #10b981 !important; }
+    .bg-rose-500 { background-color: #f43f5e !important; }
+
+    /* Action Buttons (Compact / Elegant) */
+    .saas-btn-action {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid var(--slate-200);
+        background-color: #ffffff;
+        color: var(--slate-600);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .saas-btn-action:hover {
+        color: var(--slate-900);
+        border-color: var(--slate-400);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .saas-btn-action:active {
+        transform: translateY(0);
+    }
+
+    .btn-action-plus:hover {
+        background-color: var(--emerald-50);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: var(--emerald-600);
+    }
+
+    .btn-action-minus:hover {
+        background-color: var(--rose-50);
+        border-color: rgba(244, 63, 94, 0.3);
+        color: var(--rose-600);
+    }
+
+    /* Modal Tweaks */
+    .modal-blur {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-header.bg-success {
+        background: linear-gradient(135deg, var(--emerald-600) 0%, #10b981 100%) !important;
+    }
+    .modal-header.bg-danger {
+        background: linear-gradient(135deg, var(--rose-600) 0%, #f43f5e 100%) !important;
+    }
+
+    .btn-success {
+        background-color: var(--emerald-600) !important;
+        border-color: var(--emerald-600) !important;
+    }
+    .btn-success:hover {
+        background-color: #047857 !important;
+        border-color: #047857 !important;
+    }
+    .btn-danger {
+        background-color: var(--rose-600) !important;
+        border-color: var(--rose-600) !important;
+    }
+    .btn-danger:hover {
+        background-color: #be123c !important;
+        border-color: #be123c !important;
+    }
+
+    /* Segmented Control Switcher */
+    .segmented-control {
+        background-color: #f1f5f9;
+        gap: 4px;
+    }
+
+    .transaction-mode-btn {
+        transition: all 0.25s ease;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .transaction-mode-btn:hover {
+        color: #1e293b;
+    }
+
+    .transaction-mode-btn.active-in {
+        background-color: #ffffff !important;
+        color: #2e7d32 !important;
+        box-shadow: 0 2px 8px rgba(46, 125, 50, 0.12);
+        border: 1px solid rgba(46, 125, 50, 0.15) !important;
+    }
+
+    .transaction-mode-btn.active-out {
+        background-color: #ffffff !important;
+        color: #d62828 !important;
+        box-shadow: 0 2px 8px rgba(214, 40, 40, 0.12);
+        border: 1px solid rgba(214, 40, 40, 0.15) !important;
+    }
+
+    /* Interactive Spinner Input */
+    .spinner-btn {
+        width: 46px;
+        height: 46px;
+        border: 1px solid var(--slate-200);
+        border-radius: 8px;
+        transition: all 0.15s ease;
+        background: #ffffff;
+        color: var(--slate-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spinner-btn:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #1e293b;
+        transform: scale(1.05);
+    }
+
+    .spinner-input {
+        border-color: #cbd5e1;
+        border-radius: 12px;
         background-color: #f8fafc;
-        font-family: 'Plus Jakarta Sans', sans-serif;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.2s ease;
     }
 
-    .consumables-container { padding: 2rem 3rem; }
-
-    /* Header Styling */
-    .badge-v3 {
-        display: inline-flex; align-items: center;
-        background: rgba(31, 60, 136, 0.1); color: var(--primary-color);
-        padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 0.75rem;
-        text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .premium-display-text { font-size: 3rem; font-weight: 900; color: #0f172a; letter-spacing: -0.02em; }
-    
-    .premium-search-box {
-        position: relative; background: white; border: 1.5px solid #e2e8f0; border-radius: 50px;
-        padding: 10px 20px; display: flex; align-items: center; gap: 10px; width: 300px;
-        transition: all 0.3s;
-    }
-    .premium-search-box:focus-within { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(31, 60, 136, 0.1); width: 350px; }
-    .search-field { border: none; outline: none; font-weight: 600; width: 100%; color: #334155; }
-    .search-icon { color: #94a3b8; }
-
-    .btn-premium-v2 {
-        background: var(--primary-gradient); color: white; border: none;
-        padding: 12px 28px; border-radius: 50px; font-weight: 800;
-        display: inline-flex; align-items: center; gap: 12px;
-        box-shadow: 0 10px 25px rgba(31, 60, 136, 0.3); transition: all 0.3s;
-    }
-    .btn-premium-v2:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(31, 60, 136, 0.4); }
-
-    /* Glass Cards */
-    .glass-card {
-        background: var(--glass-bg); backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border); border-radius: 28px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    .spinner-input:focus {
+        border-color: #1F3C88;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(31, 60, 136, 0.12);
     }
 
-    /* Stats Styling */
-    .stat-card-v2 {
-        padding: 2.5rem; border-radius: 28px; position: relative; overflow: hidden;
-        height: 100%; display: flex; align-items: center;
+    /* Remove browser default spinner buttons on input number */
+    .spinner-input::-webkit-outer-spin-button,
+    .spinner-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
-    .bg-primary-gradient { background: var(--primary-gradient); }
-    .stat-icon-bg {
-        position: absolute; right: -20px; bottom: -20px; font-size: 8rem;
-        opacity: 0.15; transform: rotate(-15deg);
-    }
-    .fw-extrabold { font-weight: 800; }
-
-    /* Tab pill active styles */
-    .nav-pills .nav-link.active {
-        background: var(--primary-gradient) !important;
-        color: white !important;
-        box-shadow: 0 4px 10px rgba(31, 60, 136, 0.3);
-    }
-    .nav-pills .nav-link:not(.active):hover {
-        background: rgba(31, 60, 136, 0.05);
-        color: var(--primary-color) !important;
+    .spinner-input[type=number] {
+        -moz-appearance: textfield;
     }
 
-    /* Table Styling */
-    .table-premium { width: 100%; border-collapse: separate; border-spacing: 0; }
-    .table-premium th {
-        padding: 1.5rem; font-size: 0.75rem; text-transform: uppercase;
-        color: #94a3b8; font-weight: 800; letter-spacing: 0.08em;
-        background: #fcfcfd; border-bottom: 2px solid #f1f5f9;
-    }
-    .table-premium td { padding: 1.5rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
-    .product-row { transition: all 0.2s; }
-    .product-row:hover { background: rgba(31, 60, 136, 0.02); }
-
-    .product-identity { display: flex; align-items: center; gap: 1.25rem; }
-    .product-avatar-v2 {
-        width: 52px; height: 52px; border-radius: 16px;
-        display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
-    }
-    .product-text { display: flex; flex-direction: column; }
-    .product-name { font-size: 1.1rem; }
-
-    .stock-badge {
-        padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 0.85rem;
-    }
-    .stock-badge.in { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-    .stock-badge.out { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-
-    .balance-indicator {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 45px; height: 45px; border-radius: 12px;
-        background: rgba(31, 60, 136, 0.08); color: var(--primary-color);
-        font-weight: 800; font-size: 1.1rem;
-    }
-    .balance-indicator.low { background: #fee2e2; color: #ef4444; animation: pulse-red 2s infinite; }
-
-    .btn-action {
-        width: 38px; height: 38px; border-radius: 12px; border: none;
-        display: inline-flex; align-items: center; justify-content: center;
-        transition: all 0.2s; margin-left: 5px;
-    }
-    .btn-action.view { background: rgba(31, 60, 136, 0.1); color: var(--primary-color); }
-    .btn-action.view:hover { background: var(--primary-color); color: white; }
-    .btn-action.edit { background: #f1f5f9; color: #64748b; }
-    .btn-action.edit:hover { background: #334155; color: white; }
-
-    /* Modals V2 */
-    .modal-overlay-v2 {
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 3000;
-    }
-    .modal-card-v2 {
-        background: white; border-radius: 32px; width: 100%; max-width: 550px;
-        box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25); overflow: hidden;
-    }
-    .modal-card-v2.wide { max-width: 900px; }
-    .modal-card-header {
-        padding: 2rem; border-bottom: 1px solid #f1f5f9; display: flex;
-        justify-content: space-between; align-items: center;
-    }
-    .modal-header-icon {
-        width: 50px; height: 50px; border-radius: 15px; display: flex;
-        align-items: center; justify-content: center; color: white; font-size: 1.25rem;
-    }
-    .modal-close-v2 { background: none; border: none; font-size: 2rem; color: #cbd5e1; }
-    .form-floating > .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(31, 60, 136, 0.08); }
-
-    /* Animations */
-    .animate-scale-in { animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    @@keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-    
-    .animate-fade-in { animation: fadeIn 0.6s ease-out; }
-    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    
-    .animate-bounce-in { animation: bounceIn 0.5s ease-out; }
-    @@keyframes bounceIn {
-        0% { transform: scale(0.3); opacity: 0; }
-        50% { transform: scale(1.05); }
-        70% { transform: scale(0.9); }
-        100% { transform: scale(1); opacity: 1; }
+    /* Balance Visualizer Panel */
+    .balance-visualizer {
+        background-color: #f8fafc;
+        border-color: #e2e8f0 !important;
+        position: relative;
     }
 
-    /* Toast Notifications */
-    .toast-container-v2 {
-        position: fixed; top: 2rem; right: 2rem; z-index: 9999;
-        display: flex; flex-direction: column; gap: 0.75rem;
+    /* Active highlight style for Low Stock KPI card filter */
+    .low-stock-active {
+        border-color: var(--rose-500) !important;
+        background-color: var(--rose-50) !important;
+        box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2) !important;
     }
-    .premium-toast {
-        background: white; border-radius: 16px; padding: 1rem 1.5rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 1rem;
-        min-width: 300px; border-left: 5px solid var(--primary-color);
-        animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    body.dark-mode .low-stock-active {
+        background-color: rgba(244, 63, 94, 0.15) !important;
+        border-color: var(--rose-500) !important;
     }
-    .premium-toast.success { border-left-color: #10b981; }
-    .premium-toast.error { border-left-color: #ef4444; }
-    .premium-toast.warning { border-left-color: #f59e0b; }
-    
-    .toast-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
-    .toast-content { flex-grow: 1; }
-    .toast-title { font-weight: 800; font-size: 0.9rem; color: #1e293b; margin-bottom: 2px; }
-    .toast-msg { font-size: 0.8rem; color: #64748b; }
 
-    @@keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @@keyframes toastOut { to { transform: translateX(100%); opacity: 0; } }
+    /* Pulse animation */
+    .animate-pulse-slow {
+        animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
 
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(0.95); }
+    }
+
+    /* Micro animations */
+    .animate-in {
+        animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-scale {
+        animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.96); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Alert and Toast customization */
+    .alert-icon-box {
+        flex-shrink: 0;
+    }
+
+    /* Dark Mode compatibility */
+    body.dark-mode {
+        background-color: #0b0f19;
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .saas-kpi-card {
+        background: #0f172a;
+        border-color: var(--slate-800);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    body.dark-mode .saas-kpi-card:hover {
+        border-color: var(--slate-700);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .kpi-value {
+        color: #ffffff;
+    }
+
+    body.dark-mode .bg-slate-50 {
+        background-color: var(--slate-800);
+    }
+
+    body.dark-mode .text-slate-600 {
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .saas-filter-panel {
+        background: #0f172a;
+        border-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-search-input {
+        background-color: #1e293b;
+        border-color: var(--slate-800);
+        color: #ffffff;
+    }
+
+    body.dark-mode .saas-search-input:focus {
+        border-color: var(--slate-600);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .saas-btn-filter {
+        background-color: #0f172a;
+        border-color: var(--slate-800);
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .saas-btn-filter:hover {
+        background-color: var(--slate-800);
+        color: #ffffff;
+    }
+
+    body.dark-mode .saas-btn-filter.active {
+        background-color: #ffffff;
+        border-color: #ffffff;
+        color: var(--slate-900);
+    }
+
+    body.dark-mode .saas-table-container {
+        background: #0f172a;
+        border-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table {
+        border-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table thead {
+        background-color: #1e293b;
+        border-bottom-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table th {
+        color: var(--slate-400);
+    }
+
+    body.dark-mode .saas-table tbody tr {
+        border-bottom-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table tbody tr:hover {
+        background-color: rgba(30, 41, 59, 0.4);
+    }
+
+    body.dark-mode .saas-table td {
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .product-name-cell {
+        color: #ffffff;
+    }
+
+    body.dark-mode .saas-type-pill {
+        background-color: var(--slate-800);
+        color: var(--slate-300);
+        border-color: var(--slate-700);
+    }
+
+    body.dark-mode .saas-type-pill.unassigned {
+        background-color: #0f172a;
+        color: var(--slate-600);
+    }
+
+    body.dark-mode .saas-btn-action {
+        background-color: #0f172a;
+        border-color: var(--slate-800);
+        color: var(--slate-400);
+    }
+
+    body.dark-mode .saas-btn-action:hover {
+        color: #ffffff;
+        border-color: var(--slate-600);
+    }
+
+    body.dark-mode .btn-action-plus:hover {
+        background-color: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: #10b981;
+    }
+
+    body.dark-mode .btn-action-minus:hover {
+        background-color: rgba(244, 63, 94, 0.1);
+        border-color: rgba(244, 63, 94, 0.3);
+        color: #f43f5e;
+    }
+
+    body.dark-mode .modal-blur {
+        background: rgba(15, 23, 42, 0.95);
+    }
+    body.dark-mode .segmented-control {
+        background-color: #1e293b;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    body.dark-mode .transaction-mode-btn {
+        color: #94a3b8;
+    }
+    body.dark-mode .transaction-mode-btn.active-in {
+        background-color: #334155 !important;
+        color: #4caf50 !important;
+    }
+    body.dark-mode .transaction-mode-btn.active-out {
+        background-color: #334155 !important;
+        color: #ef4444 !important;
+    }
+    body.dark-mode .balance-visualizer {
+        background-color: #111827;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    body.dark-mode .spinner-btn {
+        background-color: #1e293b;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #cbd5e1;
+    }
+    body.dark-mode .spinner-btn:hover {
+        background-color: #334155;
+        color: #f1f5f9;
+    }
+    body.dark-mode .spinner-input {
+        background-color: #111827;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #f1f5f9;
+    }
+    body.dark-mode .status-pending {
+        background-color: rgba(217, 119, 6, 0.2);
+        color: #fbbf24;
+        border-color: rgba(217, 119, 6, 0.4);
+    }
 </style>
 
-<div class="toast-container-v2" id="toastContainer"></div>
+@section Scripts {
+    <script>
+        window.isStaffUser = @(isStaff ? "true" : "false");
+        window.currentActiveStock = 0;
+        window.isAdditionMode = true;
+        window.currentTypeFilter = 'All';
+        window.currentSearchQuery = '';
+        window.showOnlyLowStock = false;
 
-<script>
-    function showToast(title, message, type = 'success') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `premium-toast ${type}`;
-        
-        let icon = '<i class="fas fa-check"></i>';
-        let iconBg = 'bg-success';
-        if (type === 'error') { icon = '<i class="fas fa-times"></i>'; iconBg = 'bg-danger'; }
-        if (type === 'warning') { icon = '<i class="fas fa-exclamation"></i>'; iconBg = 'bg-warning'; }
-        if (type === 'info') { icon = '<i class="fas fa-info"></i>'; iconBg = 'bg-info'; }
+        function openCreateModal() {
+            var createModal = new bootstrap.Modal(document.getElementById('createConsumableModal'));
+            createModal.show();
+        }
 
-        toast.innerHTML = `
-            <div class="toast-icon ${iconBg}">${icon}</div>
-            <div class="toast-content">
-                <div class="toast-title">${title}</div>
-                <div class="toast-msg">${message}</div>
-            </div>
-        `;
-        
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = 'toastOut 0.5s forwards';
-            setTimeout(() => toast.remove(), 500);
-        }, 4000);
-    }
-    // --- Charting ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const ctx = document.getElementById('inventoryChart').getContext('2d');
-        const data = {
-            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.Product))),
-            datasets: [
-                {
-                    label: 'Inbound',
-                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.In))),
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                    borderColor: '#10b981',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barPercentage: 0.6
-                },
-                {
-                    label: 'Outbound',
-                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.Out))),
-                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                    borderColor: '#ef4444',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barPercentage: 0.6
-                },
-                {
-                    label: 'Balance',
-                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Consumables.Select(c => c.Balance))),
-                    type: 'line',
-                    borderColor: '#1F3C88',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#1F3C88',
-                    tension: 0.4,
-                    fill: false
+        document.addEventListener("DOMContentLoaded", function () {
+            // Enable tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Set up search event listener
+            document.getElementById('tableSearchInput').addEventListener('input', function(e) {
+                window.currentSearchQuery = e.target.value.toLowerCase().trim();
+                applyFilters();
+            });
+
+            // Set up input change event listener for live balance preview
+            document.getElementById('inputQuantityDelta').addEventListener('input', function() {
+                // Ensure value is clean
+                let val = parseInt(this.value, 10);
+                if (isNaN(val) || val < 1) {
+                    val = 1;
                 }
-            ]
-        };
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { borderDash: [5, 5], color: '#e2e8f0' }, ticks: { font: { weight: 'bold' } } },
-                    x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
-                }
-            }
+                this.value = val;
+                updateBalancePreview();
+            });
         });
-    });
 
-    // --- Modal Logic ---
-    function closeItemsModal() { document.getElementById('itemsModal').style.display = 'none'; }
-    function showLogsModal() { document.getElementById('logsModal').style.display = 'flex'; loadLogs(1); }
-    function closeLogsModal() { document.getElementById('logsModal').style.display = 'none'; }
-
-    // Edit Logic
-    function openEditModal(item) {
-        document.getElementById('editId').value = item.Id;
-        document.getElementById('editProduct').value = item.Product;
-        document.getElementById('editUnit').value = item.Unit;
-        document.getElementById('editDescription').value = item.Description || '';
-        document.getElementById('editModal').style.display = 'flex';
-    }
-    function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-
-    async function submitEdit() {
-        const item = {
-            Id: document.getElementById('editId').value,
-            Product: document.getElementById('editProduct').value,
-            Unit: document.getElementById('editUnit').value,
-            Description: document.getElementById('editDescription').value
-        };
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        const res = await fetch('?handler=Update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
-            body: new URLSearchParams(item)
-        });
-        const data = await res.json();
-        if (data.success) {
-            showToast('Updated', 'Product information updated successfully.', 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showToast('Error', 'Failed to update product details.', 'error');
-        }
-    }
-
-    // Restock Logic
-    function openRestockModal(id, name) {
-        document.getElementById('restockId').value = id;
-        document.getElementById('restockSubTitle').innerText = name;
-        document.getElementById('restockQty').value = 1;
-        document.getElementById('restockModal').style.display = 'flex';
-    }
-    function closeRestockModal() { document.getElementById('restockModal').style.display = 'none'; }
-
-    async function submitRestock() {
-        const id = document.getElementById('restockId').value;
-        const qty = document.getElementById('restockQty').value;
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        const res = await fetch(`?handler=Restock&consumableId=${id}&quantity=${qty}`, {
-            method: 'POST',
-            headers: { 'RequestVerificationToken': token }
-        });
-        const data = await res.json();
-        if (data.success) {
-            showToast('Restocked', 'New units added to inventory.', 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showToast('Error', 'Failed to add new quantity.', 'error');
-        }
-    }
-
-    const _campusId = "@activeCampusId";
-    const _canSeeLogs = @(canSeeLogsReports ? "true" : "false");
-
-    async function loadDashboardData() {
-        if (!_campusId || !_canSeeLogs) return;
-        try {
-            const res = await fetch(`?handler=Logs&page=1&pageSize=5`);
-            const data = await res.json();
-            const acts = data.logs || [];
-            const container = document.getElementById('consumableRecentActivity');
-            container.innerHTML = acts.length
-                ? acts.map(a => `<div class="activity-item-sm"><span class="log-badge-sm">${a.action}</span><span class="fw-bold">${a.entityName}</span><span class="text-muted ms-auto">${a.timestamp}</span></div>`).join('')
-                : '<p class="text-muted small text-center py-2">No recent activity.</p>';
-        } catch (e) { console.warn('Failed to load activity logs', e); }
-    }
-
-    async function loadLogs(page) {
-        const tbody = document.getElementById('logsTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
-        
-        try {
-            const res = await fetch(`?handler=Logs&page=${page}&pageSize=10`);
-            const data = await res.json();
-            const logs = data.logs || [];
+        // Client-side search and filters
+        function applyFilters() {
+            const rows = document.querySelectorAll('.consumable-row');
+            let matchedCount = 0;
             
-            tbody.innerHTML = logs.map(l => `
-                <tr>
-                    <td class="small fw-bold">${l.timestamp}</td>
-                    <td><span class="log-badge-sm">${l.action}</span></td>
-                    <td class="fw-bold">${l.entityName}</td>
-                    <td class="small text-muted">${l.details}</td>
-                    <td class="small fw-bold">${l.username || 'System'}</td>
-                </tr>
-            `).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No logs found.</td></tr>';
-
-            document.getElementById('logsPaginationInfo').innerText = `Showing page ${data.currentPage} of ${data.totalPages}`;
-            
-            const controls = document.getElementById('logsPaginationControls');
-            controls.innerHTML = '';
-            if (data.currentPage > 1) {
-                controls.innerHTML += `<button class="btn btn-sm btn-light border rounded-pill px-3" onclick="loadLogs(${data.currentPage - 1})">Prev</button>`;
-            }
-            if (data.currentPage < data.totalPages) {
-                controls.innerHTML += `<button class="btn btn-sm btn-light border rounded-pill px-3" onclick="loadLogs(${data.currentPage + 1})">Next</button>`;
-            }
-        } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load logs.</td></tr>'; }
-    }
-
-    document.addEventListener('DOMContentLoaded', loadDashboardData);
-
-    const _isManager = @((isAdmin || isManager) ? "true" : "false");
-    const _currentUserId = "@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value";
-    let _currentConsumableId = null;
-    let _isModalShowingOutOnly = false;
-
-    async function viewItems(id, name, showOutOnly = false) {
-        _currentConsumableId = id;
-        _isModalShowingOutOnly = showOutOnly;
-        document.getElementById('modalItemTitle').innerText = name;
-        
-        // Update toggle UI
-        const btnAvail = document.getElementById('btnShowAvailable');
-        const btnUsed = document.getElementById('btnShowUsed');
-        if (showOutOnly) {
-            btnUsed.className = "btn btn-sm rounded-pill px-2 fw-bold btn-danger shadow-sm";
-            btnAvail.className = "btn btn-sm rounded-pill px-2 fw-bold text-muted";
-        } else {
-            btnAvail.className = "btn btn-sm rounded-pill px-2 fw-bold btn-primary shadow-sm";
-            btnUsed.className = "btn btn-sm rounded-pill px-2 fw-bold text-muted";
-        }
-
-        const tbody = document.getElementById('itemsTableBody');
-        const thDateOut = document.getElementById('thDateOut');
-        
-        // Show/Hide Date Out column header
-        if (thDateOut) thDateOut.style.display = showOutOnly ? 'table-cell' : 'none';
-
-        tbody.innerHTML = '<tr><td colspan="' + (showOutOnly ? 5 : 4) + '" class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 fw-bold text-primary">Fetching units...</p></td></tr>';
-        document.getElementById('itemsModal').style.display = 'flex';
-        try {
-            const res = await fetch(`?handler=Items&consumableId=${id}&showOutOnly=${showOutOnly}`);
-            const items = await res.json();
-            _currentModalItems = items; // Store globally for batch PDF
-            if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${showOutOnly ? 5 : 4}" class="text-center py-5 text-muted"><i class="fas fa-folder-open fa-2x mb-2 d-block opacity-20"></i>No ${showOutOnly ? 'used' : 'available'} units found.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = items.map(item => {
-                let statusHtml = '';
-                let actionHtml = '';
-
-                if (item.status === 'Out') {
-                    statusHtml = `<div>
-                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.75rem; padding: 5px 12px;">Used</span>
-                                    <div class="mt-1 small text-start ps-1" style="font-size: 0.65rem; line-height: 1.3;">
-                                        <div class="text-muted">Req: <span class="fw-bold text-dark">${item.requestedByUsername || '—'}</span></div>
-                                        <div class="text-muted">App: <span class="fw-bold text-dark">${item.approvedByUsername || 'Manager'}</span></div>
-                                    </div>
-                                  </div>`;
-                    actionHtml = `<span class="text-muted small fw-bold"><i class="fas fa-check-circle me-1"></i> Out</span>`;
-                } else if (item.isRequestPending) {
-                    statusHtml = `<span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle pulse-warning" style="font-size: 0.75rem; padding: 5px 12px;">
-                                    <i class="fas fa-clock me-1"></i> Awaiting Approval
-                                 </span>`;
-                    
-                    if (item.requestedByUserId === _currentUserId || _isManager) {
-                        actionHtml = `<button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="cancelRequest(${item.pendingRequestId})">
-                                        <i class="fas fa-times me-1"></i> Cancel Request
-                                      </button>`;
-                    } else {
-                        actionHtml = `<span class="text-muted small fw-bold italic">Requested by ${item.requestedByUsername}</span>`;
-                    }
+            rows.forEach(row => {
+                const name = row.getAttribute('data-product-name').toLowerCase();
+                const type = row.getAttribute('data-product-type');
+                const count = parseInt(row.getAttribute('data-count') || '0', 10);
+                
+                const matchesSearch = name.includes(window.currentSearchQuery) || type.toLowerCase().includes(window.currentSearchQuery);
+                const matchesType = (window.currentTypeFilter === 'All' || type === window.currentTypeFilter);
+                const matchesLowStock = (!window.showOnlyLowStock || count <= 5);
+                
+                if (matchesSearch && matchesType && matchesLowStock) {
+                    row.style.display = '';
+                    matchedCount++;
                 } else {
-                    statusHtml = `<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle" style="font-size: 0.75rem; padding: 5px 12px;">In Stock</span>`;
-                    if (_isManager) {
-                        actionHtml = `<button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm" onclick="directOut(${item.id})"><i class="fas fa-sign-out-alt me-1"></i> Use Unit</button>`;
-                    } else {
-                        actionHtml = `<button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-sm" onclick="requestOut(${item.id})"><i class="fas fa-paper-plane me-1"></i> Request Out</button>`;
-                    }
+                    row.style.display = 'none';
                 }
-
-                return `
-                    <tr class="${item.status === 'Out' ? 'opacity-50' : ''}">
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <button class="btn btn-sm btn-light border rounded" onclick="showQrModal('${item.itemCode}', '${document.getElementById('modalItemTitle').innerText.replace(/'/g, "\\'")}')" title="Show QR Code">
-                                    <i class="fas fa-qrcode"></i>
-                                </button>
-                                <code class="fw-bold px-2 py-1 rounded bg-light text-dark">${item.itemCode}</code>
-                            </div>
-                        </td>
-                        <td>${statusHtml}</td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center" style="width:25px;height:25px;font-size:0.6rem;font-weight:700;">${(item.addedByUsername || 'S').charAt(0).toUpperCase()}</div>
-                                <span class="small fw-bold text-muted">${item.addedByUsername || 'System'}</span>
-                            </div>
-                        </td>
-                        ${showOutOnly ? `<td class="small fw-bold text-dark">${item.dateOut ? new Date(item.dateOut).toLocaleDateString() : '—'}</td>` : ''}
-                        <td class="text-end pe-4">${actionHtml}</td>
-                    </tr>
-                `;
-            }).join('');
-        } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-5">Failed to load unit data.</td></tr>';
-        }
-    }
-
-    function toggleModalUnits(showOutOnly) {
-        if (!_currentConsumableId) return;
-        viewItems(_currentConsumableId, document.getElementById('modalItemTitle').innerText, showOutOnly);
-    }
-
-    let _currentQrData = null;
-    let _currentModalItems = []; // Populated in viewItems()
-
-    function showQrModal(itemCode, productName) {
-        _currentQrData = { code: itemCode, name: productName };
-        document.getElementById('qrModalProductName').innerText = productName;
-        document.getElementById('qrCodeText').innerText = itemCode;
-        
-        const qrContainer = document.getElementById('qrcodeDisplay');
-        qrContainer.innerHTML = '';
-        new QRCode(qrContainer, {
-            text: itemCode,
-            width: 150,
-            height: 150,
-            colorDark : "#1F3C88",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-        
-        document.getElementById('qrModal').style.display = 'flex';
-    }
-
-    function closeQrModal() {
-        document.getElementById('qrModal').style.display = 'none';
-    }
-
-    function downloadSingleQrPdf() {
-        if (!_currentQrData) return;
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 80] });
-        
-        const canvas = document.querySelector('#qrcodeDisplay canvas');
-        if (!canvas) {
-            showToast('Error', 'QR Code not fully loaded yet.', 'error');
-            return;
-        }
-        const imgData = canvas.toDataURL('image/png');
-        
-        doc.setFontSize(10);
-        doc.text("QuickStock Consumables", 40, 10, { align: "center" });
-        
-        doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        let name = _currentQrData.name;
-        if (name.length > 20) name = name.substring(0, 20) + '...';
-        doc.text(name, 40, 18, { align: "center" });
-        
-        doc.addImage(imgData, 'PNG', 20, 22, 40, 40);
-        
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.text(_currentQrData.code, 40, 68, { align: "center" });
-        
-        doc.save(`QR_${_currentQrData.code}.pdf`);
-        closeQrModal();
-    }
-
-    async function downloadBatchQrPdf() {
-        if (!_currentModalItems || _currentModalItems.length === 0) {
-            showToast('Info', 'No units available to generate QR codes.', 'warning');
-            return;
-        }
-        
-        const productName = document.getElementById('modalItemTitle').innerText;
-        showToast('Generating', 'Please wait while we generate the Batch QR PDF...', 'info');
-        
-        // Small delay to allow toast to render
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        const margin = 20;
-        const qrSize = 40;
-        const spacingX = 15;
-        const spacingY = 25;
-        
-        const columns = 3;
-        const rows = 4;
-        const itemsPerPage = columns * rows;
-        
-        let currentItem = 0;
-        const tempDiv = document.createElement('div');
-        
-        while (currentItem < _currentModalItems.length) {
-            if (currentItem > 0 && currentItem % itemsPerPage === 0) {
-                doc.addPage();
-            }
-            
-            const item = _currentModalItems[currentItem];
-            const pageIndex = currentItem % itemsPerPage;
-            const col = pageIndex % columns;
-            const row = Math.floor(pageIndex / columns);
-            
-            const x = margin + col * (qrSize + spacingX);
-            const y = margin + row * (qrSize + spacingY);
-            
-            tempDiv.innerHTML = '';
-            new QRCode(tempDiv, {
-                text: item.itemCode,
-                width: 128, height: 128,
-                colorDark : "#1F3C88", colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
             });
             
-            const canvas = tempDiv.querySelector('canvas');
-            if (canvas) {
-                const imgData = canvas.toDataURL('image/png');
-                
-                // Draw Box
-                doc.setDrawColor(200);
-                doc.rect(x - 2, y - 8, qrSize + 4, qrSize + 18);
-                
-                // Product Name
-                doc.setFontSize(8);
-                doc.setFont(undefined, 'bold');
-                let shortName = productName.length > 20 ? productName.substring(0, 18) + '..' : productName;
-                doc.text(shortName, x + (qrSize/2), y - 3, { align: "center" });
-                
-                // QR Code
-                doc.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
-                
-                // Item Code
-                doc.setFontSize(7);
-                doc.setFont(undefined, 'normal');
-                doc.text(item.itemCode, x + (qrSize/2), y + qrSize + 5, { align: "center" });
-            }
+            // Show/hide empty state row if everything is filtered out
+            const tableBody = document.getElementById('consumablesTableBody');
+            const existingEmptyMsg = document.getElementById('noResultsRow');
             
-            currentItem++;
-        }
-        
-        doc.save(`BatchQR_${productName.replace(/[^a-z0-9]/gi, '_')}.pdf`);
-        showToast('Success', 'Batch PDF downloaded successfully.', 'success');
-    }
-
-    function refreshItemsModal() {
-        if (!_currentConsumableId) return;
-        viewItems(_currentConsumableId, document.getElementById('modalItemTitle').innerText, _isModalShowingOutOnly);
-    }
-
-    async function requestOut(itemId) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        try {
-            const res = await fetch(`?handler=RequestOut&itemId=${itemId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
-            const data = await res.json();
-            if (data.success) { 
-                showToast('Request Sent', 'Request submitted! Awaiting manager approval.', 'info');
-                refreshItemsModal(); 
-            } else {
-                showToast('Error', data.message || 'Failed to submit request.', 'error');
-            }
-        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
-    }
-
-    async function cancelRequest(requestId) {
-        if (!confirm('Are you sure you want to cancel this out request?')) return;
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        try {
-            const res = await fetch(`?handler=CancelRequest&requestId=${requestId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
-            const data = await res.json();
-            if (data.success) {
-                showToast('Cancelled', 'Out request has been retracted.', 'warning');
-                refreshItemsModal();
-            } else {
-                showToast('Error', data.message || 'Failed to cancel request.', 'error');
-            }
-        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
-    }
-
-    async function directOut(itemId) {
-        if (!confirm('Mark this unit as Out? This action is permanent.')) return;
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        try {
-            const res = await fetch(`?handler=UpdateStatus&itemId=${itemId}&status=Out`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
-            if (res.ok) { 
-                showToast('Unit Used', 'Item marked as Out successfully.', 'success');
-                refreshItemsModal(); 
-            } else { 
-                showToast('Error', 'Operation failed. Please try again.', 'error'); 
-            }
-        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
-    }
-
-    // --- Request List Modal ---
-    let _currentRequestTab = 'pending';
-    function openRequestListModal() { 
-        document.getElementById('requestListModal').style.display = 'flex'; 
-        switchRequestTab('pending'); 
-    }
-    function closeRequestListModal() { document.getElementById('requestListModal').style.display = 'none'; }
-
-    function switchRequestTab(tab) {
-        _currentRequestTab = tab;
-        const btnPending = document.getElementById('btnShowPending');
-        const btnHistory = document.getElementById('btnShowHistory');
-        
-        if (tab === 'pending') {
-            btnPending.className = "btn btn-sm rounded-pill px-3 fw-bold btn-warning shadow-sm";
-            btnHistory.className = "btn btn-sm rounded-pill px-3 fw-bold text-muted";
-            loadPendingRequests();
-        } else {
-            btnHistory.className = "btn btn-sm rounded-pill px-3 fw-bold btn-dark shadow-sm";
-            btnPending.className = "btn btn-sm rounded-pill px-3 fw-bold text-muted";
-            loadRequestHistory();
-        }
-    }
-
-    async function loadRequestHistory() {
-        const tbody = document.getElementById('requestsTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-dark"></div><p class="mt-2 fw-bold text-dark">Loading history...</p></td></tr>';
-        try {
-            const res = await fetch('?handler=RequestHistory');
-            const requests = await res.json();
-            if (!requests || requests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-history fa-2x mb-2 d-block opacity-20"></i>No request history found.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = requests.map(r => {
-                let statusBadge = '';
-                if (r.status === 'Approved') statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle">Approved</span>';
-                else if (r.status === 'Rejected') statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Rejected</span>';
-                else if (r.status === 'Cancelled') statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Cancelled</span>';
-                else statusBadge = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle">${r.status}</span>`;
-
-                const remarksHtml = r.remarks ? `<div class="small text-muted mt-1 italic"><i class="fas fa-comment-alt me-1"></i>"${r.remarks}"</div>` : '';
-                const approverHtml = r.approvedByUsername ? `<div class="small text-muted mt-1">By: <b>${r.approvedByUsername}</b></div>` : '';
-
-                return `
-                    <tr>
-                        <td><code class="fw-bold px-2 py-1 rounded bg-light text-dark">${r.itemCode}</code></td>
-                        <td class="fw-bold">${r.productName}</td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width:25px;height:25px;font-size:0.6rem;font-weight:700;">${r.requestedByUsername.charAt(0).toUpperCase()}</div>
-                                <div class="d-flex flex-column">
-                                    <span class="fw-bold small">${r.requestedByUsername}</span>
-                                    <span class="text-muted" style="font-size:0.65rem;">${new Date(r.requestedAt).toLocaleDateString()}</span>
+            if (matchedCount === 0 && rows.length > 0) {
+                if (!existingEmptyMsg) {
+                    const emptyTr = document.createElement('tr');
+                    emptyTr.id = 'noResultsRow';
+                    emptyTr.className = 'border-0';
+                    emptyTr.innerHTML = `
+                        <td colspan="5" class="text-center py-5 text-slate-400">
+                            <div class="py-4 d-flex flex-column align-items-center">
+                                <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-search fs-5 text-slate-500"></i>
                                 </div>
+                                <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">No results found</span>
+                                <span class="small text-slate-500">Your search did not return any matches. Try adjusting your keyword or filters.</span>
                             </div>
                         </td>
-                        <td>
-                            ${statusBadge}
-                            ${remarksHtml}
-                            ${approverHtml}
-                        </td>
-                        <td class="text-center">
-                            <span class="small text-muted fw-bold">${r.status === 'Approved' ? '<i class="fas fa-check-circle text-success"></i> Done' : '—'}</span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load history.</td></tr>'; }
-    }
-
-    async function loadPendingRequests() {
-        const tbody = document.getElementById('requestsTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-warning"></div><p class="mt-2 fw-bold text-warning">Loading requests...</p></td></tr>';
-        try {
-            const res = await fetch('?handler=PendingRequests');
-            const requests = await res.json();
-            if (!requests || requests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-check-circle fa-2x mb-2 d-block text-success opacity-50"></i>No pending requests.</td></tr>';
-                updatePendingBadge(0); return;
+                    `;
+                    tableBody.appendChild(emptyTr);
+                }
+            } else if (existingEmptyMsg) {
+                existingEmptyMsg.remove();
             }
-            updatePendingBadge(requests.length);
-            tbody.innerHTML = requests.map(r => `
-                <tr>
-                    <td><code class="fw-bold px-2 py-1 rounded bg-light text-dark">${r.itemCode}</code></td>
-                    <td class="fw-bold">${r.productName}</td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:30px;height:30px;font-size:0.7rem;font-weight:700;">${r.requestedByUsername.charAt(0).toUpperCase()}</div>
-                            <div class="d-flex flex-column">
-                                <span class="fw-bold small">${r.requestedByUsername}</span>
-                                <span class="text-muted" style="font-size:0.65rem;">${new Date(r.requestedAt).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle pulse-warning">Pending Approval</span>
-                        <div class="small text-muted mt-1 italic">Waiting for manager response...</div>
-                    </td>
-                    <td class="text-center">
-                        <div class="d-flex gap-2 justify-content-center">
-                            @if (canUpdate)
-                            {
-                                <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="approveRequest(${r.id})">
-                                    <i class="fas fa-check me-1"></i>Approve
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="rejectRequest(${r.id}, '${r.itemCode}')">
-                                    <i class="fas fa-times me-1"></i>Reject
-                                </button>
-                            }
-                            else
-                            {
-                                <span class="small text-muted fw-bold italic">Processing...</span>
-                            }
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load requests.</td></tr>'; }
-    }
+        }
 
-    async function approveRequest(requestId) {
-        if (!confirm('Approve this out request? The item will be immediately marked as Out.')) return;
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        try {
-            const res = await fetch(`?handler=ApproveRequest&requestId=${requestId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
-            const data = await res.json();
-            if (data.success) {
-                showToast('Approved', 'Request approved. Item is now Out.', 'success');
-                loadPendingRequests();
+        function toggleLowStockFilter(card) {
+            window.showOnlyLowStock = !window.showOnlyLowStock;
+            
+            if (window.showOnlyLowStock) {
+                card.classList.add('low-stock-active');
             } else {
-                showToast('Error', data.message || 'Failed to approve request.', 'error');
+                card.classList.remove('low-stock-active');
             }
-        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
-    }
-
-    async function rejectRequest(requestId, itemCode) {
-        const reason = prompt(`Reason for rejecting item ${itemCode}:`);
-        if (reason === null) return;
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        try {
-            const res = await fetch(`?handler=RejectRequest&requestId=${requestId}&reason=${encodeURIComponent(reason)}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
-            const data = await res.json();
-            if (data.success) {
-                showToast('Rejected', 'Request has been rejected.', 'info');
-                loadPendingRequests();
-            } else {
-                showToast('Error', data.message || 'Failed to reject request.', 'error');
-            }
-        } catch (e) { showToast('Error', 'An unexpected error occurred.', 'error'); }
-    }
-
-    function updatePendingBadge(count) {
-        const badge = document.getElementById('pendingBadge');
-        if (!badge) return;
-        badge.style.display = count > 0 ? '' : 'none';
-        badge.innerText = count;
-    }
-
-    async function loadPendingCount() {
-        if (!_isManager) return;
-        try {
-            const res = await fetch('?handler=PendingRequests');
-            const data = await res.json();
-            updatePendingBadge(Array.isArray(data) ? data.length : 0);
-        } catch {}
-    }
-
-    document.addEventListener('DOMContentLoaded', () => { 
-        loadDashboardData(); 
-        loadPendingCount(); 
-
-        // Show TempData alerts as toasts
-        @if (TempData["SuccessMessage"] != null) {
-            <text>showToast('Success', '@TempData["SuccessMessage"]', 'success');</text>
-        }
-        @if (TempData["ErrorMessage"] != null) {
-            <text>showToast('Error', '@TempData["ErrorMessage"]', 'error');</text>
+            
+            applyFilters();
         }
 
-        // Tab Persistence: Restore last active tab
-        const activeTab = sessionStorage.getItem('activeConsumableTab');
-        const hasUrlParam = window.location.search.includes('showList');
-        
-        if (activeTab && !hasUrlParam) {
-            const tabEl = document.getElementById(activeTab);
-            if (tabEl && typeof bootstrap !== 'undefined') {
-                bootstrap.Tab.getOrCreateInstance(tabEl).show();
-            }
-        }
-
-        // Save active tab on change
-        const tabs = document.querySelectorAll('#consumableTabs button');
-        tabs.forEach(tab => {
-            tab.addEventListener('shown.bs.tab', (e) => {
-                sessionStorage.setItem('activeConsumableTab', e.target.id);
+        function filterByProductType(type, button) {
+            window.currentTypeFilter = type;
+            
+            // Toggle active classes on filter buttons
+            const filterContainer = button.parentElement;
+            const buttons = filterContainer.querySelectorAll('.saas-btn-filter');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
             });
-        });
-    });
-
-    window.onclick = (e) => {
-        if (e.target.classList.contains('modal-overlay-v2')) {
-            e.target.style.display = 'none';
+            button.classList.add('active');
+            
+            applyFilters();
         }
-    }
-</script>
+
+        // Modal triggers and handlers
+        function launchMutationModal(id, name, currentCount, isAdding) {
+            window.currentActiveStock = parseInt(currentCount, 10);
+            
+            document.getElementById('hiddenItemId').value = id;
+            document.getElementById('modalTargetLabel').innerText = name;
+            
+            const inputField = document.getElementById('inputQuantityDelta');
+            inputField.value = "1";
+            
+            setModalMode(isAdding);
+            
+            var operationModal = new bootstrap.Modal(document.getElementById('mutationTransactionModal'));
+            operationModal.show();
+        }
+
+        function setModalMode(isAdding) {
+            window.isAdditionMode = isAdding;
+            
+            const formElement = document.getElementById('mutationForm');
+            const headerBanner = document.getElementById('modalHeaderBanner');
+            const submitBtn = document.getElementById('modalSubmitButton');
+            const titleText = document.getElementById('modalTitleText');
+            
+            const toggleIn = document.getElementById('toggleInBtn');
+            const toggleOut = document.getElementById('toggleOutBtn');
+            
+            const inputField = document.getElementById('inputQuantityDelta');
+            
+            // Clear validation states
+            inputField.classList.remove('is-invalid');
+            document.getElementById('clientValidationErrorMsg').style.display = 'none';
+
+            if (isAdding) {
+                formElement.action = '?handler=AddStock';
+                headerBanner.className = 'modal-header border-0 bg-success text-white py-3 transition-all';
+                submitBtn.className = 'btn px-4 py-2 rounded-pill fw-bold btn-success text-white border-0 shadow-sm';
+                submitBtn.innerText = window.isStaffUser ? 'Submit Addition Request' : 'Apply Stock Addition';
+                titleText.innerHTML = window.isStaffUser ? '<i class="bi bi-box-arrow-in-down"></i> Request Stock Addition' : '<i class="bi bi-box-arrow-in-down"></i> Add Inventory Stock';
+                
+                toggleIn.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn active-in';
+                toggleOut.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn';
+                
+                inputField.removeAttribute('max');
+            } else {
+                formElement.action = '?handler=DeductStock';
+                headerBanner.className = 'modal-header border-0 bg-danger text-white py-3 transition-all';
+                submitBtn.className = 'btn px-4 py-2 rounded-pill fw-bold btn-danger text-white border-0 shadow-sm';
+                submitBtn.innerText = window.isStaffUser ? 'Submit Deduction Request' : 'Apply Stock Deduction';
+                titleText.innerHTML = window.isStaffUser ? '<i class="bi bi-box-arrow-up"></i> Request Stock Deduction' : '<i class="bi bi-box-arrow-up"></i> Deduct Inventory Stock';
+                
+                toggleIn.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn';
+                toggleOut.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn active-out';
+                
+                inputField.max = window.currentActiveStock;
+            }
+            
+            updateBalancePreview();
+        }
+
+        // Live calculations inside spinner
+        function adjustDelta(amount) {
+            const inputField = document.getElementById('inputQuantityDelta');
+            let currentVal = parseInt(inputField.value, 10);
+            if (isNaN(currentVal)) {
+                currentVal = 1;
+            }
+            
+            let newVal = currentVal + amount;
+            if (newVal < 1) {
+                newVal = 1;
+            }
+            
+            // Limit deductions to maximum available stock if in deduct mode
+            if (!window.isAdditionMode && newVal > window.currentActiveStock) {
+                newVal = window.currentActiveStock;
+            }
+            
+            inputField.value = newVal;
+            updateBalancePreview();
+        }
+
+        function updateBalancePreview() {
+            const inputField = document.getElementById('inputQuantityDelta');
+            const previewCurrent = document.getElementById('previewCurrentStock');
+            const previewOperator = document.getElementById('previewOperatorIcon');
+            const previewAdjustmentLabel = document.getElementById('previewAdjustmentLabel');
+            const previewAdjustmentValue = document.getElementById('previewAdjustmentValue');
+            const previewNew = document.getElementById('previewNewStock');
+            const warningHint = document.getElementById('allocationWarningHint');
+            const submitBtn = document.getElementById('modalSubmitButton');
+            const errorContainer = document.getElementById('clientValidationErrorMsg');
+            
+            const delta = parseInt(inputField.value, 10) || 0;
+            previewCurrent.innerText = window.currentActiveStock;
+            
+            inputField.classList.remove('is-invalid');
+            errorContainer.style.display = 'none';
+            submitBtn.disabled = false;
+
+            if (window.isAdditionMode) {
+                const newStock = window.currentActiveStock + delta;
+                
+                previewOperator.className = 'bi bi-plus-lg fs-5 text-success';
+                previewAdjustmentLabel.innerText = 'Adding';
+                previewAdjustmentLabel.className = 'd-block text-success small text-uppercase tracking-wider fw-bold mb-1';
+                previewAdjustmentValue.innerText = `+${delta}`;
+                previewAdjustmentValue.className = 'fw-800 fs-4 text-success';
+                
+                previewNew.innerText = newStock;
+                previewNew.className = 'fw-800 fs-3 text-success';
+                
+                warningHint.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-info-circle-fill me-1"></i> Augmented quantity will become <strong>${newStock}</strong> units.</span>`;
+            } else {
+                const newStock = window.currentActiveStock - delta;
+                
+                previewOperator.className = 'bi bi-dash-lg fs-5 text-danger';
+                previewAdjustmentLabel.innerText = 'Deducting';
+                previewAdjustmentLabel.className = 'd-block text-danger small text-uppercase tracking-wider fw-bold mb-1';
+                previewAdjustmentValue.innerText = `-${delta}`;
+                previewAdjustmentValue.className = 'fw-800 fs-4 text-danger';
+                
+                previewNew.innerText = newStock >= 0 ? newStock : 0;
+                
+                if (newStock < 0) {
+                    previewNew.className = 'fw-800 fs-3 text-danger animate-pulse';
+                    inputField.classList.add('is-invalid');
+                    errorContainer.innerText = `Exceeds current stock capacity of ${window.currentActiveStock} items.`;
+                    errorContainer.style.display = 'block';
+                    submitBtn.disabled = true;
+                    warningHint.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Error: Insufficient stock available.</span>`;
+                } else {
+                    previewNew.className = 'fw-800 fs-3 text-danger';
+                    warningHint.innerHTML = `<span class="text-danger fw-semibold"><i class="bi bi-info-circle-fill me-1"></i> Reduced quantity will become <strong>${newStock}</strong> units.</span>`;
+                }
+            }
+        }
+
+        // Form submission checks
+        document.getElementById('mutationForm').addEventListener('submit', function (event) {
+            const inputField = document.getElementById('inputQuantityDelta');
+            const errorContainer = document.getElementById('clientValidationErrorMsg');
+            const val = parseInt(inputField.value, 10);
+
+            if (isNaN(val) || val <= 0) {
+                event.preventDefault();
+                inputField.classList.add('is-invalid');
+                errorContainer.innerText = "Value must be a valid count greater than zero.";
+                errorContainer.style.display = 'block';
+                return false;
+            }
+
+            if (!window.isAdditionMode && val > window.currentActiveStock) {
+                event.preventDefault();
+                inputField.classList.add('is-invalid');
+                errorContainer.innerText = `Cannot deduct ${val} units. Only ${window.currentActiveStock} items are currently available.`;
+                errorContainer.style.display = 'block';
+                return false;
+            }
+        });
+    </script>
+}

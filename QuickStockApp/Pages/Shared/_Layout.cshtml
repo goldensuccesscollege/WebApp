@@ -8,714 +8,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - QuickStock</title>
 
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/QuickStockApp.styles.css" asp-append-version="true" />
+    
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
     <script>
         (function() {
-            const theme = localStorage.getItem('theme');
-            if (theme === 'dark') {
+            if (localStorage.getItem('theme') === 'dark') {
                 document.documentElement.classList.add('dark-mode');
                 document.addEventListener('DOMContentLoaded', () => document.body.classList.add('dark-mode'));
             }
         })();
     </script>
-
-    <style>
-        /* Navbar enhancements */
-        .navbar {
-            backdrop-filter: blur(12px);
-            background: rgba(255, 255, 255, 0.95) !important;
-            border-bottom: 1px solid rgba(0,0,0,0.05) !important;
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.4rem;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-right: 1.5rem;
-        }
-
-        .nav-link {
-            font-weight: 600;
-            color: #64748b !important;
-            padding: 0.5rem 1rem !important;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-            margin: 0 0.15rem;
-            white-space: nowrap;
-        }
-
-        .nav-link:hover {
-            color: #1e293b !important;
-            background: rgba(30, 64, 175, 0.05);
-        }
-
-        .nav-link.active {
-            color: var(--primary-blue) !important;
-            background: rgba(30, 64, 175, 0.12);
-        }
-
-        /* Card-like main container */
-        main.pb-3 {
-            padding-top: 2rem;
-        }
-
-        .content-wrapper {
-            background: #f8f9fa;
-            min-height: calc(100vh - 112px); /* navbar + footer height */
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-        }
-
-        /* Footer */
-        footer {
-            background: #f1f3f5;
-            padding: 1rem 0;
-            font-size: 0.9rem;
-        }
-
-        /* Logout button spacing */
-        .navbar-nav .btn-danger {
-            margin-left: 1rem;
-        }
-
-        /* Global Notification Modal */
-        .notification-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .notification-content {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 24px;
-            max-width: 450px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .notification-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            font-size: 2rem;
-        }
-
-        .notification-icon.success {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .notification-icon.error {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .notification-title {
-            font-weight: 800;
-            font-size: 1.5rem;
-            margin-bottom: 0.75rem;
-            color: #1e293b;
-        }
-
-        .notification-message {
-            color: #64748b;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-        }
-
-        .notification-close-btn {
-            background: #1e293b;
-            color: white;
-            border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .notification-close-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px rgba(30, 41, 59, 0.2);
-        }
-
-        .btn-primary {
-            background: var(--primary-gradient);
-            border: none;
-        }
-
-        .btn-outline-primary {
-            color: var(--primary-blue);
-            border-color: var(--primary-blue);
-        }
-
-        .btn-outline-primary:hover {
-            background: var(--primary-blue);
-            border-color: var(--primary-blue);
-            color: white;
-        }
-
-        .bg-primary {
-            background: var(--primary-gradient) !important;
-        }
-
-        /* --- Dark Mode Styles --- */
-        body.dark-mode {
-            background-color: #0f172a !important;
-            color: #f1f5f9 !important;
-        }
-
-        body.dark-mode .navbar, 
-        body.dark-mode .content-wrapper,
-        body.dark-mode .glass-card,
-        body.dark-mode .glass-panel,
-        body.dark-mode .modal-content {
-            background: rgba(30, 41, 59, 0.8) !important;
-            border-color: rgba(255, 255, 255, 0.1) !important;
-            color: #f1f5f9 !important;
-            backdrop-filter: blur(20px) !important;
-        }
-
-        /* Breadcrumb Styling */
-        /* --- Breadcrumb System --- */
-        .breadcrumb {
-            background: var(--surface-white);
-            padding: 0.5rem 1.25rem;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            border: 1px solid var(--border-light);
-            margin-left: 1rem;
-        }
-
-        .breadcrumb-item.active {
-            color: var(--primary-color);
-        }
-
-        /* --- Campus Badge V2 --- */
-        .campus-badge-v2 {
-            background: var(--primary-gradient);
-            color: white;
-            padding: 0.5rem 1.25rem;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: var(--shadow-md);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        body.dark-mode .campus-badge-v2 {
-            background: var(--primary-color);
-            box-shadow: none;
-        }
-
-        body.dark-mode .breadcrumb {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body.dark-mode .breadcrumb-item a { color: var(--text-muted); }
-        body.dark-mode .breadcrumb-item.active { color: var(--secondary-color); }
-
-        body.dark-mode .navbar-light .navbar-brand,
-        body.dark-mode .navbar-light .nav-link {
-            color: #FFFFFF !important;
-        }
-
-        /* --- Side Drawer Menu --- */
-        .side-drawer {
-            position: fixed;
-            top: 0;
-            left: -320px;
-            width: 320px;
-            height: 100%;
-            background: white;
-            z-index: 2050;
-            box-shadow: 20px 0 50px rgba(0,0,0,0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-            padding: 2rem 0;
-            overflow-y: auto;
-        }
-
-        .side-drawer.open {
-            left: 0;
-        }
-
-        .drawer-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 2040;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .drawer-overlay.show {
-            display: block;
-            opacity: 1;
-        }
-
-        .drawer-header {
-            padding: 0 2rem 2rem;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .drawer-nav {
-            padding: 1.5rem 1rem;
-            flex-grow: 1;
-        }
-
-        .drawer-section-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #94a3b8;
-            padding: 1.5rem 1rem 0.75rem;
-        }
-
-        .drawer-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.85rem 1rem;
-            color: #475569;
-            text-decoration: none !important;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-            margin-bottom: 0.25rem;
-        }
-
-        .drawer-link i {
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
-            color: #64748b;
-        }
-
-        .drawer-link:hover {
-            background: var(--bg-main);
-            color: var(--primary-color);
-        }
-
-        .drawer-link:hover i {
-            color: var(--primary-color);
-        }
-
-        .drawer-link.active {
-            background: rgba(31, 60, 136, 0.08);
-            color: var(--primary-color);
-        }
-
-        .drawer-link.active i {
-            color: var(--primary-color);
-        }
-
-        .drawer-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        body.dark-mode .side-drawer {
-            background: #0f172a;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        body.dark-mode .drawer-header,
-        body.dark-mode .drawer-footer {
-            border-color: rgba(255, 255, 255, 0.05);
-        }
-
-        body.dark-mode .drawer-link {
-            color: #94a3b8;
-        }
-
-        body.dark-mode .drawer-link:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #f1f5f9;
-        }
-
-        /* --- Premium Navbar Components --- */
-        .btn-navbar-action {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-        }
-
-        .btn-navbar-action:hover {
-            background: var(--bg-main);
-            color: var(--primary-color);
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        .btn-navbar-action.logout:hover {
-            background: #fff1f2;
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        .user-avatar-sm {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            background: var(--primary-gradient);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 0.85rem;
-            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
-        }
-
-        .brand-icon-box {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: var(--primary-gradient);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-close-premium {
-            background: #f1f5f9;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-
-        .btn-close-premium:hover {
-            background: #fee2e2;
-            color: #ef4444;
-            transform: rotate(90deg);
-        }
-
-        body.dark-mode .btn-close-premium {
-            background: rgba(255, 255, 255, 0.05);
-            color: #94a3b8;
-        }
-
-        /* Hamburger Button */
-        .menu-trigger {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            background: white;
-            border: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            color: #475569;
-        }
-
-        .menu-trigger:hover {
-            background: var(--bg-main);
-            color: var(--primary-color);
-            border-color: var(--primary-color);
-            transform: scale(1.05);
-        }
-
-        body.dark-mode .menu-trigger {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-        }
-
-        /* Breadcrumb Separator */
-        .breadcrumb-item + .breadcrumb-item::before {
-            content: " \f105 ";
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
-            color: #94a3b8;
-            padding: 0 0.75rem;
-        }
-
-        body.dark-mode .btn-close-premium {
-            background: rgba(255, 255, 255, 0.05);
-            color: #94a3b8;
-        }
-
-        /* Hamburger Button */
-
-        /* --- Real-time Notifications (Toast) --- */
-        .toast-container {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            pointer-events: none;
-        }
-
-        .premium-toast {
-            width: 350px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 20px;
-            padding: 1.25rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            display: flex;
-            gap: 1rem;
-            align-items: flex-start;
-            pointer-events: auto;
-            animation: toastIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .premium-toast::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 6px;
-            background: var(--toast-color, var(--primary-color));
-        }
-
-        .premium-toast.success { --toast-color: var(--success-color); }
-        .premium-toast.warning { --toast-color: var(--secondary-color); }
-        .premium-toast.danger { --toast-color: var(--accent-color); }
-        .premium-toast.info { --toast-color: var(--primary-color); }
-        .premium-toast.chat { --toast-color: var(--primary-color); }
-
-        .toast-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: var(--toast-bg, rgba(30, 64, 175, 0.1));
-            color: var(--toast-color, var(--primary-blue));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .toast-content {
-            flex-grow: 1;
-        }
-
-        .toast-title {
-            font-weight: 800;
-            font-size: 0.95rem;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-        }
-
-        .toast-message {
-            font-size: 0.85rem;
-            color: #64748b;
-            line-height: 1.4;
-        }
-
-        .toast-close {
-            background: transparent;
-            border: none;
-            color: #cbd5e1;
-            cursor: pointer;
-            padding: 4px;
-            transition: color 0.2s;
-        }
-
-        .toast-close:hover {
-            color: #64748b;
-        }
-
-        @@keyframes toastIn {
-            from { opacity: 0; transform: translateX(50px) scale(0.9); }
-            to { opacity: 1; transform: translateX(0) scale(1); }
-        }
-
-        @@keyframes toastOut {
-            to { opacity: 0; transform: translateX(20px) scale(0.9); }
-        }
-
-        body.dark-mode .premium-toast {
-            background: rgba(30, 41, 59, 0.9) !important;
-            border-color: rgba(255, 255, 255, 0.1) !important;
-        }
-
-        body.dark-mode .toast-title { color: #f1f5f9; }
-        body.dark-mode .toast-message { color: #94a3b8; }
-
-        body.dark-mode .bg-light {
-            background-color: #0f172a !important;
-        }
-
-        /* Navbar Z-Index Fix */
-        .navbar {
-            position: sticky !important;
-            top: 0;
-            z-index: 1050 !important; /* Above standard Bootstrap content but below modals */
-        }
-
-        /* Campus Badge Premium Design */
-        .campus-badge-v2 {
-            background: var(--primary-gradient);
-            color: white;
-            padding: 0.5rem 1.25rem;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        html.dark-mode .campus-badge-v2,
-        body.dark-mode .campus-badge-v2 {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        }
-
-        html.dark-mode .campus-badge-v2 i,
-        body.dark-mode .campus-badge-v2 i,
-        html.dark-mode .campus-badge-v2 span,
-        body.dark-mode .campus-badge-v2 span {
-            color: #ffffff !important;
-        }
-
-        .animate-pulse {
-            animation: pulse-red 2s infinite;
-        }
-
-        @@keyframes pulse-red {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        .hover-opacity-75:hover {
-            opacity: 0.75;
-            transition: opacity 0.2s;
-        }
-
-        .hover-bg-light:hover {
-            background-color: #f8fafc !important;
-        }
-
-        .transition-all {
-            transition: all 0.2s ease-in-out;
-        }
-    </style>
-
-    <!-- UI Functions Script -->
-    <script>
-        function openSettings() {
-            const modal = document.getElementById('settingsModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                const isDark = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
-                const toggle = document.getElementById('nightModeToggle');
-                if (toggle) toggle.checked = isDark;
-            }
-        }
-
-        function closeSettings() {
-            const modal = document.getElementById('settingsModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function toggleTheme(isDark) {
-            if (isDark) {
-                document.body.classList.add('dark-mode');
-                document.documentElement.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.remove('dark-mode');
-                document.documentElement.classList.remove('dark-mode');
-                localStorage.setItem('theme', 'light');
-            }
-        }
-
-        function toggleDrawer(open) {
-            const drawer = document.getElementById('sideDrawer');
-            const overlay = document.getElementById('drawerOverlay');
-            if (open) {
-                drawer.classList.add('open');
-                overlay.classList.add('show');
-            } else {
-                drawer.classList.remove('open');
-                overlay.classList.remove('show');
-            }
-        }
-        
-        // Apply theme immediately
-        (function() {
-            const theme = localStorage.getItem('theme');
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark-mode');
-            }
-        })();
-    </script>
 </head>
 <body class="bg-light">
+    @{
+        var globalIsAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+        var globalCanIT = User.Identity?.IsAuthenticated == true && (globalIsAdmin || User.FindFirst("CanAccessITAssets")?.Value == "True");
+        var globalCanFurniture = User.Identity?.IsAuthenticated == true && (globalIsAdmin || User.FindFirst("CanAccessHomeEconomics")?.Value == "True");
+    }
+
     @if (ViewData["HideNav"] == null || !((bool?)ViewData["HideNav"] ?? false))
     {
     <header>
@@ -725,39 +42,34 @@
                     <button class="menu-trigger" onclick="toggleDrawer(true)" title="Menu">
                         <i class="fas fa-bars fa-lg"></i>
                     </button>
-                    <a class="navbar-brand fs-4" asp-area="" asp-page="/Dashboard/Index">QuickStock</a>
-                    
-                    <nav aria-label="breadcrumb" class="d-none d-md-block ms-2 border-start ps-3">
-                        <ol class="breadcrumb mb-0" id="mainBreadcrumb">
-                            <!-- JS will populate this -->
-                        </ol>
-                    </nav>
+                    <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/Dashboard/Index">
+                        <div class="brand-icon-box" style="width: 32px; height: 32px; font-size: 0.85rem;">QS</div>
+                        <span style="font-weight: 800; font-size: 1.25rem; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">QuickStock</span>
+                    </a>
                 </div>
 
                 <div class="d-flex align-items-center gap-3">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
                         var activeCampus = User.FindFirst("ActiveCampusName")?.Value;
-                         if (!string.IsNullOrEmpty(activeCampus))
-                         {
-                             <div class="campus-badge-v2">
-                                 <i class="fas fa-map-marker-alt"></i>
-                                 <span>@activeCampus</span>
-                                 @if (User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin"))
-                                 {
-                                     <a asp-page="/Campus/Campuses" class="text-white ms-2 text-decoration-none border-start ps-2" style="opacity: 0.8;" title="Switch Campus">
-                                         <i class="fas fa-exchange-alt" style="font-size: 0.8rem;"></i>
-                                     </a>
-                                 }
-                             </div>
-                         }
+                        if (!string.IsNullOrEmpty(activeCampus))
+                        {
+                            <div class="campus-badge-v2">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>@activeCampus</span>
+                                @if (User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin"))
+                                {
+                                    <a asp-page="/Campus/Campuses" class="text-white ms-2 text-decoration-none border-start ps-2" style="opacity: 0.8;" title="Switch Campus">
+                                        <i class="fas fa-exchange-alt" style="font-size: 0.8rem;"></i>
+                                    </a>
+                                }
+                            </div>
+                        }
                         
                         <div class="vr mx-2 text-muted opacity-25 d-none d-lg-block"></div>
                         
                         <a asp-page="/Account/Profile" class="d-none d-lg-flex align-items-center gap-2 text-decoration-none text-dark hover-opacity-75">
-                            <div class="user-avatar-sm">
-                                @(User.Identity?.Name?.Substring(0, 1).ToUpper())
-                            </div>
+                            <div class="user-avatar-sm">@(User.Identity?.Name?.Substring(0, 1).ToUpper())</div>
                             <div class="d-flex flex-column" style="line-height: 1.1;">
                                 <span class="small fw-bold">@User.Identity?.Name</span>
                                 <span class="text-muted" style="font-size: 0.7rem;">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
@@ -766,11 +78,9 @@
 
                         <div class="ms-3 d-flex gap-2">
                             <div class="position-relative">
-                                <button class="btn-navbar-action" id="notificationBell" title="Notifications" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn-navbar-action" id="notificationBell" title="Notifications" data-bs-toggle="dropdown">
                                     <i class="fas fa-bell"></i>
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notificationBadge">
-                                        0
-                                    </span>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notificationBadge">0</span>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" id="notificationDropdown" style="width: 350px; border-radius: 20px; overflow: hidden; margin-top: 10px;">
                                     <div class="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
@@ -788,15 +98,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <a asp-page="/Account/Profile" class="btn-navbar-action" title="My Profile" style="background: var(--primary-gradient); color: white; border: none;">
-                                <i class="fas fa-user"></i>
-                            </a>
-                            <button onclick="openSettings()" class="btn-navbar-action" title="Settings" style="background: var(--secondary-color); color: var(--text-dark); border: none;">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                            <a asp-page="/Account/Logout" class="btn-navbar-action logout" title="Logout">
-                                <i class="fas fa-sign-out-alt"></i>
-                            </a>
+                            <a asp-page="/Account/Profile" class="btn-navbar-action" title="My Profile" style="background: var(--primary-gradient); color: white; border: none;"><i class="fas fa-user"></i></a>
+                            <button onclick="openSettings()" class="btn-navbar-action" title="Settings" style="background: var(--secondary-color); color: var(--text-dark); border: none;"><i class="fas fa-cog"></i></button>
+                            <a asp-page="/Account/Logout" class="btn-navbar-action logout" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                         </div>
                     }
                     else
@@ -808,7 +112,6 @@
         </nav>
     </header>
 
-    <!-- Premium Side Drawer -->
     <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer(false)"></div>
     <div class="side-drawer" id="sideDrawer">
         <div class="drawer-header">
@@ -816,378 +119,204 @@
                 <div class="brand-icon-box">QS</div>
                 <span class="fs-4 fw-800 gradient-text">QuickStock</span>
             </div>
-            <button class="btn-close-premium" onclick="toggleDrawer(false)">
-                <i class="fas fa-times"></i>
-            </button>
+            <button class="btn-close-premium" onclick="toggleDrawer(false)"><i class="fas fa-times"></i></button>
         </div>
         
         <div class="drawer-nav">
             <div class="drawer-section-label">Main</div>
-            <a href="/Dashboard/Index" class="drawer-link @(ViewData["Title"]?.ToString() == "Home" ? "active" : "")">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="/Account/Profile" class="drawer-link @(ViewData["Title"]?.ToString() == "My Profile" ? "active" : "")">
-                <i class="fas fa-user-circle"></i> My Profile
-            </a>
+            <a href="/Dashboard/Index" class="drawer-link @(ViewData["Title"]?.ToString() == "Home" ? "active" : "")"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="/Account/Profile" class="drawer-link @(ViewData["Title"]?.ToString() == "My Profile" ? "active" : "")"><i class="fas fa-user-circle"></i> My Profile</a>
 
             @{
-                var isFullAdmin = User.IsInRole("Admin");
                 var isLibraryAdmin = User.IsInRole("Library Admin");
                 var isFurnitureAdmin = User.IsInRole("Home Economics Admin");
-
-                var canAccessIT = isFullAdmin || (User.FindFirst("CanAccessITAssets")?.Value == "True");
-                var canAccessApparel = isFullAdmin || (User.FindFirst("CanAccessApparel")?.Value == "True");
-                var canAccessMessages = isFullAdmin || (User.FindFirst("CanAccessMessages")?.Value == "True");
-                var canAccessLibrary = isFullAdmin || isLibraryAdmin || (User.FindFirst("CanAccessLibrary")?.Value == "True");
-                var canAccessFurniture = isFullAdmin || isFurnitureAdmin || (User.FindFirst("CanAccessHomeEconomics")?.Value == "True");
-                var canAccessConsumables = isFullAdmin || (User.FindFirst("CanAccessConsumables")?.Value == "True");
-                
-                var canAccessAdmin = isFullAdmin || isLibraryAdmin || isFurnitureAdmin;
+                var canAccessApparel = globalIsAdmin || (User.FindFirst("CanAccessApparel")?.Value == "True");
+                var canAccessLibrary = globalIsAdmin || isLibraryAdmin || (User.FindFirst("CanAccessLibrary")?.Value == "True");
+                var canAccessAdmin = globalIsAdmin || isLibraryAdmin || isFurnitureAdmin;
             }
 
-            @if (canAccessIT || canAccessFurniture)
+            @if (globalCanIT || globalCanFurniture) { <div class="drawer-section-label">Inventory &amp; Assets</div> }
+            @if (globalCanIT)
             {
-                <div class="drawer-section-label">Inventory &amp; Assets</div>
+                <a href="/Inventory/ItAssets" class="drawer-link @(ViewData["Title"]?.ToString() == "IT Assets" ? "active" : "")"><i class="fas fa-laptop"></i> IT Assets</a>
+                <a href="/Inventory/Rooms" class="drawer-link @(ViewData["Title"]?.ToString() == "Room Management" ? "active" : "")"><i class="fas fa-door-open"></i> Room Management</a>
             }
-            @if (canAccessIT)
+            @if (globalCanFurniture)
             {
-                <a href="/Inventory/ItAssets" class="drawer-link @(ViewData["Title"]?.ToString() == "IT Assets" ? "active" : "")">
-                    <i class="fas fa-laptop"></i> IT Assets
-                </a>
-                <a href="/Inventory/Rooms" class="drawer-link @(ViewData["Title"]?.ToString() == "Room Management" ? "active" : "")">
-                    <i class="fas fa-door-open"></i> Room Management
-                </a>
+                <a href="/Inventory/Furniture" class="drawer-link @(ViewData["Title"]?.ToString() == "Furniture Inventory" ? "active" : "")"><i class="fas fa-couch"></i> Furniture Inventory</a>
             }
-            @if (canAccessFurniture)
+            
+            @{
+                var canAccessConsumables = globalIsAdmin || (User.FindFirst("CanAccessConsumables")?.Value == "True");
+            }
+            @if (canAccessConsumables)
             {
-                <a href="/Inventory/Furniture" class="drawer-link @(ViewData["Title"]?.ToString() == "Furniture Inventory" ? "active" : "")">
-                    <i class="fas fa-couch"></i> Furniture Inventory
-                </a>
+                <a href="/Inventory/Consumables" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumable Inventory" ? "active" : "")"><i class="fas fa-box-open"></i> Consumable Inventory</a>
+                <a href="/Inventory/ConsumableRequests" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumables Requests" ? "active" : "")"><i class="fas fa-file-signature"></i> Consumable Requests</a>
+                <a href="/Inventory/ConsumableLogs" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumables Activity Logs" ? "active" : "")"><i class="fas fa-history"></i> Consumable Logs</a>
             }
 
-            @if (canAccessApparel || canAccessConsumables)
+            @if (canAccessApparel)
             {
-                <div class="drawer-section-label">Consumables &amp; Apparel</div>
-                @if (canAccessConsumables)
-                {
-                    <a href="/Inventory/Consumables" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumables Inventory" ? "active" : "")">
-                        <i class="fas fa-box-open"></i> Consumables Inventory
-                    </a>
-                }
-                @if (canAccessApparel)
-                {
-                    <a href="/Inventory/ApparelList" class="drawer-link @(ViewData["Title"]?.ToString() == "Apparel Inventory" ? "active" : "")">
-                        <i class="fas fa-tshirt"></i> Apparel List
-                    </a>
-                    <a href="/Inventory/SoldApparel" class="drawer-link @(ViewData["Title"]?.ToString() == "Sold Apparel" ? "active" : "")">
-                        <i class="fas fa-receipt"></i> Sales History
-                    </a>
-                }
+                <div class="drawer-section-label">Apparel</div>
+                <a href="/Inventory/ApparelList" class="drawer-link @(ViewData["Title"]?.ToString() == "Apparel Inventory" ? "active" : "")"><i class="fas fa-tshirt"></i> Apparel List</a>
+                <a href="/Inventory/SoldApparel" class="drawer-link @(ViewData["Title"]?.ToString() == "Sold Apparel" ? "active" : "")"><i class="fas fa-receipt"></i> Sales History</a>
             }
 
             @if (canAccessLibrary)
             {
                 <div class="drawer-section-label">Resources</div>
-                <a href="/Community/Library" class="drawer-link @(ViewData["Title"]?.ToString() == "Library" ? "active" : "")">
-                    <i class="fas fa-book"></i> Library Explorer
-                </a>
+                <a href="/Community/Library" class="drawer-link @(ViewData["Title"]?.ToString() == "Library" ? "active" : "")"><i class="fas fa-book"></i> Library Explorer</a>
             }
 
             <div class="drawer-section-label">System</div>
-            <a href="/Campus/Campuses" class="drawer-link @(ViewData["Title"]?.ToString() == "Campuses" ? "active" : "")">
-                <i class="fas fa-building"></i> Campuses
-            </a>
-            
-            @if (canAccessMessages)
-            {
-                <a href="/Community/Chat" class="drawer-link @(ViewData["Title"]?.ToString() == "Chat" ? "active" : "")">
-                    <i class="fas fa-comment-dots"></i> Messages
-                </a>
-            }
+            <a href="/Campus/Campuses" class="drawer-link @(ViewData["Title"]?.ToString() == "Campuses" ? "active" : "")"><i class="fas fa-building"></i> Campuses</a>
 
             @if (canAccessAdmin)
             {
                 <div class="drawer-section-label">Administration</div>
-                <a href="/Account/Register" class="drawer-link @(ViewData["Title"]?.ToString() == "Register" ? "active" : "")">
-                    <i class="fas fa-user-plus"></i> Register User
-                </a>
-                <a href="/Admin/UserManagement" class="drawer-link @(ViewData["Title"]?.ToString() == "User Management" ? "active" : "")">
-                    <i class="fas fa-users-cog"></i> Account Management
-                </a>
+                <a href="/Admin/UserManagement" class="drawer-link @(ViewData["Title"]?.ToString() == "User Account Management" ? "active" : "")"><i class="fas fa-users-cog"></i> Account Management</a>
+                <a href="/Account/Register" class="drawer-link"><i class="fas fa-user-plus"></i> Register User</a>
             }
         </div>
-
-        <div class="drawer-footer">
-            <div class="d-grid">
-                <a href="/Account/Logout" class="btn btn-danger rounded-pill fw-bold">
-                    <i class="fas fa-sign-out-alt me-2"></i> Sign Out
-                </a>
-            </div>
-        </div>
     </div>
-
     }
 
-    <div class="container-fluid px-md-5">
+    <div class="container">
         <main role="main" class="pb-3">
-            <div class="content-wrapper">
-                @RenderBody()
-            </div>
+            @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted d-none">
-    </footer>
-
-    <!-- Scripts -->
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
-
-    <!-- Global Settings Modal -->
-    <div id="settingsModal" class="notification-modal" style="display: none;">
-        <div class="notification-content animate-in" style="max-width: 450px;">
-            <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold mb-0">System Settings</h3>
-                <button class="btn-close" onclick="closeSettings()"></button>
-            </div>
-            <div class="modal-body py-2">
-                <div class="d-flex align-items-center justify-content-between p-3 border rounded-4 mb-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="stat-icon-wrapper d-flex align-items-center justify-content-center rounded-3 bg-light" style="width: 45px; height: 45px;">
-                            <i class="fas fa-moon text-primary fs-5"></i>
-                        </div>
-                        <div class="text-start">
-                            <h6 class="fw-bold mb-0">Night Mode</h6>
-                            <p class="small text-muted mb-0">Switch to dark theme</p>
-                        </div>
-                    </div>
-                    <div class="form-check form-switch fs-4">
-                        <input class="form-check-input" type="checkbox" id="nightModeToggle" onchange="toggleTheme(this.checked)">
-                    </div>
-                </div>
-            </div>
-            <button class="notification-close-btn w-100 mt-3" onclick="closeSettings()">Close</button>
-        </div>
-    </div>
-
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- SignalR CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
-        // --- Notification System ---
-        const campusId = "@User.FindFirst("ActiveCampusId")?.Value";
-        
-        let connection = null;
-        try {
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl("/notificationHub")
-                .withAutomaticReconnect()
-                .build();
-
-            connection.on("ReceiveNotification", (notif) => {
-                showToast(notif.title, notif.message, notif.type.toLowerCase());
-                
-                // Update badge
-                const badge = document.getElementById('notificationBadge');
-                const label = document.getElementById('notifCountLabel');
-                if (badge) {
-                    badge.classList.remove('d-none');
-                    let count = parseInt(badge.innerText) || 0;
-                    count++;
-                    badge.innerText = count;
-                    if (label) label.innerText = `${count} New`;
-                    
-                    // Add pulse animation
-                    const bell = document.getElementById('notificationBell');
-                    if (bell) {
-                        bell.classList.add('animate-pulse');
-                    }
-                }
-            });
-        } catch (e) {
-            console.error("SignalR Init Error:", e);
-        }
-
-        async function startConnection() {
-            if (!connection) return;
-            try {
-                await connection.start();
-                console.log("Connected to NotificationHub");
-                if (campusId) {
-                    await connection.invoke("JoinCampus", parseInt(campusId));
-                }
-            } catch (err) {
-                console.error("SignalR Connection Error: ", err);
-                setTimeout(startConnection, 5000);
-            }
-        }
-
-        function showToast(title, message, type = "info") {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `premium-toast ${type}`;
-            
-            let iconClass = "fas fa-info-circle";
-            if (type === "success") iconClass = "fas fa-check-circle";
-            if (type === "warning") iconClass = "fas fa-exclamation-triangle";
-            if (type === "danger") iconClass = "fas fa-times-circle";
-            if (type === "chat") iconClass = "fas fa-comment-dots";
-
-            toast.innerHTML = `
-                <div class="toast-icon">
-                    <i class="${iconClass}"></i>
-                </div>
-                <div class="toast-content">
-                    <div class="toast-title">${title}</div>
-                    <div class="toast-message">${message}</div>
-                </div>
-                <button class="toast-close" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.animation = "toastOut 0.5s forwards";
-                setTimeout(() => toast.remove(), 500);
-            }, 6000);
-        }
-
-        if ("@User.Identity?.IsAuthenticated" === "True") {
-            startConnection();
-        }
-
-        // Close settings on backdrop click
-        window.addEventListener('click', function(event) {
-            const modal = document.getElementById('settingsModal');
-            if (event.target === modal) closeSettings();
-        });
-
-        // --- Breadcrumb System ---
-        function updateBreadcrumbs() {
-            const path = window.location.pathname;
-            const breadcrumb = document.getElementById('mainBreadcrumb');
-            if (!breadcrumb) return;
-
-            breadcrumb.innerHTML = '';
-
-            // Default Dashboard Home
-            const homeItem = document.createElement('li');
-            homeItem.className = 'breadcrumb-item';
-            homeItem.innerHTML = '<a href="/Dashboard/Index"><i class="fas fa-home me-1"></i> Dashboard</a>';
-            breadcrumb.appendChild(homeItem);
-
-            if (path === '/' || path.toLowerCase() === '/dashboard' || path.toLowerCase() === '/dashboard/index') {
-                homeItem.classList.add('active');
-                homeItem.innerHTML = '<i class="fas fa-home me-1"></i> Dashboard';
-                return;
-            }
-
-            const segments = path.split('/').filter(s => s && s.toLowerCase() !== 'index');
-            let currentPath = '';
-
-            segments.forEach((segment, index) => {
-                currentPath += `/${segment}`;
-                const isLast = index === segments.length - 1;
-                
-                const item = document.createElement('li');
-                item.className = 'breadcrumb-item' + (isLast ? ' active' : '');
-                
-                // Format segment name
-                let name = segment.replace(/([A-Z])/g, ' $1').trim(); // Space before capitals
-                name = name.charAt(0).toUpperCase() + name.slice(1); // Capitalize
-                
-                // Handle special cases
-                if (name === "Itassets") name = "IT Assets";
-                if (name === "Apparel List") name = "Apparel Inventory";
-
-                // List of segments that should NOT be clickable (folder names without index pages)
-                const nonClickableSegments = ["Inventory", "Campus", "Community", "Account", "Admin"];
-                const isFolder = nonClickableSegments.includes(name) || nonClickableSegments.includes(segment);
-
-                if (isLast || isFolder) {
-                    item.innerText = name;
-                } else {
-                    item.innerHTML = `<a href="${currentPath}">${name}</a>`;
-                }
-                
-                breadcrumb.appendChild(item);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateBreadcrumbs();
-            
-            // Notification Bell click handler
-            const bell = document.getElementById('notificationBell');
-            if (bell) {
-                bell.addEventListener('shown.bs.dropdown', loadNotifications);
-            }
-        });
-
-        function clearNotifBadge() {
-            const badge = document.getElementById('notificationBadge');
-            const label = document.getElementById('notifCountLabel');
-            if (badge) {
-                badge.classList.add('d-none');
-                badge.innerText = '0';
-            }
-            if (label) label.innerText = '0 New';
-            
-            const bell = document.getElementById('notificationBell');
-            if (bell) bell.classList.remove('animate-pulse');
-        }
-
         async function loadNotifications() {
-            const list = document.getElementById('notificationList');
             try {
-                // Fetch latest audit logs across all types
-                const res = await fetch(`/Inventory/Consumables?handler=Logs&page=1&pageSize=10`);
-                const data = await res.json();
-                const logs = data.logs || [];
-                
-                if (logs.length === 0) {
-                    list.innerHTML = '<div class="p-4 text-center text-muted small">No recent updates.</div>';
+                const response = await fetch('/Dashboard/Index?handler=Notifications');
+                if (!response.ok) {
+                    const listEl = document.getElementById('notificationList');
+                    if (listEl) {
+                        listEl.innerHTML = `
+                            <div class="p-4 text-center text-muted">
+                                <p class="small mb-0">Unable to load updates.</p>
+                            </div>`;
+                    }
                     return;
                 }
-
-                list.innerHTML = logs.map(log => {
-                    let icon = '<i class="fas fa-info-circle text-info"></i>';
-                    if (log.action.includes('Add') || log.action.includes('Register')) icon = '<i class="fas fa-plus-circle text-success"></i>';
-                    if (log.action.includes('Delete') || log.action.includes('Remove')) icon = '<i class="fas fa-trash-alt text-danger"></i>';
-                    if (log.action.includes('Out') || log.action.includes('Reject')) icon = '<i class="fas fa-exclamation-circle text-warning"></i>';
-
-                    return `
-                        <div class="p-3 border-bottom d-flex gap-3 hover-bg-light transition-all" style="cursor: default;">
-                            <div class="fs-5 mt-1">${icon}</div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <span class="fw-bold small text-dark">${log.action}</span>
-                                    <span class="text-muted" style="font-size: 0.65rem;">${log.timestamp}</span>
-                                </div>
-                                <div class="small text-muted text-truncate" style="max-width: 240px;" title="${log.details}">
-                                    <span class="fw-bold text-secondary">${log.entityName}</span>: ${log.details}
-                                </div>
-                                <div class="small mt-1 fw-bold text-primary" style="font-size: 0.65rem;">
-                                    <i class="fas fa-user me-1"></i>${log.username || 'System'}
-                                </div>
+                const notifs = await response.json();
+                
+                const listEl = document.getElementById('notificationList');
+                const badgeEl = document.getElementById('notificationBadge');
+                const labelEl = document.getElementById('notifCountLabel');
+                
+                if (!listEl) return;
+                
+                if (!notifs || notifs.length === 0) {
+                    listEl.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-check-double mb-2 text-success" style="font-size: 1.5rem;"></i>
+                            <p class="small mb-0 fw-semibold text-slate-800">You're all caught up!</p>
+                            <p class="text-slate-400" style="font-size: 0.75rem;">No new activity or request updates found.</p>
+                        </div>`;
+                    if (badgeEl) badgeEl.classList.add('d-none');
+                    if (labelEl) labelEl.innerText = "0 New";
+                    return;
+                }
+                
+                const readNotifIds = JSON.parse(localStorage.getItem('readConsumableNotifIds') || '[]');
+                const unreadCount = notifs.filter(n => !readNotifIds.includes(n.id)).length;
+                
+                if (badgeEl) {
+                    if (unreadCount > 0) {
+                        badgeEl.innerText = unreadCount;
+                        badgeEl.classList.remove('d-none');
+                    } else {
+                        badgeEl.classList.add('d-none');
+                    }
+                }
+                if (labelEl) {
+                    labelEl.innerText = `${unreadCount} New`;
+                }
+                
+                listEl.innerHTML = '';
+                notifs.forEach(notif => {
+                    const isUnread = !readNotifIds.includes(notif.id);
+                    const isApproved = notif.status === 'Approved';
+                    const isRejected = notif.status === 'Rejected';
+                    
+                    let statusIcon = '<div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;"><i class="fas fa-hourglass-half" style="font-size: 0.85rem;"></i></div>';
+                    if (isApproved) {
+                        statusIcon = '<div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;"><i class="fas fa-check" style="font-size: 0.85rem;"></i></div>';
+                    } else if (isRejected) {
+                        statusIcon = '<div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;"><i class="fas fa-times" style="font-size: 0.85rem;"></i></div>';
+                    }
+                    
+                    const itemEl = document.createElement('a');
+                    itemEl.href = notif.url || '#';
+                    itemEl.className = `dropdown-item p-3 border-bottom d-flex align-items-start gap-3 hover-bg-slate-50 transition-all ${isUnread ? 'bg-light-blue fw-semibold' : ''}`;
+                    itemEl.style.whiteSpace = 'normal';
+                    itemEl.style.cursor = 'pointer';
+                    
+                    // Format nice human-readable relative time
+                    const dateVal = new Date(notif.timestamp);
+                    const formattedTime = dateVal.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    
+                    itemEl.innerHTML = `
+                        ${statusIcon}
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                <span class="small fw-bold text-dark text-truncate" style="font-size: 0.85rem;">${notif.title}</span>
+                                <span class="text-muted" style="font-size: 0.7rem; flex-shrink: 0; margin-left: 8px;">${formattedTime}</span>
                             </div>
+                            <p class="text-secondary mb-0 text-break" style="font-size: 0.78rem; line-height: 1.35;">${notif.message}</p>
                         </div>
                     `;
-                }).join('');
-            } catch (e) {
-                list.innerHTML = '<div class="p-4 text-center text-danger small">Failed to load updates.</div>';
+                    
+                    itemEl.addEventListener('click', (e) => {
+                        markAsRead(notif.id);
+                    });
+                    
+                    listEl.appendChild(itemEl);
+                });
+            } catch (err) {
+                console.error("Error loading notifications: ", err);
             }
         }
+
+        function markAsRead(id) {
+            const readNotifIds = JSON.parse(localStorage.getItem('readConsumableNotifIds') || '[]');
+            if (!readNotifIds.includes(id)) {
+                readNotifIds.push(id);
+                localStorage.setItem('readConsumableNotifIds', JSON.stringify(readNotifIds));
+            }
+            loadNotifications();
+        }
+
+        function clearNotifBadge() {
+            const readNotifIds = JSON.parse(localStorage.getItem('readConsumableNotifIds') || '[]');
+            fetch('/Dashboard/Index?handler=Notifications')
+                .then(r => r.ok ? r.json() : [])
+                .then(notifs => {
+                    notifs.forEach(n => {
+                        if (!readNotifIds.includes(n.id)) {
+                            readNotifIds.push(n.id);
+                        }
+                    });
+                    localStorage.setItem('readConsumableNotifIds', JSON.stringify(readNotifIds));
+                    loadNotifications();
+                })
+                .catch(err => console.error(err));
+        }
+
+        // Auto load notifications when DOM loads
+        if (document.getElementById('notificationBell')) {
+            document.addEventListener('DOMContentLoaded', () => {
+                loadNotifications();
+                // Poll every 30 seconds for live updates
+                setInterval(loadNotifications, 30000);
+            });
+        }
     </script>
-
-    <partial name="_NotificationPartial" />
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
-
 </html>

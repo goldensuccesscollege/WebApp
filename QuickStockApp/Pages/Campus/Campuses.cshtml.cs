@@ -22,12 +22,12 @@ namespace QuickStockApp.Pages.Campus
         [BindProperty]
         public CampusDto Campus { get; set; } = new();
 
-        public string UserRole { get; set; } = "User";
+        public string UserRole { get; set; } = "Staff";
         public int? AssignedCampusId { get; set; }
 
         public async Task OnGetAsync()
         {
-            UserRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+            UserRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Staff";
             Campuses = await _apiService.GetCampusesAsync();
 
             // If regular user is assigned to specific campuses, show only those

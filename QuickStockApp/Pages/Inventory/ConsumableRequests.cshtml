@@ -1,0 +1,792 @@
+@page
+@model QuickStockApp.Pages.Inventory.ConsumableRequestsModel
+@{
+    ViewData["Title"] = "Consumables Requests";
+    var isStaff = User.IsInRole("Staff");
+    var isManager = User.IsInRole("Manager");
+    var isAdmin = User.IsInRole("Admin");
+    var canApprove = isAdmin || isManager;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="container-fluid px-4 py-4 main-content-container">
+    <!-- Header Area -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 animate-in">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="/Inventory/Consumables" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Back to Inventory">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h1 class="h2 mb-0 text-dark fw-800 tracking-tight">Consumable Requests</h1>
+            </div>
+            <p class="text-muted small mb-0 ms-5">Manage and track stock addition, deduction, or item creation requests under @Model.CampusName.</p>
+        </div>
+        <div class="action-group d-flex gap-2">
+            <a href="/Inventory/Consumables" class="btn btn-outline-primary rounded-pill px-4 shadow-sm py-2 fw-bold" style="border-color: #1F3C88; color: #1F3C88; font-size: 0.9rem;">
+                <i class="bi bi-box-seam me-2"></i> Consumables Inventory
+            </a>
+        </div>
+    </div>
+
+    <!-- Feedback Message -->
+    @if (!string.IsNullOrEmpty(Model.FeedbackMessage))
+    {
+        <div class="alert @(Model.IsSuccessState ? "alert-success border-success-subtle" : "alert-danger border-danger-subtle") alert-dismissible fade show shadow-premium rounded-4 mb-4 animate-scale" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="alert-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center @(Model.IsSuccessState ? "bg-success text-white" : "bg-danger text-white")" style="width: 38px; height: 38px;">
+                    <i class="bi @(Model.IsSuccessState ? "bi-check-lg" : "bi-exclamation-triangle-fill") fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark">@(Model.IsSuccessState ? "Action Successful" : "Action Failed")</h6>
+                    <span class="text-secondary small">@Model.FeedbackMessage</span>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Request & Approval Workflow Panels -->
+    @if (isStaff)
+    {
+        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var myRequests = Model.ConsumableRequests?.Where(r => r.RequestorId == currentUserId).ToList() ?? new List<QuickStockApp.Models.ConsumableRequestDto>();
+
+        <div class="saas-table-container animate-in">
+            <div class="p-4 border-bottom bg-slate-50 d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="h5 mb-1 text-dark fw-bold">My Stock Requests</h3>
+                    <p class="text-muted small mb-0">Track the status of your pending, approved, and rejected requests.</p>
+                </div>
+                <span class="badge bg-slate-200 text-slate-700 rounded-pill px-3 py-2 fw-semibold">@myRequests.Count Total</span>
+            </div>
+            <div class="table-responsive">
+                <table class="saas-table" id="myRequestsTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4" style="width: 25%;">Product Name</th>
+                            <th style="width: 15%;">Product Type</th>
+                            <th style="width: 15%;">Request Type</th>
+                            <th style="width: 15%;">Quantity</th>
+                            <th style="width: 15%;">Status</th>
+                            <th style="width: 15%;">Date Requested</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!myRequests.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-slate-400">
+                                    <div class="py-4 d-flex flex-column align-items-center">
+                                        <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-file-earmark-text fs-4 text-slate-500"></i>
+                                        </div>
+                                        <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">No requests submitted</span>
+                                        <span class="small text-slate-500">Any stock adjustments or creation requests you make will appear here.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var req in myRequests)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-semibold text-slate-900">
+                                        @req.ProductName
+                                    </td>
+                                    <td>
+                                        <span class="saas-type-pill">
+                                            <i class="bi bi-tag-fill"></i> @req.ProductType
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var reqTypeClass = req.RequestType.ToLower() switch
+                                            {
+                                                "create" => "status-create",
+                                                "add" => "status-add",
+                                                "deduct" => "status-deduct",
+                                                _ => ""
+                                            };
+                                        }
+                                        <span class="saas-badge-status @reqTypeClass">
+                                            <span class="status-dot @(req.RequestType.ToLower() == "create" ? "bg-indigo-500" : req.RequestType.ToLower() == "add" ? "bg-emerald-500" : "bg-rose-500")"></span>
+                                            @req.RequestType
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-slate-800">@req.Count Units</td>
+                                    <td>
+                                        @{
+                                            var statusClass = req.Status.ToLower() switch
+                                            {
+                                                "pending" => "status-pending",
+                                                "approved" => "status-success",
+                                                "rejected" => "status-danger",
+                                                _ => ""
+                                            };
+                                        }
+                                        <span class="saas-badge-status @statusClass">
+                                            <span class="status-dot @(req.Status.ToLower() == "approved" ? "bg-emerald-500" : req.Status.ToLower() == "rejected" ? "bg-rose-500" : "bg-amber-500")"></span>
+                                            @req.Status
+                                        </span>
+                                        @if (req.Status.ToLower() == "rejected" && !string.IsNullOrEmpty(req.RejectionReason))
+                                        {
+                                            <small class="d-block text-danger mt-1" style="max-width: 200px; font-size: 0.75rem; line-height: 1.2;">
+                                                <strong>Reason:</strong> @req.RejectionReason
+                                            </small>
+                                        }
+                                    </td>
+                                    <td class="small text-muted">
+                                        <i class="bi bi-clock me-1 text-slate-400"></i>
+                                        @req.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <!-- Dynamic Pagination Container -->
+            <div id="myRequestsPager" class="p-3 border-top bg-light d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"></div>
+        </div>
+    }
+
+    @if (canApprove)
+    {
+        var pendingRequests = Model.ConsumableRequests?.Where(r => r.Status == "Pending").ToList() ?? new List<QuickStockApp.Models.ConsumableRequestDto>();
+        var pastRequests = Model.ConsumableRequests?.Where(r => r.Status != "Pending").ToList() ?? new List<QuickStockApp.Models.ConsumableRequestDto>();
+
+        <div class="saas-table-container animate-in">
+            <div class="p-4 border-bottom bg-slate-50 d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="h5 mb-1 text-dark fw-bold">Pending Consumable Requests</h3>
+                    <p class="text-muted small mb-0">Review, approve, or reject inventory requests from staff members.</p>
+                </div>
+                <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: #fffbeb; color: #b45309;">@pendingRequests.Count Pending</span>
+            </div>
+            <div class="table-responsive">
+                <table class="saas-table" id="pendingRequestsTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4" style="width: 20%;">Requestor</th>
+                            <th style="width: 20%;">Product Details</th>
+                            <th style="width: 15%;">Request Type</th>
+                            <th style="width: 15%;">Quantity</th>
+                            <th style="width: 15%;">Date Requested</th>
+                            <th class="text-end pe-4" style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!pendingRequests.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-slate-400">
+                                    <div class="py-4 d-flex flex-column align-items-center">
+                                        <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-shield-check fs-4 text-slate-500"></i>
+                                        </div>
+                                        <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">All caught up!</span>
+                                        <span class="small text-slate-500">There are no pending stock adjustment requests requiring your attention.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var req in pendingRequests)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-slate-900">@req.RequestorName</div>
+                                        <div class="text-slate-500 small">ID: @req.RequestorId</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-slate-900">@req.ProductName</div>
+                                        <span class="saas-type-pill mt-1">
+                                            <i class="bi bi-tag-fill"></i> @req.ProductType
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var reqTypeClass = req.RequestType.ToLower() switch
+                                            {
+                                                "create" => "status-create",
+                                                "add" => "status-add",
+                                                "deduct" => "status-deduct",
+                                                _ => ""
+                                            };
+                                        }
+                                        <span class="saas-badge-status @reqTypeClass">
+                                            <span class="status-dot @(req.RequestType.ToLower() == "create" ? "bg-indigo-500" : req.RequestType.ToLower() == "add" ? "bg-emerald-500" : "bg-rose-500")"></span>
+                                            @req.RequestType
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-slate-800">@req.Count Units</td>
+                                    <td class="small text-muted">
+                                        <i class="bi bi-clock me-1 text-slate-400"></i>
+                                        @req.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <form method="post" asp-page-handler="ApproveRequest" asp-route-id="@req.Id" style="display:inline;">
+                                                <button type="submit" class="saas-btn-action btn-action-plus" title="Approve" data-bs-toggle="tooltip">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="saas-btn-action btn-action-minus" title="Reject" data-bs-toggle="tooltip" onclick="launchRejectionModal(@req.Id)">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <!-- Dynamic Pagination Controls -->
+            <div id="pendingRequestsPager" class="p-3 border-top bg-light d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"></div>
+        </div>
+
+        <div class="saas-table-container mt-5 mb-5 animate-in">
+            <div class="p-4 border-bottom bg-slate-50 d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="h5 mb-1 text-dark fw-bold">Request Log History</h3>
+                    <p class="text-muted small mb-0">Audit log of previously resolved staff consumable requests.</p>
+                </div>
+                <span class="badge bg-slate-200 text-slate-700 rounded-pill px-3 py-2 fw-semibold">@pastRequests.Count Total</span>
+            </div>
+            <div class="table-responsive">
+                <table class="saas-table" id="pastRequestsTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4" style="width: 20%;">Requestor</th>
+                            <th style="width: 20%;">Product Details</th>
+                            <th style="width: 15%;">Request Type</th>
+                            <th style="width: 10%;">Quantity</th>
+                            <th style="width: 15%;">Status / Decision</th>
+                            <th style="width: 20%;">Resolved By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!pastRequests.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-slate-400">
+                                    <div class="py-4 d-flex flex-column align-items-center">
+                                        <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-journal-text fs-4 text-slate-500"></i>
+                                        </div>
+                                        <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">No past request history</span>
+                                        <span class="small text-slate-500">Once pending requests are approved or rejected, they will be archived here.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var req in pastRequests)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-slate-900">@req.RequestorName</div>
+                                        <div class="text-slate-500 small">ID: @req.RequestorId</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-slate-900">@req.ProductName</div>
+                                        <span class="saas-type-pill mt-1">
+                                            <i class="bi bi-tag-fill"></i> @req.ProductType
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var reqTypeClass = req.RequestType.ToLower() switch
+                                            {
+                                                "create" => "status-create",
+                                                "add" => "status-add",
+                                                "deduct" => "status-deduct",
+                                                _ => ""
+                                            };
+                                        }
+                                        <span class="saas-badge-status @reqTypeClass">
+                                            <span class="status-dot @(req.RequestType.ToLower() == "create" ? "bg-indigo-500" : req.RequestType.ToLower() == "add" ? "bg-emerald-500" : "bg-rose-500")"></span>
+                                            @req.RequestType
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-slate-800">@req.Count Units</td>
+                                    <td>
+                                        @{
+                                            var statusClass = req.Status.ToLower() switch
+                                            {
+                                                "approved" => "status-success",
+                                                "rejected" => "status-danger",
+                                                _ => ""
+                                            };
+                                        }
+                                        <span class="saas-badge-status @statusClass">
+                                            <span class="status-dot @(req.Status.ToLower() == "approved" ? "bg-emerald-500" : req.Status.ToLower() == "rejected" ? "bg-rose-500" : "bg-amber-500")"></span>
+                                            @req.Status
+                                        </span>
+                                        @if (req.Status.ToLower() == "rejected" && !string.IsNullOrEmpty(req.RejectionReason))
+                                        {
+                                            <small class="d-block text-danger mt-1" style="max-width: 200px; font-size: 0.75rem; line-height: 1.2;">
+                                                <strong>Reason:</strong> @req.RejectionReason
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(req.ReviewerName))
+                                        {
+                                            <div class="fw-semibold text-slate-900">@req.ReviewerName</div>
+                                            <div class="text-slate-500 small">ID: @req.ReviewerId</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">System</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <!-- Dynamic Pagination Controls -->
+            <div id="pastRequestsPager" class="p-3 border-top bg-light d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"></div>
+        </div>
+    }
+</div>
+
+<!-- Rejection Reason Modal -->
+<div class="modal fade" id="rejectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-premium rounded-4 overflow-hidden modal-blur">
+            <form method="post" asp-page-handler="RejectRequest" id="rejectionForm">
+                <input type="hidden" name="id" id="rejectRequestId" />
+                <div class="modal-header border-0 bg-danger text-white py-3 transition-all">
+                    <h5 class="modal-title fw-800 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-octagon"></i> Reject Stock Request
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body px-4 py-4">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Rejection Reason</label>
+                        <textarea class="form-control rounded-3" name="reason" rows="3" placeholder="Please explain why this request is being rejected..." required></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top-0 px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger text-white px-4 py-2 rounded-pill fw-bold border-0 shadow-sm">Reject Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* SaaS Dashboard Design System */
+    :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+
+        --emerald-50: #ecfdf5;
+        --rose-50: #fff1f2;
+        
+        --primary-brand: #1F3C88;
+        --shadow-premium: 0 15px 30px rgba(31, 60, 136, 0.08);
+    }
+
+    body {
+        background-color: #fafafa;
+        color: var(--slate-700);
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .main-content-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .fw-800 { font-weight: 800; }
+    .tracking-tight { letter-spacing: -0.03em; }
+
+    /* Table Styles */
+    .saas-table-container {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .saas-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .saas-table thead {
+        background-color: var(--slate-50);
+        border-bottom: 1px solid var(--slate-200);
+    }
+
+    .saas-table th {
+        padding: 14px 18px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--slate-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border: none;
+    }
+
+    .saas-table tbody tr {
+        border-bottom: 1px solid var(--slate-100);
+        transition: background-color 0.15s ease;
+    }
+
+    .saas-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .saas-table tbody tr:hover {
+        background-color: rgba(248, 250, 252, 0.6);
+    }
+
+    .saas-table td {
+        padding: 14px 18px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--slate-700);
+    }
+
+    /* Product Type Pills */
+    .saas-type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        background-color: var(--slate-100);
+        color: var(--slate-700);
+        border: 1px solid var(--slate-200);
+    }
+
+    /* Status Badges */
+    .saas-badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 20px;
+        border: 1px solid transparent;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Status Color Mappings */
+    .status-pending {
+        background-color: #fffbeb;
+        color: #b45309;
+        border-color: #fde68a;
+    }
+    .status-success {
+        background-color: #ecfdf5;
+        color: #047857;
+        border-color: #a7f3d0;
+    }
+    .status-danger {
+        background-color: #fff1f2;
+        color: #be123c;
+        border-color: #fecdd3;
+    }
+
+    .status-create {
+        background-color: #e0e7ff;
+        color: #3730a3;
+        border-color: #c7d2fe;
+    }
+    .status-add {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border-color: #a7f3d0;
+    }
+    .status-deduct {
+        background-color: #fff1f2;
+        color: #9f1239;
+        border-color: #fecdd3;
+    }
+
+    /* Actions Buttons */
+    .saas-btn-action {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--slate-200);
+        background-color: #ffffff;
+        color: var(--slate-500);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .saas-btn-action:hover {
+        background-color: var(--slate-50);
+        color: var(--slate-800);
+        border-color: var(--slate-300);
+    }
+
+    .btn-action-plus:hover {
+        background-color: var(--emerald-50) !important;
+        border-color: #a7f3d0 !important;
+        color: #059669 !important;
+    }
+
+    .btn-action-minus:hover {
+        background-color: var(--rose-50) !important;
+        border-color: #fecdd3 !important;
+        color: #e11d48 !important;
+    }
+
+    /* Modal styling */
+    .modal-blur {
+        backdrop-filter: blur(8px);
+        background: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    body.dark-mode .modal-blur {
+        background: rgba(15, 23, 42, 0.95) !important;
+    }
+
+    /* Dark Mode Overrides */
+    body.dark-mode {
+        background-color: #0b0f19;
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .h2, body.dark-mode .h3, body.dark-mode .h5, body.dark-mode .fw-bold {
+        color: #ffffff !important;
+    }
+
+    body.dark-mode .saas-table-container {
+        background-color: #0f172a;
+        border-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table thead {
+        background-color: #1e293b;
+        border-bottom-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table th {
+        color: var(--slate-400);
+    }
+
+    body.dark-mode .saas-table tbody tr {
+        border-bottom-color: var(--slate-800);
+    }
+
+    body.dark-mode .saas-table tbody tr:hover {
+        background-color: rgba(30, 41, 59, 0.4);
+    }
+
+    body.dark-mode .saas-table td {
+        color: var(--slate-300);
+    }
+
+    body.dark-mode .saas-type-pill {
+        background-color: var(--slate-800);
+        color: var(--slate-300);
+        border-color: var(--slate-700);
+    }
+
+    body.dark-mode .saas-btn-action {
+        background-color: #0f172a;
+        border-color: var(--slate-800);
+        color: var(--slate-400);
+    }
+
+    body.dark-mode .saas-btn-action:hover {
+        color: #ffffff;
+        border-color: var(--slate-600);
+    }
+
+    body.dark-mode .btn-action-plus:hover {
+        background-color: rgba(16, 185, 129, 0.1) !important;
+        border-color: rgba(16, 185, 129, 0.3) !important;
+        color: #10b981 !important;
+    }
+
+    body.dark-mode .btn-action-minus:hover {
+        background-color: rgba(244, 63, 94, 0.1) !important;
+        border-color: rgba(244, 63, 94, 0.3) !important;
+        color: #f43f5e !important;
+    }
+
+    /* Animation Utilities */
+    .animate-in {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .animate-scale {
+        animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Enable tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Initialize Pagination
+            paginateTable('myRequestsTable', 'myRequestsPager', 10);
+            paginateTable('pendingRequestsTable', 'pendingRequestsPager', 10);
+            paginateTable('pastRequestsTable', 'pastRequestsPager', 10);
+        });
+
+        function paginateTable(tableId, pagerId, pageSize) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            // Only paginate actual data rows, exclude empty state row
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.querySelector('td[colspan]'));
+            if (rows.length === 0) {
+                // If there are no data rows (empty state), hide the pager container
+                const pager = document.getElementById(pagerId);
+                if (pager) pager.style.display = 'none';
+                return;
+            }
+
+            let currentPage = 1;
+            const totalPages = Math.ceil(rows.length / pageSize);
+
+            const container = document.getElementById(pagerId);
+            if (!container) return;
+
+            function showPage(page) {
+                currentPage = page;
+                const start = (page - 1) * pageSize;
+                const end = start + pageSize;
+
+                rows.forEach((row, index) => {
+                    if (index >= start && index < end) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                updatePagerControls();
+            }
+
+            function updatePagerControls() {
+                container.innerHTML = '';
+                
+                const startEntry = (currentPage - 1) * pageSize + 1;
+                const endEntry = Math.min(currentPage * pageSize, rows.length);
+
+                // Info text
+                const info = document.createElement('span');
+                info.className = 'text-muted small fw-semibold';
+                info.innerText = `Showing ${startEntry} to ${endEntry} of ${rows.length} entries`;
+                container.appendChild(info);
+
+                // Button group
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'd-flex gap-1 align-items-center';
+
+                // Prev Button
+                const prevBtn = document.createElement('button');
+                prevBtn.type = 'button';
+                prevBtn.className = `btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold ${currentPage === 1 ? 'disabled' : ''}`;
+                prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i> Prev';
+                if (currentPage > 1) {
+                    prevBtn.addEventListener('click', () => showPage(currentPage - 1));
+                }
+                btnGroup.appendChild(prevBtn);
+
+                // Dynamic Page numbers helper
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.type = 'button';
+                    pageBtn.className = `btn btn-sm rounded-circle fw-bold ${currentPage === i ? 'btn-primary text-white border-0' : 'btn-outline-secondary'}`;
+                    pageBtn.style.width = '32px';
+                    pageBtn.style.height = '32px';
+                    pageBtn.style.display = 'inline-flex';
+                    pageBtn.style.alignItems = 'center';
+                    pageBtn.style.justifyContent = 'center';
+                    pageBtn.style.fontSize = '0.8rem';
+                    if (currentPage === i) {
+                        pageBtn.style.background = 'linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%)';
+                    }
+                    pageBtn.innerText = i;
+                    pageBtn.addEventListener('click', () => showPage(i));
+                    btnGroup.appendChild(pageBtn);
+                }
+
+                // Next Button
+                const nextBtn = document.createElement('button');
+                nextBtn.type = 'button';
+                nextBtn.className = `btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextBtn.innerHTML = 'Next <i class="bi bi-chevron-right"></i>';
+                if (currentPage < totalPages) {
+                    nextBtn.addEventListener('click', () => showPage(currentPage + 1));
+                }
+                btnGroup.appendChild(nextBtn);
+
+                container.appendChild(btnGroup);
+            }
+
+            showPage(1);
+        }
+
+        function launchRejectionModal(requestId) {
+            document.getElementById('rejectRequestId').value = requestId;
+            const form = document.getElementById('rejectionForm');
+            form.querySelector('textarea[name="reason"]').value = '';
+            var rejectModal = new bootstrap.Modal(document.getElementById('rejectionModal'));
+            rejectModal.show();
+        }
+    </script>
+}
