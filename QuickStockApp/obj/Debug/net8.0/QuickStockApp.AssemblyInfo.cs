@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QuickStockApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48ca8204982be109079fbb12b6f785f050dc5170")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a85099625a642af6f80af7cbaf44b718eb3c1004")]
 [assembly: System.Reflection.AssemblyProductAttribute("QuickStockApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QuickStockApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

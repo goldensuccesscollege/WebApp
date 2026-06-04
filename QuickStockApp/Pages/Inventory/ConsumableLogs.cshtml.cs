@@ -24,6 +24,13 @@ namespace QuickStockApp.Pages.Inventory
         [BindProperty(SupportsGet = true)]
         public int? SelectedCampusId { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public int CurrentPage { get; set; } = 1;
+
+        public int TotalPages { get; set; }
+        public int TotalItems { get; set; }
+        public int PageSize { get; set; } = 15;
+
         public async Task<IActionResult> OnGetAsync()
         {
             var hasAccess = User.IsInRole("Admin") || 
@@ -43,8 +50,12 @@ namespace QuickStockApp.Pages.Inventory
                 activeCampusId = acid;
             }
 
-            var logsResult = await _reportService.GetAuditLogsPaginatedAsync(activeCampusId, 1, 500, "Consumable");
+            if (CurrentPage < 1) CurrentPage = 1;
+
+            var logsResult = await _reportService.GetAuditLogsPaginatedAsync(activeCampusId, CurrentPage, PageSize, "Consumable");
             ConsumableLogs = logsResult?.Logs ?? new();
+            TotalPages = logsResult?.TotalPages ?? 1;
+            TotalItems = logsResult?.TotalItems ?? 0;
 
             return Page();
         }

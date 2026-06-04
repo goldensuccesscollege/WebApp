@@ -4,10 +4,10 @@
     ViewData["Title"] = "Library";
     var isAdmin = User.IsInRole("Admin");
     var isManager = User.IsInRole("Manager");
-    var isStaff = User.IsInRole("Staff");
+    var isEmployee = User.IsInRole("Employee");
     
     // Permission helpers
-    var canAdd = isAdmin || isManager || isStaff;
+    var canAdd = isAdmin || isManager || isEmployee;
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
 }

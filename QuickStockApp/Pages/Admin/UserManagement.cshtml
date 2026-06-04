@@ -237,7 +237,7 @@
                 <div class="col-md-6">
                     <label class="form-label">Role</label>
                     <select asp-for="NewUser.Role" class="premium-input">
-                        <option value="Staff">Staff</option>
+                        <option value="Employee">Employee</option>
                         <option value="Manager">Manager</option>
                         <option value="Admin">Administrator</option>
                     </select>
@@ -305,7 +305,7 @@
                 <div class="col-md-12">
                     <label class="form-label">Role</label>
                     <select asp-for="EditUser.Role" id="editRole" class="premium-input">
-                        <option value="Staff">Staff</option>
+                        <option value="Employee">Employee</option>
                         <option value="Manager">Manager</option>
                         <option value="Admin">Administrator</option>
                     </select>
@@ -376,7 +376,7 @@
     .role-badge { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
     .role-admin { background: #ede9fe; color: #5b21b6; }
     .role-manager { background: #e0f2fe; color: #075985; }
-    .role-staff { background: #f1f5f9; color: #475569; }
+    .role-employee { background: #f1f5f9; color: #475569; }
 
     .campus-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .campus-chip { background: white; border: 1px solid var(--glass-border); padding: 0.3rem 0.8rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }

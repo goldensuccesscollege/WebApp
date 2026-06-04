@@ -5,14 +5,14 @@
     var apCampusId = User.FindFirst("ActiveCampusId")?.Value;
     var apIsAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
     var isManager = User.IsInRole("Manager");
-    var isStaff = User.IsInRole("Staff");
+    var isEmployee = User.IsInRole("Employee");
     var isViewer = User.IsInRole("Viewer");
     
     // Permission helpers
-    var canAdd = apIsAdmin || isManager || isStaff;
+    var canAdd = apIsAdmin || isManager || isEmployee;
     var canUpdate = apIsAdmin || isManager;
     var canDelete = apIsAdmin;
-    var canSeeLogsReports = apIsAdmin || isManager || isStaff;
+    var canSeeLogsReports = apIsAdmin || isManager || isEmployee;
 
     bool showListTab = !string.IsNullOrEmpty(Model.SearchTerm) || Model.CurrentPage > 1 || Request.Query.ContainsKey("showList");
 }
@@ -390,7 +390,7 @@
                                             </form>
                                         }
                                     }
-                                    else if (isStaff || isViewer)
+                                    else if (isEmployee || isViewer)
                                     {
                                         <span class="text-muted small">View Only</span>
                                     }
@@ -608,7 +608,7 @@
                         </div>
                         <div class="input-group-premium">
                             <label asp-for="ApparelItem.Category">Category</label>
-                            <input asp-for="ApparelItem.Category" id="category" placeholder="e.g. Staff Uniform" required />
+                            <input asp-for="ApparelItem.Category" id="category" placeholder="e.g. Employee Uniform" required />
                         </div>
                     </div>
                     <div class="form-row">

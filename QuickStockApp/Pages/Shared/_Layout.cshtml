@@ -138,8 +138,26 @@
             @if (globalCanIT || globalCanFurniture) { <div class="drawer-section-label">Inventory &amp; Assets</div> }
             @if (globalCanIT)
             {
-                <a href="/Inventory/ItAssets" class="drawer-link @(ViewData["Title"]?.ToString() == "IT Assets" ? "active" : "")"><i class="fas fa-laptop"></i> IT Assets</a>
-                <a href="/Inventory/Rooms" class="drawer-link @(ViewData["Title"]?.ToString() == "Room Management" ? "active" : "")"><i class="fas fa-door-open"></i> Room Management</a>
+                var isItActive = ViewData["Title"]?.ToString() == "IT Assets" || ViewData["Title"]?.ToString() == "Room Management";
+                <div class="drawer-dropdown">
+                    <a href="javascript:void(0)" class="drawer-link dropdown-toggle @(isItActive ? "active" : "")" 
+                       data-bs-toggle="collapse" data-bs-target="#itAssetsSubmenu" 
+                       aria-expanded="@(isItActive ? "true" : "false")">
+                        <i class="fas fa-laptop"></i> 
+                        <span>IT Assets</span>
+                        <i class="fas fa-chevron-down ms-auto dropdown-arrow"></i>
+                    </a>
+                    <div class="collapse @(isItActive ? "show" : "")" id="itAssetsSubmenu">
+                        <div class="drawer-submenu">
+                            <a href="/Inventory/ItAssets" class="drawer-sublink @(ViewData["Title"]?.ToString() == "IT Assets" ? "active" : "")">
+                                <i class="fas fa-laptop"></i> Assets
+                            </a>
+                            <a href="/Inventory/Rooms" class="drawer-sublink @(ViewData["Title"]?.ToString() == "Room Management" ? "active" : "")">
+                                <i class="fas fa-door-open"></i> Room Management
+                            </a>
+                        </div>
+                    </div>
+                </div>
             }
             @if (globalCanFurniture)
             {
@@ -151,9 +169,39 @@
             }
             @if (canAccessConsumables)
             {
-                <a href="/Inventory/Consumables" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumable Inventory" ? "active" : "")"><i class="fas fa-box-open"></i> Consumable Inventory</a>
-                <a href="/Inventory/ConsumableRequests" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumables Requests" ? "active" : "")"><i class="fas fa-file-signature"></i> Consumable Requests</a>
-                <a href="/Inventory/ConsumableLogs" class="drawer-link @(ViewData["Title"]?.ToString() == "Consumables Activity Logs" ? "active" : "")"><i class="fas fa-history"></i> Consumable Logs</a>
+                var isConsumablesActive = ViewData["Title"]?.ToString() == "Consumable Inventory Management" || 
+                                          ViewData["Title"]?.ToString() == "Consumable Inventory" || 
+                                          ViewData["Title"]?.ToString() == "Consumable Inventory Ledger" || 
+                                          ViewData["Title"]?.ToString() == "Consumables Requests" || 
+                                          ViewData["Title"]?.ToString() == "Consumables Activity Logs";
+                <div class="drawer-dropdown">
+                    <a href="javascript:void(0)" class="drawer-link dropdown-toggle @(isConsumablesActive ? "active" : "")" 
+                       data-bs-toggle="collapse" data-bs-target="#consumablesSubmenu" 
+                       aria-expanded="@(isConsumablesActive ? "true" : "false")">
+                        <i class="fas fa-box-open"></i> 
+                        <span>Consumable Inventory</span>
+                        <i class="fas fa-chevron-down ms-auto dropdown-arrow"></i>
+                    </a>
+                    <div class="collapse @(isConsumablesActive ? "show" : "")" id="consumablesSubmenu">
+                        <div class="drawer-submenu">
+                            <a href="/Inventory/Consumables" class="drawer-sublink @(ViewData["Title"]?.ToString() == "Consumable Inventory Management" || ViewData["Title"]?.ToString() == "Consumable Inventory" ? "active" : "")">
+                                <i class="fas fa-boxes"></i> Inventory
+                            </a>
+                            @if (!User.IsInRole("Employee"))
+                            {
+                                <a href="/Inventory/ConsumableLedger" class="drawer-sublink @(ViewData["Title"]?.ToString() == "Consumable Inventory Ledger" ? "active" : "")">
+                                    <i class="fas fa-book-open"></i> Ledger
+                                </a>
+                            }
+                            <a href="/Inventory/ConsumableRequests" class="drawer-sublink @(ViewData["Title"]?.ToString() == "Consumables Requests" ? "active" : "")">
+                                <i class="fas fa-file-signature"></i> Requests
+                            </a>
+                            <a href="/Inventory/ConsumableLogs" class="drawer-sublink @(ViewData["Title"]?.ToString() == "Consumables Activity Logs" ? "active" : "")">
+                                <i class="fas fa-history"></i> Logs
+                            </a>
+                        </div>
+                    </div>
+                </div>
             }
 
             @if (canAccessApparel)
