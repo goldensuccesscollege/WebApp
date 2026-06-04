@@ -40,7 +40,7 @@ namespace QuickStockApp.Models
         public int? TargetItemId { get; set; }
         public string Status { get; set; } = "Pending";
         public string? RejectionReason { get; set; }
-        public DateTime Timestamp { get; set; }
+        public DateTime? Timestamp { get; set; }
         public string? RequestorId { get; set; }
         public string? RequestorName { get; set; }
         public string? ReviewerId { get; set; }
@@ -56,10 +56,29 @@ namespace QuickStockApp.Models
         public int Count { get; set; }
         public int? TargetItemId { get; set; }
         public int CampusId { get; set; }
+        public string? RequestorId { get; set; }
+        public string? RequestorName { get; set; }
+        public string SubmitToken { get; set; } = string.Empty;
+        public DateTime? Timestamp { get; set; }
     }
 
     public class RejectConsumableRequestCommand
     {
         public string RejectionReason { get; set; } = string.Empty;
+    }
+
+    // NEW: Data Transfer Object for Ledger Entries
+    public class ConsumableLedgerEntryDto
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductType { get; set; } = string.Empty;
+        public DateTime Date { get; set; }                  // Fixes 3 error CS1061 warnings
+        public string Action { get; set; } = string.Empty;
+        public int In { get; set; }
+        public int Out { get; set; }
+        public int Balance { get; set; }                   // Fixes 2 error CS1061 warnings
+        public string ProcessedByName { get; set; } = string.Empty; // Fixes 4 error CS1061 warnings
+        public int CampusId { get; set; }
     }
 }

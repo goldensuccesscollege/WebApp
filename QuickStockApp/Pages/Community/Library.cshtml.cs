@@ -57,7 +57,7 @@ namespace QuickStockApp.Pages.Community
         public async Task<IActionResult> OnPostAddAsync()
         {
             var isAnyAdmin = User.IsInRole("Admin");
-            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("Staff")) return Forbid();
+            if (!isAnyAdmin && !User.IsInRole("Manager") && !User.IsInRole("Employee")) return Forbid();
 
             if (Book.CampusId <= 0)
             {

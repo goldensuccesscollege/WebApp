@@ -20,7 +20,6 @@ namespace QuickStockApp.Pages
             _reportService = reportService;
         }
 
-        // Expose data layers directly to the .cshtml layout view
         public List<ConsumableResponse> ConsumablesList { get; set; } = new();
         public int ThisWeekInflow { get; set; }
         public int ThisWeekOutflow { get; set; }
@@ -37,37 +36,44 @@ namespace QuickStockApp.Pages
         [BindProperty]
         public int QuantityDelta { get; set; }
 
+        [BindProperty]
+        public System.DateTime RequestDate { get; set; } = System.DateTime.Today;
+
         [TempData]
         public string? FeedbackMessage { get; set; }
 
         [TempData]
         public bool IsSuccessState { get; set; }
 
+        // -----------------------------------------------------------------------
+        // Resolves the active campus from the user's JWT claims.
+        // -----------------------------------------------------------------------
+        private int ResolveCampusId()
+        {
+            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
+            return int.TryParse(campusIdStr, out int id) ? id : 1;
+        }
+
         public async Task<IActionResult> OnGetAsync()
         {
-            var hasAccess = User.IsInRole("Admin") || 
+            var hasAccess = User.IsInRole("Admin") ||
                             User.FindFirst("CanAccessConsumables")?.Value == "True";
 
             if (!hasAccess)
-            {
                 return Forbid();
-            }
 
-            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
             int? activeCampusId = SelectedCampusId > 0 ? SelectedCampusId : null;
-            if (!activeCampusId.HasValue && int.TryParse(campusIdStr, out int acid))
-            {
-                activeCampusId = acid;
-            }
+            if (!activeCampusId.HasValue)
+                activeCampusId = ResolveCampusId();
 
             ConsumablesList = await _consumableService.GetAllConsumablesAsync(activeCampusId);
 
             var logsResult = await _reportService.GetAuditLogsPaginatedAsync(activeCampusId, 1, 500, "Consumable");
             var logsList = logsResult?.Logs ?? new List<AuditLogDto>();
-            
+
             ThisWeekInflow = 0;
             ThisWeekOutflow = 0;
-            
+
             var cutoffDate = System.DateTime.UtcNow.AddDays(-7);
             foreach (var log in logsList)
             {
@@ -76,32 +82,38 @@ namespace QuickStockApp.Pages
                     int count = 0;
                     if (!string.IsNullOrEmpty(log.Details))
                     {
-                        var parts = log.Details.Split('|');
-                        foreach (var part in parts)
+                        foreach (var part in log.Details.Split('|'))
                         {
                             if (part.Contains("Count:"))
-                            {
                                 int.TryParse(part.Replace("Count:", "").Trim(), out count);
-                            }
                         }
                     }
 
                     if (log.Action == "Add Stock" || log.Action == "Create")
-                    {
                         ThisWeekInflow += count;
-                    }
                     else if (log.Action == "Deduct Stock")
-                    {
                         ThisWeekOutflow += count;
-                    }
                 }
             }
 
             return Page();
         }
 
+        // -----------------------------------------------------------------------
+        // ALL roles (Admin, Manager, Employee) submit through the Request pipeline.
+        // Admin / Manager can approve their own requests on the Requests page.
+        // Employee requests stay Pending until an Admin/Manager approves them.
+        // -----------------------------------------------------------------------
+
         public async Task<IActionResult> OnPostAddStockAsync()
         {
+            if (User.IsInRole("Employee"))
+            {
+                FeedbackMessage = "Access denied: Employees cannot request stock additions.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
+            }
+
             if (QuantityDelta <= 0)
             {
                 FeedbackMessage = "Quantity must be greater than zero.";
@@ -109,43 +121,25 @@ namespace QuickStockApp.Pages
                 return RedirectToPage(new { SelectedCampusId });
             }
 
-            // Resolve SelectedCampusId from user profile claim if not loaded
-            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
-            int campusId = 1;
-            if (int.TryParse(campusIdStr, out int acid))
-            {
-                campusId = acid;
-            }
+            var campusId = ResolveCampusId();
+            var consumables = await _consumableService.GetAllConsumablesAsync(campusId);
+            var item = consumables.Find(c => c.Id == TargetItemId);
 
-            // Intercept if User is in Staff Role
-            if (User.IsInRole("Staff"))
-            {
-                // Fetch details to map Name and Type to the Request
-                var consumables = await _consumableService.GetAllConsumablesAsync(campusId);
-                var item = consumables.Find(c => c.Id == TargetItemId);
-
-                var requestCommand = new CreateConsumableRequestCommand
+            var (success, message) = await _consumableService.CreateConsumableRequestAsync(
+                new CreateConsumableRequestCommand
                 {
-                    RequestType = "Add",
-                    ProductName = item?.ProductName ?? "Unknown Item",
-                    ProductType = item?.ProductType ?? "pieces",
-                    Count = QuantityDelta,
+                    RequestType  = "Add",
+                    ProductName  = item?.ProductName ?? "Unknown Item",
+                    ProductType  = item?.ProductType ?? "pieces",
+                    Count        = QuantityDelta,
                     TargetItemId = TargetItemId,
-                    CampusId = campusId
-                };
-
-                var (reqSuccess, reqMessage) = await _consumableService.CreateConsumableRequestAsync(requestCommand);
-                FeedbackMessage = reqMessage;
-                IsSuccessState = reqSuccess;
-                return RedirectToPage(new { SelectedCampusId });
-            }
-
-            var command = new AddStockCommand { Id = TargetItemId, Quantity = QuantityDelta };
-            var (success, message) = await _consumableService.AddStockAsync(command);
+                    CampusId     = campusId,
+                    RequestorId  = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    RequestorName = User.Identity?.Name
+                });
 
             FeedbackMessage = message;
-            IsSuccessState = success;
-
+            IsSuccessState  = success;
             return RedirectToPage(new { SelectedCampusId });
         }
 
@@ -158,52 +152,39 @@ namespace QuickStockApp.Pages
                 return RedirectToPage(new { SelectedCampusId });
             }
 
-            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
-            int campusId = 1;
-            if (int.TryParse(campusIdStr, out int acid))
-            {
-                campusId = acid;
-            }
+            var campusId = ResolveCampusId();
+            var consumables = await _consumableService.GetAllConsumablesAsync(campusId);
+            var item = consumables.Find(c => c.Id == TargetItemId);
 
-            // Intercept if User is in Staff Role
-            if (User.IsInRole("Staff"))
-            {
-                var consumables = await _consumableService.GetAllConsumablesAsync(campusId);
-                var item = consumables.Find(c => c.Id == TargetItemId);
-
-                var requestCommand = new CreateConsumableRequestCommand
+            var (success, message) = await _consumableService.CreateConsumableRequestAsync(
+                new CreateConsumableRequestCommand
                 {
-                    RequestType = "Deduct",
-                    ProductName = item?.ProductName ?? "Unknown Item",
-                    ProductType = item?.ProductType ?? "pieces",
-                    Count = QuantityDelta,
+                    RequestType  = "Deduct",
+                    ProductName  = item?.ProductName ?? "Unknown Item",
+                    ProductType  = item?.ProductType ?? "pieces",
+                    Count        = QuantityDelta,
                     TargetItemId = TargetItemId,
-                    CampusId = campusId
-                };
-
-                var (reqSuccess, reqMessage) = await _consumableService.CreateConsumableRequestAsync(requestCommand);
-                FeedbackMessage = reqMessage;
-                IsSuccessState = reqSuccess;
-                return RedirectToPage(new { SelectedCampusId });
-            }
-
-            var command = new DeductStockCommand { Id = TargetItemId, Quantity = QuantityDelta };
-            var (success, message) = await _consumableService.DeductStockAsync(command);
+                    CampusId     = campusId,
+                    RequestorId  = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    RequestorName = User.Identity?.Name,
+                    Timestamp    = RequestDate
+                });
 
             FeedbackMessage = message;
-            IsSuccessState = success;
-
+            IsSuccessState  = success;
             return RedirectToPage(new { SelectedCampusId });
         }
 
         public async Task<IActionResult> OnPostCreateConsumableAsync()
         {
-            var campusIdStr = User.FindFirst("ActiveCampusId")?.Value;
-            int campusId = 1;
-            if (int.TryParse(campusIdStr, out int acid))
+            if (User.IsInRole("Employee"))
             {
-                campusId = acid;
+                FeedbackMessage = "Access denied: Employees cannot request consumable creation.";
+                IsSuccessState = false;
+                return RedirectToPage(new { SelectedCampusId });
             }
+
+            var campusId = ResolveCampusId();
             NewConsumable.CampusId = campusId;
 
             if (string.IsNullOrWhiteSpace(NewConsumable.ProductName))
@@ -227,28 +208,20 @@ namespace QuickStockApp.Pages
                 return RedirectToPage(new { SelectedCampusId });
             }
 
-            // Intercept if User is in Staff Role
-            if (User.IsInRole("Staff"))
-            {
-                var requestCommand = new CreateConsumableRequestCommand
+            var (success, message) = await _consumableService.CreateConsumableRequestAsync(
+                new CreateConsumableRequestCommand
                 {
                     RequestType = "Create",
                     ProductName = NewConsumable.ProductName,
                     ProductType = NewConsumable.ProductType,
-                    Count = NewConsumable.Count,
-                    CampusId = campusId
-                };
+                    Count       = NewConsumable.Count,
+                    CampusId    = campusId,
+                    RequestorId  = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    RequestorName = User.Identity?.Name
+                });
 
-                var (reqSuccess, reqMessage) = await _consumableService.CreateConsumableRequestAsync(requestCommand);
-                FeedbackMessage = reqMessage;
-                IsSuccessState = reqSuccess;
-                return RedirectToPage(new { SelectedCampusId });
-            }
-
-            var (success, message) = await _consumableService.CreateConsumableAsync(NewConsumable);
             FeedbackMessage = message;
-            IsSuccessState = success;
-
+            IsSuccessState  = success;
             return RedirectToPage(new { SelectedCampusId });
         }
     }

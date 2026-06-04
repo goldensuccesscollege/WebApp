@@ -5,15 +5,15 @@
     var campusId = User.FindFirst("ActiveCampusId")?.Value;
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin");
     var isManager = User.IsInRole("Manager");
-    var isStaff = User.IsInRole("Staff");
+    var isEmployee = User.IsInRole("Employee");
     var isViewer = User.IsInRole("Viewer");
     
     // Permission helpers
-    var canAdd = isAdmin || isManager || isStaff;
+    var canAdd = isAdmin || isManager || isEmployee;
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
-    var canTransfer = isAdmin || isManager || isStaff;
-    var canSeeLogsReports = isAdmin || isManager || isStaff;
+    var canTransfer = isAdmin || isManager || isEmployee;
+    var canSeeLogsReports = isAdmin || isManager || isEmployee;
 
     bool showListTab = Model.SelectedRoomId.HasValue || !string.IsNullOrEmpty(Model.SearchTerm) || Request.Query["tab"] == "list";
 }

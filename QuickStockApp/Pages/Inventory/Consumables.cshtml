@@ -2,7 +2,7 @@
 @model QuickStockApp.Pages.ConsumablesModel
 @{
     ViewData["Title"] = "Consumable Inventory Management";
-    var isStaff = User.IsInRole("Staff");
+    var isEmployee = User.IsInRole("Employee");
     var isManager = User.IsInRole("Manager");
     var isAdmin = User.IsInRole("Admin");
     var canApprove = isAdmin || isManager;
@@ -19,12 +19,27 @@
             <p class="text-muted small mb-0">Monitor quantity states, manage stock balances, and apply real-time adjustments.</p>
         </div>
         <div class="action-group d-flex gap-2">
+            @if (!isEmployee)
+            {
+                <a href="/Inventory/ConsumableLedger" class="btn btn-outline-primary rounded-pill px-4 shadow-sm py-2 fw-bold" style="border-color: #1F3C88; color: #1F3C88; font-size: 0.9rem;">
+                    <i class="bi bi-book-half me-2"></i> View Ledger
+                </a>
+            }
             <a href="/Inventory/ConsumableLogs" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm py-2 fw-bold" style="border-color: #64748b; color: #64748b; font-size: 0.9rem;">
                 <i class="bi bi-clock-history me-2"></i> View Activity Logs
             </a>
-            <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2 fw-bold" onclick="openCreateModal()" style="background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%); border: none; font-size: 0.9rem;">
-                <i class="bi bi-plus-lg me-2"></i> Create Consumable
-            </button>
+            @if (!isEmployee)
+            {
+                <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2 fw-bold" onclick="openCreateModal()" style="background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%); border: none; font-size: 0.9rem;">
+                    <i class="bi bi-plus-lg me-2"></i> Create Consumable
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-danger rounded-pill px-4 shadow-sm py-2 fw-bold" onclick="openDeductRequestModal()" style="background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%); border: none; font-size: 0.9rem;">
+                    <i class="bi bi-file-earmark-plus me-2"></i> Request Form
+                </button>
+            }
         </div>
     </div>
 
@@ -227,16 +242,19 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-2">
-                                        <button type="button" class="saas-btn-action btn-action-plus"
-                                                title="Add Stock Quantity" data-bs-toggle="tooltip"
-                                                onclick="launchMutationModal(@item.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(item.ProductName ?? "")', @item.Count, true)">
-                                            <i class="bi bi-plus-lg"></i>
-                                        </button>
-                                        <button type="button" class="saas-btn-action btn-action-minus"
-                                                title="Deduct Stock Quantity" data-bs-toggle="tooltip"
-                                                onclick="launchMutationModal(@item.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(item.ProductName ?? "")', @item.Count, false)">
-                                            <i class="bi bi-dash-lg"></i>
-                                        </button>
+                                        @if (!isEmployee)
+                                        {
+                                            <button type="button" class="saas-btn-action btn-action-plus"
+                                                    title="Add Stock Quantity" data-bs-toggle="tooltip"
+                                                    onclick="launchMutationModal(@item.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(item.ProductName ?? "")', @item.Count, true)">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                            <button type="button" class="saas-btn-action btn-action-minus"
+                                                    title="Deduct Stock Quantity" data-bs-toggle="tooltip"
+                                                    onclick="launchMutationModal(@item.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(item.ProductName ?? "")', @item.Count, false)">
+                                                <i class="bi bi-dash-lg"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -262,13 +280,10 @@
                 </div>
                 
                 <div class="modal-body px-4 py-4">
-                    @if (isStaff)
-                    {
-                        <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(31, 60, 136, 0.08); border-color: rgba(31, 60, 136, 0.15); color: #1f3c88;">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <span>As Staff, this action will submit a request to Admin/Manager for approval.</span>
-                        </div>
-                    }
+                    <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(31, 60, 136, 0.08); border-color: rgba(31, 60, 136, 0.15); color: #1f3c88;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>This action will submit an inventory request for approval.</span>
+                    </div>
                     <!-- Hidden inputs -->
                     <input type="hidden" asp-for="TargetItemId" id="hiddenItemId" />
 
@@ -281,14 +296,23 @@
                     <!-- In/Out Switch Segments -->
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Transaction Mode</label>
-                        <div class="segmented-control p-1 rounded-3 d-flex bg-light border">
-                            <button type="button" class="btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn" id="toggleInBtn" onclick="setModalMode(true)">
-                                <i class="bi bi-box-arrow-in-down"></i> Stock In
-                            </button>
-                            <button type="button" class="btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn" id="toggleOutBtn" onclick="setModalMode(false)">
-                                <i class="bi bi-box-arrow-up"></i> Stock Out
-                            </button>
-                        </div>
+                        @if (isEmployee)
+                        {
+                            <div class="p-2 bg-light rounded text-center fw-bold text-secondary border">
+                                <i class="bi bi-box-arrow-up me-2"></i> Stock Out (Deduct Stock Only)
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="segmented-control p-1 rounded-3 d-flex bg-light border">
+                                <button type="button" class="btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn" id="toggleInBtn" onclick="setModalMode(true)">
+                                    <i class="bi bi-box-arrow-in-down"></i> Stock In
+                                </button>
+                                <button type="button" class="btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn" id="toggleOutBtn" onclick="setModalMode(false)">
+                                    <i class="bi bi-box-arrow-up"></i> Stock Out
+                                </button>
+                            </div>
+                        }
                     </div>
 
                     <!-- Quantity Input with Spinner Controls -->
@@ -343,6 +367,72 @@
     </div>
 </div>
 
+<!-- Request Stock Deduction Modal (For Employee) -->
+<div class="modal fade" id="requestDeductionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-premium rounded-4 overflow-hidden modal-blur">
+            <form method="post" asp-page-handler="DeductStock" id="employeeDeductForm">
+                <div class="modal-header border-0 text-white py-3 transition-all" style="background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%) !important;">
+                    <h5 class="modal-title fw-800 d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-plus"></i> Request Form
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body px-4 py-4">
+                    <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(225, 29, 72, 0.08); border-color: rgba(225, 29, 72, 0.15); color: #e11d48;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>This request will be sent to the administrator/manager for review.</span>
+                    </div>
+
+                    <!-- Product Name Dropdown -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Product Name</label>
+                        <select class="form-select form-control-lg rounded-3" asp-for="TargetItemId" id="deductProductSelect" required onchange="onDeductProductChange()">
+                            <option value="" disabled selected>Select an available product...</option>
+                            @if (Model.ConsumablesList != null)
+                            {
+                                foreach (var item in Model.ConsumablesList)
+                                {
+                                    <option value="@item.Id" data-type="@item.ProductType" data-stock="@item.Count">
+                                        @item.ProductName (Available: @item.Count @item.ProductType)
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Product Type (Automatic) -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Product Type / Unit</label>
+                        <input type="text" id="deductProductType" class="form-control form-control-lg rounded-3" readonly placeholder="Automatic from selection" style="background-color: #f1f5f9; cursor: not-allowed;" />
+                    </div>
+
+                    <!-- Count -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Quantity</label>
+                        <input type="number" class="form-control form-control-lg rounded-3" asp-for="QuantityDelta" min="1" value="1" id="deductCountInput" required oninput="validateDeductCount()" />
+                        <div class="invalid-feedback fw-semibold mt-2" id="deductCountError" style="display: none;"></div>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Request Date</label>
+                        <input type="date" class="form-control form-control-lg rounded-3" asp-for="RequestDate" id="deductRequestDate" required readonly style="background-color: #f1f5f9; cursor: not-allowed;" />
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top-0 px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn text-white px-4 py-2 rounded-pill fw-bold" id="deductSubmitBtn" style="background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%) !important; border: none;">
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Create Consumable Modal -->
 <div class="modal fade" id="createConsumableModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -356,13 +446,10 @@
                 </div>
                 
                 <div class="modal-body px-4 py-4">
-                    @if (isStaff)
-                    {
-                        <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(31, 60, 136, 0.08); border-color: rgba(31, 60, 136, 0.15); color: #1f3c88;">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <span>As Staff, creating an item will submit a request to Admin/Manager for approval.</span>
-                        </div>
-                    }
+                    <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 rounded-3 small mb-4" style="background-color: rgba(31, 60, 136, 0.08); border-color: rgba(31, 60, 136, 0.15); color: #1f3c88;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>This action will submit a creation request for approval.</span>
+                    </div>
                     <!-- Product Name -->
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-muted text-uppercase tracking-wider mb-2" style="font-size: 0.75rem;">Product Name</label>
@@ -391,7 +478,7 @@
                 <div class="modal-footer bg-light border-top-0 px-4 py-3 rounded-bottom-4">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn text-white px-4 py-2 rounded-pill fw-bold" style="background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%) !important; border: none;">
-                        @(isStaff ? "Submit Creation Request" : "Create Item")
+                        Submit Creation Request
                     </button>
                 </div>
             </form>
@@ -1182,7 +1269,7 @@
 
 @section Scripts {
     <script>
-        window.isStaffUser = @(isStaff ? "true" : "false");
+        window.isEmployeeUser = @(isEmployee ? "true" : "false");
         window.currentActiveStock = 0;
         window.isAdditionMode = true;
         window.currentTypeFilter = 'All';
@@ -1192,6 +1279,68 @@
         function openCreateModal() {
             var createModal = new bootstrap.Modal(document.getElementById('createConsumableModal'));
             createModal.show();
+        }
+
+        function openDeductRequestModal() {
+            // Set date to today in YYYY-MM-DD format
+            const today = new Date().toLocaleDateString('en-CA');
+            document.getElementById('deductRequestDate').value = today;
+
+            // Reset inputs
+            document.getElementById('deductProductSelect').selectedIndex = 0;
+            document.getElementById('deductProductType').value = '';
+            document.getElementById('deductCountInput').value = '1';
+            document.getElementById('deductCountError').style.display = 'none';
+            document.getElementById('deductCountInput').classList.remove('is-invalid');
+            document.getElementById('deductSubmitBtn').disabled = true;
+
+            var deductModal = new bootstrap.Modal(document.getElementById('requestDeductionModal'));
+            deductModal.show();
+        }
+
+        function onDeductProductChange() {
+            const select = document.getElementById('deductProductSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption && select.value !== "") {
+                const productType = selectedOption.getAttribute('data-type');
+                document.getElementById('deductProductType').value = productType || '';
+            } else {
+                document.getElementById('deductProductType').value = '';
+            }
+            validateDeductCount();
+        }
+
+        function validateDeductCount() {
+            const select = document.getElementById('deductProductSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const countInput = document.getElementById('deductCountInput');
+            const errorDiv = document.getElementById('deductCountError');
+            const submitBtn = document.getElementById('deductSubmitBtn');
+
+            if (!selectedOption || select.value === "") {
+                submitBtn.disabled = true;
+                return;
+            }
+
+            const availableStock = parseInt(selectedOption.getAttribute('data-stock') || '0', 10);
+            const requestCount = parseInt(countInput.value, 10) || 0;
+
+            countInput.classList.remove('is-invalid');
+            errorDiv.style.display = 'none';
+            submitBtn.disabled = false;
+
+            if (requestCount <= 0) {
+                countInput.classList.add('is-invalid');
+                errorDiv.innerText = "Value must be a valid count greater than zero.";
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = true;
+            } else if (requestCount > availableStock) {
+                countInput.classList.add('is-invalid');
+                errorDiv.innerText = `Cannot deduct ${requestCount} units. Only ${availableStock} items are currently available.`;
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = true;
+            }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -1311,6 +1460,9 @@
         }
 
         function setModalMode(isAdding) {
+            if (window.isEmployeeUser) {
+                isAdding = false;
+            }
             window.isAdditionMode = isAdding;
             
             const formElement = document.getElementById('mutationForm');
@@ -1331,8 +1483,8 @@
                 formElement.action = '?handler=AddStock';
                 headerBanner.className = 'modal-header border-0 bg-success text-white py-3 transition-all';
                 submitBtn.className = 'btn px-4 py-2 rounded-pill fw-bold btn-success text-white border-0 shadow-sm';
-                submitBtn.innerText = window.isStaffUser ? 'Submit Addition Request' : 'Apply Stock Addition';
-                titleText.innerHTML = window.isStaffUser ? '<i class="bi bi-box-arrow-in-down"></i> Request Stock Addition' : '<i class="bi bi-box-arrow-in-down"></i> Add Inventory Stock';
+                submitBtn.innerText = 'Submit Addition Request';
+                titleText.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Request Stock Addition';
                 
                 toggleIn.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn active-in';
                 toggleOut.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn';
@@ -1342,8 +1494,8 @@
                 formElement.action = '?handler=DeductStock';
                 headerBanner.className = 'modal-header border-0 bg-danger text-white py-3 transition-all';
                 submitBtn.className = 'btn px-4 py-2 rounded-pill fw-bold btn-danger text-white border-0 shadow-sm';
-                submitBtn.innerText = window.isStaffUser ? 'Submit Deduction Request' : 'Apply Stock Deduction';
-                titleText.innerHTML = window.isStaffUser ? '<i class="bi bi-box-arrow-up"></i> Request Stock Deduction' : '<i class="bi bi-box-arrow-up"></i> Deduct Inventory Stock';
+                submitBtn.innerText = 'Submit Deduction Request';
+                titleText.innerHTML = '<i class="bi bi-box-arrow-up"></i> Request Stock Deduction';
                 
                 toggleIn.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn';
                 toggleOut.className = 'btn flex-fill py-2 rounded-2 fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transaction-mode-btn active-out';

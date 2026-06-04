@@ -68,7 +68,7 @@ namespace QuickStockApp.Pages.Dashboard
 
         public async System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> OnGetAsync()
         {
-            CanSeeLogs = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+            CanSeeLogs = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Employee");
 
             var activeName = User.FindFirst("ActiveCampusName")?.Value;
             var activeIdString = User.FindFirst("ActiveCampusId")?.Value;
@@ -152,7 +152,7 @@ namespace QuickStockApp.Pages.Dashboard
             var requests = await _consumableService.GetConsumableRequestsAsync(campusId);
             
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var isStaff = User.IsInRole("Staff");
+            var isEmployee = User.IsInRole("Employee");
             var isManager = User.IsInRole("Manager");
             var isAdmin = User.IsInRole("Admin");
 
@@ -168,7 +168,7 @@ namespace QuickStockApp.Pages.Dashboard
                     {
                         id = req.Id,
                         title = $"New Request: {req.RequestType} {req.ProductName}",
-                        message = $"Staff {req.RequestorName} requested to {req.RequestType.ToLower()} {req.Count} {req.ProductType}.",
+                        message = $"Employee {req.RequestorName} requested to {req.RequestType.ToLower()} {req.Count} {req.ProductType}.",
                         timestamp = req.Timestamp,
                         status = req.Status,
                         url = "/Inventory/ConsumableRequests"
@@ -176,9 +176,9 @@ namespace QuickStockApp.Pages.Dashboard
                 }
             }
             
-            if (isStaff)
+            if (isEmployee)
             {
-                // Staff should see approved or rejected requests as notifications
+                // Employee should see approved or rejected requests as notifications
                 var myResolved = requests
                     .Where(r => r.RequestorId == currentUserId && r.Status != "Pending")
                     .OrderByDescending(r => r.Timestamp)

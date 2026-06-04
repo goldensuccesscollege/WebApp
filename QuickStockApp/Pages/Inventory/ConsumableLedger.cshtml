@@ -1,0 +1,480 @@
+@page
+@model QuickStockApp.Pages.Inventory.ConsumableLedgerModel
+@{
+    ViewData["Title"] = "Consumable Inventory Ledger";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="container-fluid px-4 py-4 main-content-container">
+    <!-- Header Area -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 animate-in">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="/Inventory/Consumables" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Back to Inventory">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h1 class="h2 mb-0 text-dark fw-800 tracking-tight">Inventory Ledger</h1>
+            </div>
+            <p class="text-muted small mb-0 ms-5">Chronological record of all stock transactions for @Model.CampusName — track every IN, OUT, and running balance per product.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge rounded-pill px-3 py-2 fw-bold" style="font-size: 0.8rem; background: rgba(31,60,136,0.08); color: #1F3C88; border: 1px solid rgba(31,60,136,0.18);">
+                <i class="bi bi-list-check me-1"></i> @Model.LedgerEntries.Count Entries
+            </span>
+            <a href="/Inventory/Consumables" class="btn btn-outline-primary rounded-pill px-4 shadow-sm py-2 fw-bold" style="border-color: #1F3C88; color: #1F3C88; font-size: 0.9rem;">
+                <i class="bi bi-box-seam me-2"></i> Consumables Inventory
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Summary Row -->
+    <div class="row g-4 mb-4 animate-in">
+        <div class="col-12 col-md-4">
+            <div class="saas-kpi-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="kpi-label">Total Units IN</span>
+                    <div class="kpi-icon-box" style="background-color: #ecfdf5; color: #059669;">
+                        <i class="bi bi-arrow-down-circle-fill"></i>
+                    </div>
+                </div>
+                <div class="kpi-value-wrapper">
+                    <h3 class="kpi-value" style="color: #059669;">+@Model.TotalIn</h3>
+                    <span class="kpi-trend text-muted"><i class="bi bi-info-circle me-1"></i>all time stock additions</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="saas-kpi-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="kpi-label">Total Units OUT</span>
+                    <div class="kpi-icon-box" style="background-color: #fff1f2; color: #e11d48;">
+                        <i class="bi bi-arrow-up-circle-fill"></i>
+                    </div>
+                </div>
+                <div class="kpi-value-wrapper">
+                    <h3 class="kpi-value" style="color: #e11d48;">-@Model.TotalOut</h3>
+                    <span class="kpi-trend text-muted"><i class="bi bi-info-circle me-1"></i>all time stock deductions</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="saas-kpi-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="kpi-label">Unique Products Tracked</span>
+                    <div class="kpi-icon-box" style="background-color: #f0f9ff; color: #0369a1;">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                </div>
+                <div class="kpi-value-wrapper">
+                    <h3 class="kpi-value">@Model.UniqueProductCount</h3>
+                    <span class="kpi-trend text-muted"><i class="bi bi-info-circle me-1"></i>products with ledger history</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="saas-filter-panel p-3 mb-4 animate-in">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-lg-5">
+                <div class="saas-search-wrapper">
+                    <i class="bi bi-search search-icon-inline"></i>
+                    <input type="text" id="ledgerSearchInput" class="saas-search-input" placeholder="Search by product name or processed by..." aria-label="Search ledger">
+                </div>
+            </div>
+            <div class="col-12 col-lg-4">
+                <select id="ledgerProductFilter" class="form-select rounded-3" style="font-size: 0.875rem; font-weight: 500; border-color: var(--slate-200); background-color: var(--slate-50);">
+                    <option value="">All Products</option>
+                    @foreach (var name in Model.ProductNames)
+                    {
+                        <option value="@name.ToLower()">@name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-lg-3 d-flex gap-2">
+                <button class="saas-btn-filter active flex-fill" id="ledgerFilterAll" onclick="ledgerFilterType('All', this)">All</button>
+                <button class="saas-btn-filter flex-fill" id="ledgerFilterIn" onclick="ledgerFilterType('In', this)">
+                    <i class="bi bi-arrow-down-circle text-success me-1"></i>IN Only
+                </button>
+                <button class="saas-btn-filter flex-fill" id="ledgerFilterOut" onclick="ledgerFilterType('Out', this)">
+                    <i class="bi bi-arrow-up-circle text-danger me-1"></i>OUT Only
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ledger Table -->
+    <div class="saas-table-container animate-in">
+        <div class="p-4 border-bottom bg-slate-50 d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
+            <div>
+                <h5 class="fw-bold mb-1 text-dark tracking-tight"><i class="bi bi-journal-text me-2 text-primary"></i>Transaction History</h5>
+                <p class="text-muted small mb-0">Every stock movement recorded in chronological order with running balances per product.</p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="saas-table" id="inventoryLedgerTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4" style="width: 15%;">Date</th>
+                        <th style="width: 25%;">Product Name</th>
+                        <th style="width: 12%; text-align: center;">IN</th>
+                        <th style="width: 12%; text-align: center;">OUT</th>
+                        <th style="width: 15%; text-align: center;">Balance</th>
+                        <th style="width: 21%;">Processed By</th>
+                    </tr>
+                </thead>
+                <tbody id="ledgerTableBody">
+                    @if (!Model.LedgerEntries.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-slate-400">
+                                <div class="py-4 d-flex flex-column align-items-center">
+                                    <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                                        <i class="bi bi-journal-text fs-4 text-slate-500"></i>
+                                    </div>
+                                    <span class="fw-semibold text-slate-900 d-block fs-6 mb-1">No ledger entries yet</span>
+                                    <span class="small text-slate-500">Stock transactions will automatically appear here once items are created or adjusted.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var entry in Model.LedgerEntries)
+                        {
+                            <tr class="ledger-row"
+                                data-product-name="@entry.ProductName.ToLower()"
+                                data-processed-by="@entry.ProcessedByName.ToLower()"
+                                data-in="@entry.In"
+                                data-out="@entry.Out">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="ledger-date-indicator @(entry.In > 0 ? "ledger-in-indicator" : "ledger-out-indicator")"></div>
+                                        <div>
+                                            <div class="fw-600 text-slate-700" style="font-size: 0.85rem;">@entry.Date.ToLocalTime().ToString("yyyy-MM-dd")</div>
+                                            <div class="text-slate-400" style="font-size: 0.75rem;">@entry.Date.ToLocalTime().ToString("HH:mm")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-slate-900" style="font-size: 0.9rem;">@entry.ProductName</div>
+                                </td>
+                                <td style="text-align: center;">
+                                    @if (entry.In > 0)
+                                    {
+                                        <span class="ledger-qty-badge ledger-in-badge">
+                                            <i class="bi bi-arrow-down-circle-fill me-1"></i>+@entry.In
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-300 small">—</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    @if (entry.Out > 0)
+                                    {
+                                        <span class="ledger-qty-badge ledger-out-badge">
+                                            <i class="bi bi-arrow-up-circle-fill me-1"></i>-@entry.Out
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-300 small">—</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="ledger-balance-badge @(entry.Balance <= 5 ? "ledger-balance-low" : "ledger-balance-ok")">
+                                        @entry.Balance
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="ledger-avatar">
+                                            @(string.IsNullOrEmpty(entry.ProcessedByName) ? "?" : entry.ProcessedByName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <span class="fw-500 text-slate-700 small">@entry.ProcessedByName</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination container -->
+        <div id="ledgerPager" class="p-3 border-top bg-light d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"></div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --primary-brand: #1F3C88;
+    }
+
+    body {
+        background-color: #fafafa;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: var(--slate-700);
+    }
+
+    .main-content-container { max-width: 1400px; margin: 0 auto; }
+    .fw-800 { font-weight: 800; }
+    .fw-600 { font-weight: 600; }
+    .fw-500 { font-weight: 500; }
+    .tracking-tight { letter-spacing: -0.03em; }
+
+    /* KPI Cards */
+    .saas-kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.2s ease-in-out;
+    }
+    .saas-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border-color: var(--slate-300);
+    }
+    .kpi-label { font-size: 0.8rem; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi-icon-box { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .kpi-value-wrapper { margin-top: 1rem; }
+    .kpi-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--slate-900); margin-bottom: 0.25rem; }
+    .kpi-trend { font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; }
+
+    /* Filter Panel */
+    .saas-filter-panel {
+        background: #ffffff;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .saas-search-wrapper { position: relative; display: flex; align-items: center; }
+    .search-icon-inline { position: absolute; left: 14px; color: var(--slate-400); font-size: 0.95rem; }
+    .saas-search-input {
+        width: 100%; padding: 8px 14px 8px 38px;
+        font-size: 0.9rem; font-weight: 500;
+        border: 1px solid var(--slate-200); border-radius: 8px;
+        background-color: var(--slate-50); color: var(--slate-900);
+        transition: all 0.15s ease;
+    }
+    .saas-search-input:focus { background-color: #fff; border-color: var(--slate-400); outline: none; box-shadow: 0 0 0 3px rgba(15,23,42,0.08); }
+    .saas-search-input::placeholder { color: var(--slate-400); }
+    .saas-btn-filter {
+        padding: 6px 12px; font-size: 0.85rem; font-weight: 600;
+        border-radius: 6px; border: 1px solid var(--slate-200);
+        background-color: #ffffff; color: var(--slate-600); transition: all 0.15s ease;
+    }
+    .saas-btn-filter:hover { background-color: var(--slate-50); color: var(--slate-900); border-color: var(--slate-300); }
+    .saas-btn-filter.active { background-color: var(--slate-900); border-color: var(--slate-900); color: #ffffff; }
+
+    /* Table */
+    .saas-table-container {
+        background: #ffffff; border: 1px solid var(--slate-200);
+        border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+    .saas-table { width: 100%; border-collapse: collapse; }
+    .saas-table thead { background-color: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
+    .saas-table th {
+        padding: 14px 18px; font-size: 0.72rem; font-weight: 700;
+        color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em;
+        text-align: left; border: none;
+    }
+    .saas-table tbody tr { border-bottom: 1px solid var(--slate-100); transition: background-color 0.15s ease; }
+    .saas-table tbody tr:last-child { border-bottom: none; }
+    .saas-table tbody tr:hover { background-color: rgba(248,250,252,0.6); }
+    .saas-table td { padding: 14px 18px; font-size: 0.9rem; font-weight: 500; color: var(--slate-700); }
+
+    /* Ledger-specific components */
+    .ledger-date-indicator { width: 3px; height: 32px; border-radius: 2px; flex-shrink: 0; }
+    .ledger-in-indicator  { background-color: #059669; }
+    .ledger-out-indicator { background-color: #e11d48; }
+
+    .ledger-qty-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+    .ledger-in-badge  { background-color: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,0.25); }
+    .ledger-out-badge { background-color: #fff1f2; color: #e11d48; border: 1px solid rgba(225,29,72,0.25); }
+
+    .ledger-balance-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; letter-spacing: -0.02em; }
+    .ledger-balance-ok  { background-color: #f0f9ff; color: #0369a1; border: 1px solid rgba(3,105,161,0.18); }
+    .ledger-balance-low { background-color: #fff7ed; color: #c2410c; border: 1px solid rgba(194,65,12,0.22); }
+
+    .ledger-avatar {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%);
+        color: #ffffff; font-size: 0.72rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* Animations */
+    .animate-in { animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Dark Mode */
+    body.dark-mode { background-color: #0b0f19; color: var(--slate-300); }
+    body.dark-mode .saas-kpi-card { background: #0f172a; border-color: var(--slate-800); }
+    body.dark-mode .kpi-value { color: #ffffff; }
+    body.dark-mode .saas-filter-panel { background: #0f172a; border-color: var(--slate-800); }
+    body.dark-mode .saas-search-input { background-color: #1e293b; border-color: var(--slate-800); color: #ffffff; }
+    body.dark-mode .saas-btn-filter { background-color: #0f172a; border-color: var(--slate-800); color: var(--slate-300); }
+    body.dark-mode .saas-btn-filter.active { background-color: #ffffff; border-color: #ffffff; color: var(--slate-900); }
+    body.dark-mode .saas-table-container { background: #0f172a; border-color: var(--slate-800); }
+    body.dark-mode .saas-table thead { background-color: #1e293b; border-bottom-color: var(--slate-800); }
+    body.dark-mode .saas-table th { color: var(--slate-400); }
+    body.dark-mode .saas-table tbody tr { border-bottom-color: var(--slate-800); }
+    body.dark-mode .saas-table tbody tr:hover { background-color: rgba(30,41,59,0.4); }
+    body.dark-mode .saas-table td { color: var(--slate-300); }
+    body.dark-mode .ledger-in-badge { background-color: rgba(5,150,105,0.15); color: #34d399; border-color: rgba(5,150,105,0.3); }
+    body.dark-mode .ledger-out-badge { background-color: rgba(225,29,72,0.15); color: #fb7185; border-color: rgba(225,29,72,0.3); }
+    body.dark-mode .ledger-balance-ok { background-color: rgba(3,105,161,0.15); color: #38bdf8; border-color: rgba(3,105,161,0.3); }
+    body.dark-mode .ledger-balance-low { background-color: rgba(194,65,12,0.15); color: #fb923c; border-color: rgba(194,65,12,0.3); }
+</style>
+
+@section Scripts {
+    <script>
+        window.ledgerCurrentTypeFilter = 'All';
+        window.ledgerCurrentPage = 1;
+        const LEDGER_PAGE_SIZE = 15;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const ledgerSearch = document.getElementById('ledgerSearchInput');
+            if (ledgerSearch) {
+                ledgerSearch.addEventListener('input', function () {
+                    window.ledgerCurrentPage = 1;
+                    applyLedgerFilters();
+                });
+            }
+            const ledgerProductFilter = document.getElementById('ledgerProductFilter');
+            if (ledgerProductFilter) {
+                ledgerProductFilter.addEventListener('change', function () {
+                    window.ledgerCurrentPage = 1;
+                    applyLedgerFilters();
+                });
+            }
+            applyLedgerFilters();
+        });
+
+        function ledgerFilterType(type, button) {
+            window.ledgerCurrentTypeFilter = type;
+            window.ledgerCurrentPage = 1;
+            document.querySelectorAll('#ledgerFilterAll, #ledgerFilterIn, #ledgerFilterOut')
+                .forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            applyLedgerFilters();
+        }
+
+        function applyLedgerFilters() {
+            const searchVal = (document.getElementById('ledgerSearchInput')?.value ?? '').toLowerCase().trim();
+            const productVal = (document.getElementById('ledgerProductFilter')?.value ?? '').toLowerCase();
+            const typeFilter = window.ledgerCurrentTypeFilter;
+            const rows = Array.from(document.querySelectorAll('#ledgerTableBody .ledger-row'));
+
+            const visibleRows = rows.filter(row => {
+                const name = row.getAttribute('data-product-name') ?? '';
+                const processedBy = row.getAttribute('data-processed-by') ?? '';
+                const inQty = parseInt(row.getAttribute('data-in') || '0', 10);
+                const outQty = parseInt(row.getAttribute('data-out') || '0', 10);
+                const matchesSearch = searchVal === '' || name.includes(searchVal) || processedBy.includes(searchVal);
+                const matchesProduct = productVal === '' || name === productVal;
+                const matchesType = typeFilter === 'All' || (typeFilter === 'In' && inQty > 0) || (typeFilter === 'Out' && outQty > 0);
+                return matchesSearch && matchesProduct && matchesType;
+            });
+
+            rows.forEach(row => row.style.display = 'none');
+
+            const totalPages = Math.max(1, Math.ceil(visibleRows.length / LEDGER_PAGE_SIZE));
+            if (window.ledgerCurrentPage > totalPages) window.ledgerCurrentPage = totalPages;
+            const startIdx = (window.ledgerCurrentPage - 1) * LEDGER_PAGE_SIZE;
+            const endIdx = startIdx + LEDGER_PAGE_SIZE;
+            visibleRows.forEach((row, i) => { row.style.display = (i >= startIdx && i < endIdx) ? '' : 'none'; });
+
+            const tbody = document.getElementById('ledgerTableBody');
+            const existingEmpty = document.getElementById('ledgerNoResultsRow');
+            if (visibleRows.length === 0 && rows.length > 0) {
+                if (!existingEmpty) {
+                    const tr = document.createElement('tr');
+                    tr.id = 'ledgerNoResultsRow';
+                    tr.innerHTML = `<td colspan="6" class="text-center py-5 text-slate-400">
+                        <div class="py-3 d-flex flex-column align-items-center">
+                            <div class="rounded-circle bg-slate-100 d-flex align-items-center justify-content-center mb-3" style="width:44px;height:44px;">
+                                <i class="bi bi-search fs-5 text-slate-400"></i>
+                            </div>
+                            <span class="fw-semibold text-slate-800 d-block mb-1">No matching entries</span>
+                            <span class="small text-slate-500">Try adjusting your search or filter selections.</span>
+                        </div></td>`;
+                    tbody.appendChild(tr);
+                }
+            } else if (existingEmpty) {
+                existingEmpty.remove();
+            }
+
+            renderLedgerPager(visibleRows.length, totalPages);
+        }
+
+        function renderLedgerPager(totalRows, totalPages) {
+            const container = document.getElementById('ledgerPager');
+            if (!container) return;
+            if (totalRows === 0 || totalPages <= 1) { container.style.display = 'none'; return; }
+            container.style.display = '';
+            container.innerHTML = '';
+
+            const currentPage = window.ledgerCurrentPage;
+            const startEntry = (currentPage - 1) * LEDGER_PAGE_SIZE + 1;
+            const endEntry = Math.min(currentPage * LEDGER_PAGE_SIZE, totalRows);
+
+            const info = document.createElement('span');
+            info.className = 'text-muted small fw-semibold';
+            info.innerText = `Showing ${startEntry} to ${endEntry} of ${totalRows} entries`;
+            container.appendChild(info);
+
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'd-flex gap-1 align-items-center';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.type = 'button';
+            prevBtn.className = `btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold ${currentPage === 1 ? 'disabled' : ''}`;
+            prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i> Prev';
+            if (currentPage > 1) prevBtn.addEventListener('click', () => { window.ledgerCurrentPage--; applyLedgerFilters(); });
+            btnGroup.appendChild(prevBtn);
+
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            if (endPage - startPage + 1 < maxButtons) startPage = Math.max(1, endPage - maxButtons + 1);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.type = 'button';
+                pageBtn.className = `btn btn-sm rounded-circle fw-bold ${currentPage === i ? 'btn-primary text-white border-0' : 'btn-outline-secondary'}`;
+                pageBtn.style.cssText = 'width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;font-size:0.8rem;';
+                if (currentPage === i) pageBtn.style.background = 'linear-gradient(135deg, #1F3C88 0%, #4f46e5 100%)';
+                pageBtn.innerText = i;
+                const pageNum = i;
+                pageBtn.addEventListener('click', () => { window.ledgerCurrentPage = pageNum; applyLedgerFilters(); });
+                btnGroup.appendChild(pageBtn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.type = 'button';
+            nextBtn.className = `btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextBtn.innerHTML = 'Next <i class="bi bi-chevron-right"></i>';
+            if (currentPage < totalPages) nextBtn.addEventListener('click', () => { window.ledgerCurrentPage++; applyLedgerFilters(); });
+            btnGroup.appendChild(nextBtn);
+
+            container.appendChild(btnGroup);
+        }
+    </script>
+}

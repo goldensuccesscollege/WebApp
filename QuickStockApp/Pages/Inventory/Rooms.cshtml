@@ -5,9 +5,9 @@
     var isViewer = User.IsInRole("Viewer");
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("Library Admin") || User.IsInRole("Home Economics Admin"); // Keep original role name but the logic is same
     var isManager = User.IsInRole("Manager");
-    var isStaff = User.IsInRole("Staff");
+    var isEmployee = User.IsInRole("Employee");
     
-    var canAdd = isAdmin || isManager || isStaff;
+    var canAdd = isAdmin || isManager || isEmployee;
     var canUpdate = isAdmin || isManager;
     var canDelete = isAdmin;
 }
